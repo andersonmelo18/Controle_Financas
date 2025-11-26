@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <title>Entradas - Controle Financeiro</title> 
+
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>Finan<span>Control</span></h3>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
+            <li class="active"><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
+            <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
+            <li><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
+            <li><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
+            <li><a href="cartoes_specs.html"><span class="material-icons-sharp">receipt_long</span>Compras
+                    Parceladas</a></li>
+            <li><a href="pendencias.html"><span class="material-icons-sharp">assignment_late</span>Pendências</a></li>
+            <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="main-header">
+            <button class="hamburger-menu">
+                <span class="material-icons-sharp">menu</span>
+            </button>
+            
+            <h2>Controle de Entradas</h2>
+
+            <div class="month-selector">
+                <button id="prev-month"><span class="material-icons-sharp">chevron_left</span></button>
+                <h3 id="current-month-display" data-year="2025" data-month="11">Carregando...</h3>
+                <button id="next-month"><span class="material-icons-sharp">chevron_right</span></button>
+            </div>
+
+            <div class="header-actions">
+            
+                <div class="global-balance" id="global-balance-container" style="display: none;">
+                    <small>Saldo em Caixa</small>
+                    <h3 id="global-balance-display">R$ 0,00</h3>
+                </div>
+
+                <div class="notification-bell">
+                    <button id="notification-button" class="btn-icon">
+                        <span class="material-icons-sharp">notifications</span>
+                        <span id="notification-count" class="badge" style="display: none;">0</span>
+                    </button>
+                    <div id="notification-dropdown" class="dropdown-content">
+                        <div id="notification-list">
+                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                                Nenhum alerta no momento.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="theme-toggler">
+                    <span class="material-icons-sharp active">light_mode</span>
+                    <span class="material-icons-sharp">dark_mode</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="card" style="margin: 2rem;">
+            <h3>Registrar Entrada</h3>
+            <form id="form-add-entrada" class="form-container" style="border-bottom: none; margin-bottom: 0;">
+                <div class="form-group">
+                    <label for="entrada-data">Data</label>
+                    <input type="date" id="entrada-data" required>
+                </div>
+                <div class="form-group">
+                    <label for="entrada-plataforma">Origem (Plataforma)</label>
+                    <select id="entrada-plataforma" required>
+                        <option value="Salário">💰 Salário</option>
+                        <option value="Uber">🚗 Uber</option>
+                        <option value="99">🚗 99</option>
+                        <option value="Indrive">🚗 Indrive</option>
+                        <option value="Shopee">📦 Shopee</option>
+                        <option value="iFood">🍔 iFood</option>
+                        <option value="Gorjetas">💵 Gorjetas</option>
+                        <option value="Vendas Online">💻 Vendas Online</option>
+                        <option value="Outros">🧩 Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="entrada-descricao">Descrição</label>
+                    <input type="text" id="entrada-descricao" required placeholder="Ex: Viagem, Venda...">
+                </div>
+                <div class="form-group">
+                    <label for="entrada-valor">Valor</label>
+                    <input type="text" id="entrada-valor" class="currency" required placeholder="R$ 0,00">
+                </div>
+                <div class="form-group">
+                    <label for="entrada-km">KM Rodados (Opcional)</label>
+                    <input type="number" id="entrada-km" step="0.1" placeholder="0.0">
+                </div>
+                <div class="form-group">
+                    <label for="entrada-horas">Horas Trab. (Opcional)</label>
+                    <input type="text" id="entrada-horas" placeholder="Ex: 8:30 ou 8.5">
+                </div>
+                <div class="form-group">
+                    <label for="entrada-comprovante">Comprovante (Opcional)</label>
+                    <input type="file" id="entrada-comprovante">
+                </div>
+                <div class="form-group" style="align-items: flex-end;">
+                    <button type="submit" class="btn-primary">Adicionar Entrada</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <h3>Histórico de Entradas do Mês</h3>
+
+            <div id="filtro-bar" class="form-container"
+                style="padding-bottom: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                <div class="form-group">
+                    <label for="filtro-origem">Filtrar por Origem</label>
+                    <select id="filtro-origem">
+                        <option value="todas">Todas as Origens</option>
+                        </select>
+                </div>
+                <div class="form-group search-bar">
+                    <label for="filtro-busca">Buscar por Descrição</label>
+                    <span class="material-icons-sharp">search</span>
+                    <input type="text" id="filtro-busca" placeholder="Buscar...">
+                </div>
+                <div class="form-group" style="align-items: flex-end;">
+                    <button id="btn-limpar-filtros" class="btn-secondary">
+                        <span class="material-icons-sharp">close</span> Limpar
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="table-entradas"> 
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Origem</th>
+                            <th>Valor</th>
+                            <th style="text-align: center;">Comp.</th>
+                            <th>KM</th>
+                            <th>Horas</th>
+                            <th style="width: 140px;">Ações</th> 
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-entradas">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                <h3>Total Filtrado:
+                    <span id="total-filtrado" style="color: var(--text-color);">R$ 0,00</span>
+                </h3>
+                <div style="text-align: right;">
+                    <h3 style="margin: 0;">Total (Mês): 
+                        <span id="total-mes-entradas" style="color: var(--success-color);">R$ 0,00</span>
+                    </h3>
+                    <small style="color: var(--text-light); font-weight: 500;">
+                        KM: <span id="total-mes-km">0.0 km</span> | Horas: <span id="total-mes-horas">0h 00m</span>
+                    </small>
+                </div>
+            </div>
+        </section>
+        
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <h3>Ganhos Diários (Visão Semanal)</h3>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="filtro-semana" style="margin-bottom: 0; margin-right: 0.5rem;">Selecionar Semana:</label>
+                    <select id="filtro-semana" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius-1); background: var(--card-background); color: var(--text-color);">
+                        </select>
+                </div>
+            </div>
+            
+            <div style="height: 250px; position: relative;">
+                <canvas id="grafico-semanal"></canvas>
+            </div>
+        </section>
+
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <h3>Evolução das Entradas (Acumulado no Mês)</h3>
+            <div id="chart-evolucao-container" style="padding: 1rem; height: 300px;">
+                <canvas id="grafico-entradas-mes"></canvas>
+                <p id="grafico-placeholder" style="text-align: center; padding: 2rem; color: var(--text-light);">
+                    (Sem entradas registradas neste mês para exibir o gráfico)
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Confirmar Exclusão</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Tem certeza que deseja excluir esta entrada?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-btn-confirm">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-container" id="modal-edit-entrada" style="display: none;">
+        <div class="modal-content">
+            <h2>Editar Entrada</h2>
+            
+            <form id="form-edit-entrada" class="form-container">
+                
+                <div class="form-group">
+                    <label for="edit-entrada-data">Data</label>
+                    <input type="date" id="edit-entrada-data" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-entrada-plataforma">Origem (Plataforma)</label>
+                    <select id="edit-entrada-plataforma" required>
+                        <option value="Salário">💰 Salário</option>
+                        <option value="Uber">🚗 Uber</option>
+                        <option value="99">🚗 99</option>
+                        <option value="Indrive">🚗 Indrive</option>
+                        <option value="Shopee">📦 Shopee</option>
+                        <option value="iFood">🍔 iFood</option>
+                        <option value="Gorjetas">💵 Gorjetas</option>
+                        <option value="Vendas Online">💻 Vendas Online</option>
+                        <option value="Outros">🧩 Outros</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-entrada-descricao">Descrição</label>
+                    <input type="text" id="edit-entrada-descricao" placeholder="Ex: Viagem, Venda..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-entrada-valor">Valor</label>
+                    <input type="text" id="edit-entrada-valor" class="currency" placeholder="R$ 0,00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-entrada-km">KM Rodados (Opcional)</label>
+                    <input type="number" id="edit-entrada-km" step="0.1" placeholder="0.0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-entrada-horas">Horas Trab. (Opcional)</label>
+                    <input type="text" id="edit-entrada-horas" placeholder="Ex: 8:30 ou 8.5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-entrada-comprovante">Substituir Comprovante (Opcional)</label>
+                    <input type="file" id="edit-entrada-comprovante">
+                    <p id="edit-comprovante-display" style="font-size: 0.8rem; color: var(--text-light); margin-top: 5px; display: none;">
+                        Arquivo atual: ...
+                    </p>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/entradas.js"></script>
+</body>
+</html>

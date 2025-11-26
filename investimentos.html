@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <title>Investimentos - Controle Financeiro</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>Finan<span>Control</span></h3>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
+            <li><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
+            <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
+            <li><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
+            <li><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
+            <li><a href="cartoes_specs.html"><span class="material-icons-sharp">receipt_long</span>Compras Parceladas</a></li>
+            <li><a href="pendencias.html"><span class="material-icons-sharp">assignment_late</span>Pendências</a></li>
+            <li class="active"><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="main-header">
+    <button class="hamburger-menu">
+        <span class="material-icons-sharp">menu</span>
+    </button>
+    
+    <h2>Meus Investimentos</h2>
+
+    <div class="month-selector">
+        <button id="prev-month"><span class="material-icons-sharp">chevron_left</span></button>
+        <h3 id="current-month-display" data-year="2025" data-month="11">Carregando...</h3>
+        <button id="next-month"><span class="material-icons-sharp">chevron_right</span></button>
+    </div>
+
+    <div class="header-actions">
+    
+        <div class="global-balance" id="global-balance-container" style="display: none;">
+            <small>Saldo em Caixa</small>
+            <h3 id="global-balance-display">R$ 0,00</h3>
+        </div>
+
+        <div class="notification-bell">
+            <button id="notification-button" class="btn-icon">
+                <span class="material-icons-sharp">notifications</span>
+                <span id="notification-count" class="badge" style="display: none;">0</span>
+            </button>
+            <div id="notification-dropdown" class="dropdown-content">
+                <div id="notification-list">
+                    <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                        Nenhum alerta no momento.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <button class="theme-toggler">
+            <span class="material-icons-sharp active">light_mode</span>
+            <span class="material-icons-sharp">dark_mode</span>
+        </button>
+    </div>
+</header>
+
+        <div class="kpi-grid">
+            <div class="card kpi-card">
+                <h4>Total Acumulado</h4>
+                <h2 id="kpi-total-acumulado">R$ 0,00</h2>
+                <small>Valor atual de todo o seu patrimônio</small>
+            </div>
+            <div class="card kpi-card">
+                <h4>Total Investido</h4>
+                <h2 id="kpi-total-investido">R$ 0,00</h2>
+                <small>Soma de todos os aportes (custo)</small>
+            </div>
+            <div class="card kpi-card">
+                <h4>Lucro / Prejuízo</h4>
+                <h2 id="kpi-lucro-prejuizo">R$ 0,00</h2>
+                <small>Rentabilidade total da carteira</small>
+            </div>
+        </div>
+        
+        <div class="main-grid two-cols">
+            <section class="card">
+                <h3>Divisão da Carteira</h3>
+                <div id="chart-divisao-container" style="padding: 1rem; max-height: 300px; display: flex; justify-content: center; align-items: center;">
+                    <canvas id="graficoDivisao"></canvas>
+                </div>
+            </section>
+            <section class="card">
+                <h3>Evolução do Patrimônio</h3>
+                <div id="chart-evolucao-container" style="padding: 1rem; height: 300px;">
+                    <canvas id="graficoEvolucao"></canvas>
+                    <p id="evolucao-placeholder" style="text-align: center; padding: 2rem; color: var(--text-light); display: none;">
+                        (Sem histórico para o gráfico de evolução)
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <section class="card">
+            <div class="card-header">
+                <h3>Posição Consolidada</h3>
+                <div class="card-header-actions">
+                    <label>Taxa CDI Base (% a.a):</label>
+                    <input type="text" id="config-cdi-base" value="11.25" style="width: 80px;">
+                    <button id="btn-save-cdi-base" class="btn-primary" style="margin-left: 8px;">Salvar</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="table-posicao-consolidada">
+                    <thead>
+                        <tr>
+                            <th>Corretora / Banco</th>
+                            <th>Tipo</th>
+                            <th>Investimento</th>
+                            <th>Rendimento Esp.</th>
+                            <th>Valor Investido</th>
+                            <th>Valor Atual</th>
+                            <th>Lucro/Prej.</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-posicao-consolidada">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Nova Movimentação (Aporte / Resgate)</h3>
+            <form id="form-movimentacao" class="form-container" style="border-bottom: none; margin-bottom: 0;">
+                
+                <div class="form-group">
+                    <label for="inv-tipo-mov">Movimentação</label>
+                    <select id="inv-tipo-mov" required>
+                        <option value="Aporte">📤 Aporte (Do Saldo)</option>
+                        <option value="Resgate">📥 Resgate (Para o Saldo)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="inv-data">Data</label>
+                    <input type="date" id="inv-data" required>
+                </div>
+                <div class="form-group">
+                    <label for="inv-valor">Valor</label>
+                    <input type="text" id="inv-valor" class="currency" required placeholder="R$ 0,00">
+                </div>
+
+                <div class="form-group">
+                    <label for="inv-banco">Corretora / Banco</label>
+                    <select id="inv-banco" required>
+                        <option value="Nubank">🏦 Nubank</option>
+                        <option value="Inter">🏦 Inter</option>
+                        <option value="XP">📈 XP</option>
+                        <option value="Rico">📈 Rico</option>
+                        <option value="BTG">📈 BTG</option>
+                        <option value="Binance">🪙 Binance</option>
+                        <option value="Outro">🏛️ Outro</option>
+                    </select>
+                </div>
+                <div class="form-group" id="group-banco-outro" style="display: none;">
+                    <label for="inv-banco-outro">Qual?</label>
+                    <input type="text" id="inv-banco-outro" placeholder="Nome da Corretora">
+                </div>
+                
+                <div class="form-group">
+                    <label for="inv-tipo-geral">Tipo de Investimento</label>
+                    <select id="inv-tipo-geral" required>
+                        <option value="Renda Fixa">💰 Renda Fixa (CDI, LCI, Tesouro)</option>
+                        <option value="Renda Variável">📊 Renda Variável (Ações, FIIs)</option>
+                        <option value="Cripto">🪙 Criptomoedas</option>
+                        <option value="Fundos">👥 Fundos (Ex: Nu Reserva)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="inv-tipo-nome">Nome do Ativo</label>
+                    <input type="text" id="inv-tipo-nome" required placeholder="Ex: CDB 100%, PETR4, BTC">
+                </div>
+                
+                <div class="form-group" id="group-cdi-percent">
+                    <label for="inv-cdi-percent">Rendimento (% CDI)</label>
+                    <input type="number" id="inv-cdi-percent" value="100" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="inv-objetivo">Objetivo (Opcional)</label>
+                    <input type="text" id="inv-objetivo" placeholder="Ex: Reserva, Aposentadoria">
+                </div>
+                <div class="form-group" id="group-vencimento">
+                    <label for="inv-vencimento">Vencimento (Opcional)</label>
+                    <input type="date" id="inv-vencimento">
+                </div>
+
+                <div class="form-group" style="align-items: flex-end;">
+                    <button type="submit" class="btn-primary">Registrar Movimentação</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <h3>Histórico de Movimentações</h3>
+            <div class="table-container">
+                <table id="table-historico-geral">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Mov.</th>
+                            <th>Banco</th>
+                            <th>Ativo</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-historico-geral"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+    
+    <div class="modal-container" id="modal-resgate-rapido" style="display: none;">
+        <div class="modal-content">
+            <h2>Resgatar Investimento</h2>
+            <form id="form-resgate-rapido" class="form-container">
+                <p>Resgatar de: <strong id="resgate-info">...</strong></p>
+                <p>Valor Atual: <strong id="resgate-valor-disponivel">R$ 0,00</strong></p>
+                
+                <div class="form-group">
+                    <label for="resgate-valor">Valor a Resgatar</label>
+                    <input type="text" id="resgate-valor" class="currency" required placeholder="R$ 0,00">
+                </div>
+                <div class="form-group">
+                    <label for="resgate-data">Data do Resgate</label>
+                    <input type="date" id="resgate-data" required>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-cancel" id="modal-resgate-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Confirmar Resgate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-container" id="modal-update-manual" style="display: none;">
+        <div class="modal-content">
+            <h2>Atualizar Valor (RV/Cripto)</h2>
+            <form id="form-update-manual" class="form-container">
+                <p>Atualizar: <strong id="update-info">...</strong></p>
+                <p>Valor Investido (Custo): <strong id="update-valor-investido">R$ 0,00</strong></p>
+                
+                <div class="form-group">
+                    <label for="update-valor-atual">Novo Valor Atual Total</label>
+                    <input type="text" id="update-valor-atual" class="currency" required placeholder="R$ 0,00">
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-cancel" id="modal-update-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Atualizar Valor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-edit-rentabilidade" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Editar Rentabilidade (Renda Fixa)</h3></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modal-input-cdi">Rendimento (% CDI)</label>
+                    <input type="number" id="modal-input-cdi" value="100" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-cdi-btn-cancel">Cancelar</button>
+                <button class="btn-primary" id="modal-cdi-btn-confirm">Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/investimentos.js"></script>
+</body>
+</html>

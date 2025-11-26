@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <title>Pendências - Controle Financeiro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>Finan<span>Control</span></h3>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
+            <li><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
+            <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
+            <li><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
+            <li><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
+            <li><a href="cartoes_specs.html"><span class="material-icons-sharp">receipt_long</span>Compras
+                    Parceladas</a></li>
+            <li class="active"><a href="pendencias.html"><span
+                        class="material-icons-sharp">assignment_late</span>Pendências</a></li>
+            <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="main-header">
+            <button class="hamburger-menu">
+                <span class="material-icons-sharp">menu</span>
+            </button>
+            
+            <h2>Controle de Pendências</h2>
+
+            <div class="month-selector">
+                <button id="prev-month"><span class="material-icons-sharp">chevron_left</span></button>
+                <h3 id="current-month-display" data-year="2025" data-month="11">Carregando...</h3>
+                <button id="next-month"><span class="material-icons-sharp">chevron_right</span></button>
+            </div>
+
+            <div class="header-actions">
+            
+                <div class="global-balance" id="global-balance-container" style="display: none;">
+                    <small>Saldo em Caixa</small>
+                    <h3 id="global-balance-display">R$ 0,00</h3>
+                </div>
+
+                <div class="notification-bell">
+                    <button id="notification-button" class="btn-icon">
+                        <span class="material-icons-sharp">notifications</span>
+                        <span id="notification-count" class="badge" style="display: none;">0</span>
+                    </button>
+                    <div id="notification-dropdown" class="dropdown-content">
+                        <div id="notification-list">
+                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                                Nenhum alerta no momento.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="theme-toggler">
+                    <span class="material-icons-sharp active">light_mode</span>
+                    <span class="material-icons-sharp">dark_mode</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="card" style="margin: 2rem; padding-bottom: 0;">
+            <h3>Adicionar Nova Pendência</h3>
+            <form id="form-add-pendencia" class="form-container" style="border-bottom: none; margin-bottom: 0;">
+                <div class="form-group">
+                    <label for="pendencia-tipo">Tipo</label>
+                    <select id="pendencia-tipo" required>
+                        <option value="euDevo">📤 Eu devo</option>
+                        <option value="meDeve">📥 Devem para mim</option>
+                    </select>
+                </div>
+                <div class="form-group" id="group-pendencia-pessoa">
+                    <label for="pendencia-pessoa">Pessoa</label>
+                    <input type="text" id="pendencia-pessoa" placeholder="Nome de quem te deve">
+                </div>
+                <div class="form-group">
+                    <label for="pendencia-descricao">Descrição</label>
+                    <input type="text" id="pendencia-descricao" required placeholder="Ex: Empréstimo, Dívida...">
+                </div>
+                <div class="form-group">
+                    <label for="pendencia-valor">Valor (Total ou da Parcela)</label>
+                    <input type="text" id="pendencia-valor" class="currency" required placeholder="R$ 0,00">
+                </div>
+                <div class="form-group">
+                    <label for="pendencia-vencimento">Vencimento (1ª Parcela)</label>
+                    <input type="date" id="pendencia-vencimento" required>
+                </div>
+                <div class="form-group">
+                    <label for="pendencia-forma-pagamento">Forma de Pagamento</label>
+                    <select id="pendencia-forma-pagamento" required>
+                        <option value="Saldo em Caixa">🏦 Saldo em Caixa</option>
+                        <option value="Pix">📱 Pix</option>
+                        <option value="Dinheiro">💵 Dinheiro</option>
+                        <option value="Outro">🧩 Outro</option>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label for="pendencia-parcelas">Nº de Parcelas</label>
+                    <input type="number" id="pendencia-parcelas" value="1" min="1" max="120" required>
+                </div>
+                <div class="form-group" style="align-items: flex-end;">
+                    <button type="submit" class="btn-primary">Adicionar Pendência</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <div class="tab-nav">
+                <button class="tab-btn active" id="btn-tab-eu-devo">O que eu devo</button>
+                <button class="tab-btn" id="btn-tab-me-devem">O que me devem</button>
+            </div>
+            
+            <div class="tab-content" id="card-eu-devo">
+                <div class="table-container">
+                    <table id="table-eu-devo">
+                        <thead>
+                            <tr>
+                                <th>Vencimento</th>
+                                <th>Para quem devo</th>
+                                <th>Valor</th>
+                                <th>F. Pagamento</th>
+                                <th>Status (Pago)</th>
+                                <th style="width: 100px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-eu-devo">
+                        </tbody>
+                    </table>
+                </div>
+                <h3 style="margin-top: 1.5rem; text-align: right;">
+                    A Pagar (Mês): <span id="total-eu-devo-pendente" style="color: var(--warning-color);">R$ 0,00</span>
+                </h3>
+                </div>
+            
+            <div class="tab-content" id="card-me-devem" style="display: none;">
+                <div class="table-container">
+                    <table id="table-me-devem">
+                        <thead>
+                            <tr>
+                                <th>Vencimento</th>
+                                <th>Quem me deve</th>
+                                <th>Valor</th>
+                                <th>F. Pagamento</th>
+                                <th>Status (Recebido)</th>
+                                <th style="width: 100px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-me-devem">
+                        </tbody>
+                    </table>
+                </div>
+                <h3 style="margin-top: 1.5rem; text-align: right;">
+                    A Receber (Mês): <span id="total-me-devem-pendente" style="color: var(--success-color);">R$ 0,00</span>
+                </h3>
+                </div>
+        </section>
+        </main>
+
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Confirmar Ação</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Tem certeza que deseja excluir este item?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-btn-confirm">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-parcela-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Excluir Pendência Parcelada</h3>
+            </div>
+            <div class="modal-body">
+                <p>Esta pendência possui múltiplas parcelas. O que você deseja excluir?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-parcela-btn-cancel">Cancelar</button>
+                <button class="btn-primary" id="modal-parcela-btn-apenas-esta">Excluir Apenas Esta</button>
+                <button class="btn-danger" id="modal-parcela-btn-todas">Excluir Todas as Futuras</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-container" id="modal-edit-pendencia" style="display: none;">
+        <div class="modal-content">
+            <h2>Editar Pendência</h2>
+            
+            <form id="form-edit-pendencia" class="form-container">
+                
+                <div class="form-group">
+                    <label for="edit-pendencia-tipo">Tipo (Não pode ser alterado)</label>
+                    <input type="text" id="edit-pendencia-tipo" disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-pendencia-vencimento">Vencimento (Não pode ser alterado)</label>
+                    <input type="date" id="edit-pendencia-vencimento" disabled>
+                </div>
+
+                <div class="form-group" id="group-edit-pendencia-pessoa">
+                    <label for="edit-pendencia-pessoa">Pessoa</label>
+                    <input type="text" id="edit-pendencia-pessoa" placeholder="Nome da pessoa">
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-pendencia-descricao">Descrição</label>
+                    <input type="text" id="edit-pendencia-descricao" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-pendencia-valor">Valor</label>
+                    <input type="text" id="edit-pendencia-valor" class="currency" placeholder="R$ 0,00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-pendencia-forma-pagamento">Forma de Pagamento</label>
+                    <select id="edit-pendencia-forma-pagamento" required>
+                        <option value="Saldo em Caixa">🏦 Saldo em Caixa</option>
+                        <option value="Pix">📱 Pix</option>
+                        <option value="Dinheiro">💵 Dinheiro</option>
+                        <option value="Outro">🧩 Outro</option>
+                        </select>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type.module" src="js/main.js"></script>
+    <script type="module" src="js/pendencias.js"></script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <title>Compras Parceladas - Controle Financeiro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>Finan<span>Control</span></h3>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
+            <li><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
+            <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
+            <li><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
+            <li><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
+            <li class="active"><a href="cartoes_specs.html"><span
+                        class="material-icons-sharp">receipt_long</span>Compras Parceladas</a></li>
+            <li><a href="pendencias.html"><span class="material-icons-sharp">assignment_late</span>Pendências</a></li>
+            <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="main-header">
+            <button class="hamburger-menu">
+                <span class="material-icons-sharp">menu</span>
+            </button>
+            
+            <h2>Controle de compras Parceladas</h2>
+
+            <div class="month-selector">
+                <button id="prev-month"><span class="material-icons-sharp">chevron_left</span></button>
+                <h3 id="current-month-display" data-year="2025" data-month="11">Carregando...</h3>
+                <button id="next-month"><span class="material-icons-sharp">chevron_right</span></button>
+            </div>
+
+            <div class="header-actions">
+            
+                <div class="global-balance" id="global-balance-container" style="display: none;">
+                    <small>Saldo em Caixa</small>
+                    <h3 id="global-balance-display">R$ 0,00</h3>
+                </div>
+
+                <div class="notification-bell">
+                    <button id="notification-button" class="btn-icon">
+                        <span class="material-icons-sharp">notifications</span>
+                        <span id="notification-count" class="badge" style="display: none;">0</span>
+                    </button>
+                    <div id="notification-dropdown" class="dropdown-content">
+                        <div id="notification-list">
+                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                                Nenhum alerta no momento.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="theme-toggler">
+                    <span class="material-icons-sharp active">light_mode</span>
+                    <span class="material-icons-sharp">dark_mode</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="card" style="margin: 2rem;">
+            <h3>Nova Compra Parcelada</h3>
+            <form id="form-add-parcela" class="form-container" style="border-bottom: none; margin-bottom: 0;">
+                <div class="form-group">
+                    <label for="cartao-data-compra">Data da Compra</label>
+                    <input type="date" id="cartao-data-compra" required>
+                </div>
+                <div class="form-group">
+                    <label for="cartao-utilizado">Cartão Utilizado</label>
+                    <select id="cartao-utilizado" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="cartao-descricao">Descrição da Compra</label>
+                    <input type="text" id="cartao-descricao" required placeholder="Ex: Monitor, Supermercado...">
+                </div>
+                <div class="form-group">
+                    <label for="cartao-valor-total">Valor Total da Compra</label>
+                    <input type="text" id="cartao-valor-total" class="currency" required placeholder="R$ 0,00">
+                </div>
+                <div class="form-group">
+                    <label for="cartao-num-parcelas">Número de Parcelas</label>
+                    <input type="number" id="cartao-num-parcelas" value="1" min="1" max="120" required>
+                </div>
+                <div class="form-group" style="align-items: flex-end;">
+                    <button type="submit" class="btn-primary">Adicionar Compra</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <h3>Parcelas do Mês Selecionado</h3>
+            <p style="margin-bottom: 1rem; color: var(--text-light);">
+                Mostrando parcelas que serão cobradas na fatura de <strong id="mes-display-fatura">...</strong>
+            </p>
+            <div class="table-container">
+                <table id="table-parcelas-do-mes">
+                    <thead>
+                        <tr>
+                            <th>Cartão</th>
+                            <th>Descrição</th>
+                            <th>Data da Compra</th>
+                            <th>Parcela (Nº)</th>
+                            <th>Valor da Parcela</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-parcelas-do-mes">
+                        </tbody>
+                </table>
+            </div>
+            <h3 style="margin-top: 1.5rem; text-align: right;">
+                Total em Parcelas (Mês): <span id="total-parcelas-mes" style="color: var(--danger-color);">R$ 0,00</span>
+            </h3>
+        </section>
+
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <h3>Histórico Geral de Compras</h3>
+            <div class="table-container">
+                <table id="table-master-list">
+                    <thead>
+                        <tr>
+                            <th>Data Compra</th>
+                            <th>Mês 1ª Parcela</th>
+                            <th>Cartão</th>
+                            <th>Descrição</th>
+                            <th>Valor Total</th>
+                            <th>Progresso</th>
+                            <th>Status</th>
+                            <th style="width: 160px;">Ações</th> </tr>
+                    </thead>
+                    <tbody id="tbody-master-list">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Confirmar Ação</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Tem certeza?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-btn-confirm">Excluir</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-container" id="modal-edit-parcela" style="display: none;">
+        <div class="modal-content">
+            <h2>Editar Compra Parcelada</h2>
+            <form id="form-edit-parcela" class="form-container">
+                <div class="form-group">
+                    <label for="edit-cartao-utilizado">Cartão</label>
+                    <select id="edit-cartao-utilizado" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-cartao-descricao">Descrição</label>
+                    <input type="text" id="edit-cartao-descricao" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-cartao-valor-total">Valor Total</label>
+                    <input type="text" id="edit-cartao-valor-total" class="currency" required>
+                </div>
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label for="edit-cartao-num-parcelas">Nº de Parcelas (Não editável)</label>
+                        <input type="number" id="edit-cartao-num-parcelas" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-cartao-data-inicio">Mês 1ª Parcela (Não editável)</label>
+                        <input type="text" id="edit-cartao-data-inicio" disabled>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-quitar-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-quitar-title">Quitar Compra</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-quitar-message">Tem certeza?</p>
+                <p style="font-size: 0.9rem; color: var(--text-light); margin-top: 10px;">
+                    O valor total restante será lançado na sua fatura do mês <strong>ATUAL</strong>.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-quitar-btn-cancel">Cancelar</button>
+                <button class="btn-success" id="modal-quitar-btn-confirm">Quitar Agora</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-estorno-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-estorno-title">Estornar Compra</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-estorno-message">Tem certeza?</p>
+                <p style="font-size: 0.9rem; color: var(--text-light); margin-top: 10px;">
+                    Todas as parcelas futuras (abertas e pagas) desta compra serão zeradas e marcadas como "Estornada".
+                    Isto não devolve dinheiro ao seu saldo.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-estorno-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-estorno-btn-confirm">Confirmar Estorno</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/cartoes_specs.js"></script>
+</body>
+</html>

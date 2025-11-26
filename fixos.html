@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" type="image/png" href="./static/logo.png">
+
+    <title>Despesas Fixas - Controle Financeiro</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>Finan<span>Control</span></h3>
+        </div>
+        <ul>
+            <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
+            <li><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
+            <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
+            <li class="active"><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp.
+                    Fixas</a></li>
+            <li><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
+            <li><a href="cartoes_specs.html"><span class="material-icons-sharp">receipt_long</span>Compras
+                    Parceladas</a></li>
+            <li><a href="pendencias.html"><span class="material-icons-sharp">assignment_late</span>Pendências</a></li>
+            <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header class="main-header">
+            <button class="hamburger-menu">
+                <span class="material-icons-sharp">menu</span>
+            </button>
+            
+            <h2>Despesas Fixas</h2>
+
+            <div class="month-selector">
+                <button id="prev-month"><span class="material-icons-sharp">chevron_left</span></button>
+                <h3 id="current-month-display" data-year="2025" data-month="11">Carregando...</h3>
+                <button id="next-month"><span class="material-icons-sharp">chevron_right</span></button>
+            </div>
+
+            <div class="header-actions">
+            
+                <div class="global-balance" id="global-balance-container" style="display: none;">
+                    <small>Saldo em Caixa</small>
+                    <h3 id="global-balance-display">R$ 0,00</h3>
+                </div>
+
+                <div class="notification-bell">
+                    <button id="notification-button" class="btn-icon">
+                        <span class="material-icons-sharp">notifications</span>
+                        <span id="notification-count" class="badge" style="display: none;">0</span>
+                    </button>
+                    <div id="notification-dropdown" class="dropdown-content">
+                        <div id="notification-list">
+                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                                Nenhum alerta no momento.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="theme-toggler">
+                    <span class="material-icons-sharp active">light_mode</span>
+                    <span class="material-icons-sharp">dark_mode</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="card" style="margin: 2rem;">
+            <h3>Registrar Despesa Fixa</h3>
+            <p style="margin-bottom: 1rem; color: var(--text-light);">
+                O lançamento será feito no mês selecionado: <strong id="mes-aviso">...</strong>
+            </p>
+            <form id="form-add-fixo" class="form-container" style="border-bottom: none; margin-bottom: 0;">
+                <div class="form-group">
+                    <label for="fixo-vencimento">Data de Vencimento</label>
+                    <input type="date" id="fixo-vencimento" required>
+                </div>
+                <div class="form-group">
+                    <label for="fixo-categoria">Categoria</label>
+                    <select id="fixo-categoria" required>
+                        <option value="Moradia">🏠 Moradia (Aluguel, Cond.)</option>
+                        <option value="Contas">💡 Contas (Água, Luz, Gás)</option>
+                        <option value="Internet">📺 Internet / TV / Streaming</option>
+                        <option value="Transporte">🚗 Transporte (Passe, Finan.)</option>
+                        <option value="Saude">❤️ Saúde (Plano, Terapia)</option>
+                        <option value="Educacao">🎓 Educação (Curso, Faculdade)</option>
+                        <option value="Seguros">🛡️ Seguros</option>
+                        <option value="Outros">📦 Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fixo-descricao">Descrição</label>
+                    <input type="text" id="fixo-descricao" required placeholder="Ex: Aluguel, Netflix...">
+                </div>
+                <div class="form-group">
+                    <label for="fixo-forma-pagamento">Forma de Pagamento</label>
+                    <select id="fixo-forma-pagamento" required>
+                        <option value="Débito Automático">🔄 Débito Automático</option>
+                        <option value="Saldo em Caixa">🏦 Saldo em Caixa</option>
+                        <option value="Pix">📱 Pix</option>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label for="fixo-valor">Valor</label>
+                    <input type="text" id="fixo-valor" class="currency" required placeholder="R$ 0,00">
+                </div>
+                <div class="form-group">
+                    <label for="fixo-recorrencia">Tipo de Recorrência</label>
+                    <select id="fixo-recorrencia" required>
+                        <option value="unica">Única (só este mês)</option>
+                        <option value="parcelada">Parcelada</option>
+                        <option value="mensal">Mensal (todos os meses)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="group-num-parcelas" style="display: none;">
+                    <label for="fixo-num-parcelas">Nº de Parcelas</label>
+                    <input type="number" id="fixo-num-parcelas" value="2" min="2" max="120">
+                </div>
+                <div class="form-group" style="align-items: flex-end;">
+                    <button type="submit" class="btn-primary">Adicionar Despesa</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <h3>Resumo de Despesas Fixas do Mês</h3>
+            <div class="table-container">
+                <table id="table-despesas-fixas">
+                    <thead>
+                        <tr>
+                            <th>Vencimento</th>
+                            <th>Categoria</th>
+                            <th>Descrição</th>
+                            <th>Parcela</th>
+                            <th>F. Pagamento</th>
+                            <th>Valor</th>
+                            <th>Status (Pago)</th>
+                            <th style="width: 100px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-despesas-fixas">
+                    </tbody>
+                </table>
+            </div>
+            <h3 style="margin-top: 1.5rem; text-align: right;">
+                Total Pago (Mês): <span id="total-fixo-pago" style="color: var(--danger-color);">R$ 0,00</span>
+            </h3>
+            <h3 style="margin-top: 0.5rem; text-align: right;">
+                A Pagar (Mês): <span id="total-fixo-pendente" style="color: var(--warning-color);">R$ 0,00</span>
+            </h3>
+
+            <div class="content-section">
+                <h2>📈 Histórico Anual de Variação</h2>
+                <div class="chart-container">
+                    <canvas id="grafico-anual-fixos"></canvas>
+                </div>
+            </div>
+            
+            </section>
+
+    </main>
+
+    <div id="modal-parcela-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Excluir Despesa Fixa</h3>
+            </div>
+            <div class="modal-body">
+                <p>Esta é uma despesa recorrente. O que você deseja excluir?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-parcela-btn-cancel">Cancelar</button>
+                <button class="btn-primary" id="modal-parcela-btn-apenas-esta">Excluir Apenas Este Mês</button>
+                <button class="btn-danger" id="modal-parcela-btn-todas">Excluir Todas as Futuras</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-container" id="modal-edit-fixo" style="display: none;">
+        <div class="modal-content">
+            <h2>Editar Despesa Fixa</h2>
+            <form id="form-edit-fixo" class="form-container">
+                <div class="form-group">
+                    <label for="edit-fixo-vencimento">Vencimento (Não pode ser alterado)</label>
+                    <input type="date" id="edit-fixo-vencimento" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="edit-fixo-categoria">Categoria</label>
+                    <select id="edit-fixo-categoria" required>
+                        <option value="Moradia">🏠 Moradia (Aluguel, Cond.)</option>
+                        <option value="Contas">💡 Contas (Água, Luz, Gás)</option>
+                        <option value="Internet">📺 Internet / TV / Streaming</option>
+                        <option value="Transporte">🚗 Transporte (Passe, Finan.)</option>
+                        <option value="Saude">❤️ Saúde (Plano, Terapia)</option>
+                        <option value="Educacao">🎓 Educação (Curso, Faculdade)</option>
+                        <option value="Seguros">🛡️ Seguros</option>
+                        <option value="Outros">📦 Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-fixo-descricao">Descrição</label>
+                    <input type="text" id="edit-fixo-descricao" placeholder="Ex: Netflix" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-fixo-forma-pagamento">Forma de Pagamento</label>
+                    <select id="edit-fixo-forma-pagamento" required>
+                        <option value="Débito Automático">🔄 Débito Automático</option>
+                        <option value="Saldo em Caixa">🏦 Saldo em Caixa</option>
+                        <option value="Pix">📱 Pix</option>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-fixo-valor">Valor</label>
+                    <input type="text" id="edit-fixo-valor" class="currency" placeholder="R$ 0,00" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/fixos.js"></script>
+</body>
+</html>
