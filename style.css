@@ -1284,7 +1284,7 @@ a.btn-icon-small:hover {
    ESTILOS PARA FIXOS/PENDENCIAS (Status de Vencimento)
    =============================================================== */
 
-/* Linha da tabela com item vencido (vermelho) */
+/* Linha da tabela com item vencido (vermelhoo) */
 tr.vencido {
     background-color: var(--danger-transparent);
     color: var(--danger-color);
