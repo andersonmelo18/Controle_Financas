@@ -1,11 +1,27 @@
 // js/entradas.js
-// VERSÃO 5.0 (Gráfico Semanal tipo Uber, Visualização de Comprovantes e Gráficos Melhorados)
+// VERSÃO 5.1 (Com Upload de Comprovantes para o Firebase Storage)
 
 import { 
-    db, ref, set, get, push, remove, onValue, off, update
+    db, 
+    storage, // IMPORTA O STORAGE
+    ref, 
+    set, 
+    get, 
+    push, 
+    remove, 
+    onValue, 
+    off, 
+    update,
+    storageRef,     // IMPORTA AS FUNÇÕES DO STORAGE
+    uploadBytes,
+    getDownloadURL,
+    deleteObject
 } from './firebase-config.js';
 import { 
-    getUserId, formatCurrency, parseCurrency, verificarSaldoSuficiente 
+    getUserId, 
+    formatCurrency, 
+    parseCurrency, 
+    verificarSaldoSuficiente 
 } from './main.js';
 
 // ---- Variáveis Globais ----
@@ -17,10 +33,9 @@ let activeListener = null;
 let allEntradasDoMes = [];
 let currentFilters = { origem: 'todas', busca: '' };
 
-// Instâncias dos Gráficos
-let graficoEntradas = null; // Evolução
-let graficoSemanal = null;  // Torres (Uber)
-let semanaSelecionadaIndex = 0; // 0 = Primeira semana do mês
+let graficoEntradas = null; 
+let graficoSemanal = null; 
+let semanaSelecionadaIndex = 0; 
 
 // ---- Mapas de Ícones ----
 const origemIcones = {
@@ -38,6 +53,7 @@ const valorInput = document.getElementById('entrada-valor');
 const kmInput = document.getElementById('entrada-km');
 const horasInput = document.getElementById('entrada-horas');
 const comprovanteInput = document.getElementById('entrada-comprovante');
+const btnSubmitForm = form.querySelector('button[type="submit"]'); // Botão de submit
 
 // ---- Elementos DOM (Tabela e Totais) ----
 const tbody = document.getElementById('tbody-entradas');
@@ -50,17 +66,14 @@ const totalFiltradoEl = document.getElementById('total-filtrado');
 const filtroOrigem = document.getElementById('filtro-origem');
 const filtroBusca = document.getElementById('filtro-busca');
 const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
-
-// NOVO: Elementos do Gráfico Semanal
-const filtroSemana = document.getElementById('filtro-semana'); // Select da semana
-const canvasGraficoSemanal = document.getElementById('grafico-semanal'); // Canvas do gráfico de barras
+const filtroSemana = document.getElementById('filtro-semana');
+const canvasGraficoSemanal = document.getElementById('grafico-semanal');
 
 // ---- Modais ----
 const modalConfirm = document.getElementById('modal-confirm');
 const modalMessage = document.getElementById('modal-message');
 const modalEdit = document.getElementById('modal-edit-entrada');
 const formEdit = document.getElementById('form-edit-entrada');
-// Inputs do Edit (mesmos IDs do seu código original)
 const editDataInput = document.getElementById('edit-entrada-data');
 const editOrigemSelect = document.getElementById('edit-entrada-plataforma');
 const editDescricaoInput = document.getElementById('edit-entrada-descricao');
@@ -70,6 +83,7 @@ const editHorasInput = document.getElementById('edit-entrada-horas');
 const editComprovanteDisplay = document.getElementById('edit-comprovante-display');
 const btnCancelEdit = document.getElementById('modal-edit-btn-cancel');
 
+// (Funções de inicialização, helpers de data e filtros - Sem mudanças)
 // ===============================================================
 // HELPER DE DATA
 // ===============================================================
@@ -89,7 +103,6 @@ document.addEventListener('authReady', async (e) => {
         currentYear = e.detail.year;
         currentMonth = e.detail.month;
         updateDataInput();
-        // Recalcula as semanas disponíveis para o novo mês
         populateSemanaFilter();
         loadEntradas();
     });
@@ -101,9 +114,8 @@ document.addEventListener('authReady', async (e) => {
     }
 
     populateFilterOrigens();
-    populateSemanaFilter(); // Inicializa as semanas
+    populateSemanaFilter(); 
 
-    // Listeners Filtros
     filtroOrigem.addEventListener('change', (e) => {
         currentFilters.origem = e.target.value;
         renderTabela();
@@ -114,18 +126,16 @@ document.addEventListener('authReady', async (e) => {
     });
     btnLimparFiltros.addEventListener('click', resetFilters);
 
-    // Listener Filtro Semana (Gráfico)
     if(filtroSemana) {
         filtroSemana.addEventListener('change', (e) => {
             semanaSelecionadaIndex = parseInt(e.target.value);
-            renderGraficoSemanal(); // Atualiza apenas o gráfico semanal
+            renderGraficoSemanal(); 
         });
     }
     
     updateDataInput();
     loadEntradas();
 
-    // Listeners Form
     form.addEventListener('submit', handleFormSubmit);
     if (formEdit) formEdit.addEventListener('submit', handleSaveEdit);
     if (btnCancelEdit) btnCancelEdit.addEventListener('click', () => modalEdit.style.display = 'none');
@@ -141,19 +151,12 @@ function populateFilterOrigens() {
     }
 }
 
-/**
- * Calcula as semanas do mês atual e preenche o select
- */
 function populateSemanaFilter() {
     if(!filtroSemana) return;
     filtroSemana.innerHTML = '';
     
-    // Total de dias no mês
     const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
     const weeks = [];
-    
-    // Lógica simples: Quebra em blocos de 7 dias (pode ser ajustado para calendário real Seg-Dom)
-    // Para estilo "Uber", vamos fazer blocos sequenciais para facilitar a visualização
     let startDay = 1;
     let weekCount = 1;
     
@@ -179,7 +182,6 @@ function populateSemanaFilter() {
         filtroSemana.appendChild(option);
     });
 
-    // Seleciona a semana atual baseada no dia de hoje (se estivermos no mês atual)
     const hoje = new Date();
     const isCurrentMonth = (hoje.getFullYear() == currentYear && (hoje.getMonth() + 1) == currentMonth);
     
@@ -188,7 +190,7 @@ function populateSemanaFilter() {
         const semanaAtual = weeks.find(w => diaHoje >= w.start && diaHoje <= w.end);
         if(semanaAtual) semanaSelecionadaIndex = semanaAtual.index;
     } else {
-        semanaSelecionadaIndex = 0; // Default para primeira semana
+        semanaSelecionadaIndex = 0; 
     }
     
     filtroSemana.value = semanaSelecionadaIndex;
@@ -207,24 +209,61 @@ function updateDataInput() {
 }
 
 // ===============================================================
-// LÓGICA DE DADOS (Load & Render)
+// 2. NOVAS FUNÇÕES DE UPLOAD (v5.1)
 // ===============================================================
 
+/**
+ * Faz o upload de um arquivo para o Firebase Storage.
+ * @param {File} file O arquivo do input
+ * @returns {Promise<object>} Um objeto com a URL e o Path do arquivo.
+ */
+async function uploadFile(file) {
+    if (!userId) throw new Error("Usuário não autenticado.");
+    
+    const timestamp = Date.now();
+    const uniqueFileName = `${timestamp}-${file.name}`;
+    const storagePath = `dados/${userId}/comprovantes/${uniqueFileName}`;
+    
+    const fileRef = storageRef(storage, storagePath);
+    await uploadBytes(fileRef, file);
+    const downloadURL = await getDownloadURL(fileRef);
+    
+    return {
+        url: downloadURL,
+        path: storagePath 
+    };
+}
+
+/**
+ * Exclui um arquivo do Firebase Storage.
+ * @param {string} path O caminho completo do arquivo no Storage.
+ */
+async function deleteFile(path) {
+    if (!path) return;
+    
+    const fileRef = storageRef(storage, path);
+    try {
+        await deleteObject(fileRef);
+    } catch (error) {
+        if (error.code !== 'storage/object-not-found') {
+            console.error("Erro ao excluir arquivo do Storage:", error);
+        }
+    }
+}
+
+// ===============================================================
+// 3. LÓGICA DE DADOS (Load & Render) - (v5.1 - Modificado)
+// ===============================================================
 function loadEntradas() {
     if (!userId) return;
-
-    if (activeListener) {
-        off(activeListener.ref, 'value', activeListener.callback);
-    }
+    if (activeListener) off(activeListener.ref, 'value', activeListener.callback);
     
     const path = `dados/${userId}/entradas/${currentYear}-${currentMonth}`;
     const dataRef = ref(db, path);
     
     const callback = (snapshot) => {
         allEntradasDoMes = [];
-        let totalMes = 0;
-        let totalKm = 0;
-        let totalMinutos = 0; 
+        let totalMes = 0, totalKm = 0, totalMinutos = 0; 
         
         if (snapshot.exists()) {
             snapshot.forEach((child) => {
@@ -241,7 +280,7 @@ function loadEntradas() {
         totalHorasEl.textContent = formatHoras(totalMinutos);
         
         renderTabela();
-        renderGraficoSemanal(); // Renderiza o novo gráfico
+        renderGraficoSemanal();
     };
     
     onValue(dataRef, callback);
@@ -254,7 +293,7 @@ function renderTabela() {
     const filtros = currentFilters;
     const entradasFiltradas = allEntradasDoMes.filter(entrada => {
         const matchOrigem = filtros.origem === 'todas' || entrada.origem === filtros.origem;
-        const matchBusca = filtros.busca === '' || entrada.descricao.toLowerCase().includes(filtros.busca);
+        const matchBusca = filtros.busca === '' || (entrada.descricao && entrada.descricao.toLowerCase().includes(filtros.busca));
         return matchOrigem && matchBusca;
     });
 
@@ -284,7 +323,6 @@ function renderTabela() {
         const [y, m, d] = data.split('-');
         const dataFormatada = `${d}/${m}/${y}`;
         
-        // Header do dia com colspan ajustado para 7 colunas
         const trHeader = document.createElement('tr');
         trHeader.className = 'day-header';
         trHeader.innerHTML = `
@@ -300,48 +338,49 @@ function renderTabela() {
             renderRow(entrada);
         }
     }
-
     renderGraficoEntradas(entradasPorDia);
 }
 
 /**
- * Renderiza a linha (TR) com a nova coluna de arquivo
+ * Renderiza a linha (TR) (v5.1 - Modificado)
  */
 function renderRow(entrada) {
     if (!entrada.data) return;
 
     const tr = document.createElement('tr');
     tr.dataset.id = entrada.id;
-    // ... (datasets mantidos para lógica de edit/duplicate)
     tr.dataset.valor = entrada.valor;
     tr.dataset.data = entrada.data;
     tr.dataset.origem = entrada.origem;
     tr.dataset.descricao = entrada.descricao || '';
     tr.dataset.km = entrada.km || 0;
     tr.dataset.horas = entrada.horas || 0;
-    tr.dataset.comprovante = entrada.comprovante || '';
+    
+    // v5.1: Salva o path e a URL
+    const comp = entrada.comprovante; // { url: "...", path: "..." }
+    tr.dataset.comprovanteUrl = comp ? comp.url : '';
+    tr.dataset.comprovantePath = comp ? comp.path : ''; 
 
     const [y, m, d] = entrada.data.split('-');
     const dataFormatada = `${d}/${m}/${y}`;
     const icone = origemIcones[entrada.origem] || "🧩"; 
     
-    // Lógica do Comprovante
+    // v5.1: Lógica do Comprovante (agora é um link <a>)
     let comprovanteHtml = '-';
-    if (entrada.comprovante && entrada.comprovante.trim() !== '') {
-        // Se houver arquivo, mostra ícone clicável. 
-        // Nota: Como ainda não temos URL real, usaremos o nome no alert
+    if (comp && comp.url) {
         comprovanteHtml = `
-            <button class="btn-icon-small" onclick="alert('Visualizar arquivo: ${entrada.comprovante}')" title="Ver Comprovante">
-                📎
-            </button>
-        `;
+            <a href="${comp.url}" target="_blank" class="btn-icon-small" title="Ver Comprovante">
+              📎
+            </a>
+           `;
     }
 
     tr.innerHTML = `
         <td>${dataFormatada}</td>
         <td>${icone} ${entrada.origem}</td>
         <td>${formatCurrency(entrada.valor)}</td>
-        <td class="text-center">${comprovanteHtml}</td> <td>${(entrada.km || 0).toFixed(1)}</td>
+        <td class="text-center">${comprovanteHtml}</td> 
+        <td>${(entrada.km || 0).toFixed(1)}</td>
         <td>${formatHoras(entrada.horas || 0)}</td>
         <td class="actions">
             <button class="btn-icon info btn-duplicate" title="Duplicar"><span class="material-icons-sharp">content_copy</span></button>
@@ -352,52 +391,38 @@ function renderRow(entrada) {
     
     tbody.appendChild(tr);
 
-    // Reatribui listeners
     tr.querySelector('.btn-delete').addEventListener('click', handleDeleteClick);
     tr.querySelector('.btn-edit').addEventListener('click', handleEditClick);
     tr.querySelector('.btn-duplicate').addEventListener('click', handleDuplicateClick);
 }
 
 // ===============================================================
-// GRÁFICOS
+// 4. GRÁFICOS (v5.0 - Sem mudanças)
 // ===============================================================
-
-/**
- * NOVO: Gráfico de Torres Semanal (Estilo Uber)
- */
 function renderGraficoSemanal() {
     if (!filtroSemana || !canvasGraficoSemanal) return;
-    
     const ctx = canvasGraficoSemanal.getContext('2d');
     
-    // Obter dados da semana selecionada
     const weekIndex = parseInt(filtroSemana.value);
     const options = filtroSemana.options;
     if(options.length === 0) return;
     
-    // Recriar lógica para pegar start e end day do texto ou do índice
-    // Para simplificar, recalculamos aqui baseados no índice selecionado
     const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
     const startDay = (weekIndex * 7) + 1;
     let endDay = startDay + 6;
     if(endDay > daysInMonth) endDay = daysInMonth;
 
-    // Prepara os dados: Um array para cada dia da semana (Seg-Dom ou Dia 1-7 da range)
     const labels = [];
     const dataValues = [];
     
-    // Agrupa dados DO MÊS INTEIRO (allEntradasDoMes) filtrando pela data
     for (let day = startDay; day <= endDay; day++) {
         const diaFormatado = day.toString().padStart(2, '0');
         const dataCompletaISO = `${currentYear}-${currentMonth}-${diaFormatado}`;
-        
-        // Pega dia da semana (Dom, Seg, Ter...)
         const dateObj = new Date(currentYear, currentMonth - 1, day);
         const diaSemanaNome = dateObj.toLocaleDateString('pt-BR', { weekday: 'short' });
         
         labels.push(`${diaSemanaNome} (${diaFormatado})`);
         
-        // Soma valores deste dia
         const entradasDia = allEntradasDoMes.filter(e => e.data === dataCompletaISO);
         const totalDia = entradasDia.reduce((sum, e) => sum + e.valor, 0);
         dataValues.push(totalDia);
@@ -407,7 +432,7 @@ function renderGraficoSemanal() {
 
     const estiloComputado = getComputedStyle(document.body);
     const corTexto = estiloComputado.getPropertyValue('--text-color') || '#000';
-    const corBarras = '#000000'; // Preto Uber (ou mude para sua cor)
+    const corBarras = '#000000'; 
 
     graficoSemanal = new Chart(ctx, {
         type: 'bar',
@@ -417,8 +442,8 @@ function renderGraficoSemanal() {
                 label: 'Ganhos do Dia',
                 data: dataValues,
                 backgroundColor: corBarras,
-                borderRadius: 4, // Bordas arredondadas tipo Uber
-                barThickness: 25, // Largura da barra
+                borderRadius: 4, 
+                barThickness: 25, 
             }]
         },
         options: {
@@ -445,19 +470,15 @@ function renderGraficoSemanal() {
     });
 }
 
-/**
- * Gráfico de Evolução (Melhorado com Gradiente e Design)
- */
 function renderGraficoEntradas(entradasPorDia) {
     const ctx = document.getElementById('grafico-entradas-mes').getContext('2d');
     const placeholder = document.getElementById('grafico-placeholder');
     const estiloComputado = getComputedStyle(document.body);
     const corTexto = estiloComputado.getPropertyValue('--text-color') || '#000';
     
-    // Cria Gradiente
     let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(118, 193, 107, 0.5)'); // Verde topo
-    gradient.addColorStop(1, 'rgba(118, 193, 107, 0.0)'); // Transparente base
+    gradient.addColorStop(0, 'rgba(118, 193, 107, 0.5)'); 
+    gradient.addColorStop(1, 'rgba(118, 193, 107, 0.0)'); 
 
     if (graficoEntradas) graficoEntradas.destroy();
 
@@ -488,7 +509,7 @@ function renderGraficoEntradas(entradasPorDia) {
             datasets: [{
                 label: 'Evolução Acumulada',
                 data: dataValores,
-                borderColor: '#76c16b', // Verde Principal
+                borderColor: '#76c16b', 
                 backgroundColor: gradient,
                 borderWidth: 3,
                 pointBackgroundColor: '#fff',
@@ -496,7 +517,7 @@ function renderGraficoEntradas(entradasPorDia) {
                 pointRadius: 4,
                 pointHoverRadius: 6,
                 fill: true,
-                tension: 0.3 // Curva suave
+                tension: 0.3 
             }]
         },
         options: {
@@ -525,37 +546,61 @@ function renderGraficoEntradas(entradasPorDia) {
 }
 
 // ===============================================================
-// FUNÇÕES DE AÇÃO E UTILITÁRIAS (Mantidas praticamente iguais)
+// 5. FUNÇÕES DE AÇÃO (v5.1 - Modificado)
 // ===============================================================
 
 async function handleFormSubmit(e) {
     e.preventDefault();
     if (!userId) return;
-    const totalMinutos = parseInputParaMinutos(horasInput.value);
-    
-    let comprovanteNome = null;
-    if (comprovanteInput.files.length > 0) comprovanteNome = comprovanteInput.files[0].name;
 
-    const data = {
-        data: dataInput.value,
-        origem: origemSelect.value,
-        descricao: descricaoInput.value,
-        valor: parseCurrency(valorInput.value),
-        km: parseFloat(kmInput.value) || 0,
-        horas: totalMinutos,
-        comprovante: comprovanteNome
-    };
-
-    if (data.valor <= 0) { alert("Valor deve ser maior que zero."); return; }
+    btnSubmitForm.disabled = true;
+    btnSubmitForm.textContent = 'Salvando...';
     
-    const [entryYear, entryMonth] = data.data.split('-');
+    let comprovanteData = null;
+
     try {
+        // 1. FAZ O UPLOAD PRIMEIRO
+        if (comprovanteInput.files.length > 0) {
+            const file = comprovanteInput.files[0];
+            comprovanteData = await uploadFile(file);
+        }
+
+        const data = {
+            data: dataInput.value,
+            origem: origemSelect.value,
+            descricao: descricaoInput.value,
+            valor: parseCurrency(valorInput.value),
+            km: parseFloat(kmInput.value) || 0,
+            horas: parseInputParaMinutos(horasInput.value),
+            comprovante: comprovanteData // Salva {url, path} ou null
+        };
+
+        if (data.valor <= 0) throw new Error("Valor deve ser maior que zero.");
+        
+        // 2. SALVA NO RTDB
+        const [entryYear, entryMonth] = data.data.split('-');
         const newRef = push(ref(db, `dados/${userId}/entradas/${entryYear}-${entryMonth}`));
         await set(newRef, { ...data, id: newRef.key });
+        
+        // 3. ATUALIZA O SALDO
         await updateSaldoGlobal(data.valor); 
+        
         form.reset();
         updateDataInput();
-    } catch (error) { console.error(error); alert("Erro ao salvar."); }
+
+    } catch (error) { 
+        console.error(error); 
+        alert("Erro ao salvar: " + error.message);
+        
+        // 4. Se o upload foi feito mas o RTDB falhou, exclui o arquivo órfão
+        if (comprovanteData && comprovanteData.path) {
+            console.warn("Revertendo upload do arquivo órfão...");
+            await deleteFile(comprovanteData.path);
+        }
+    } finally {
+        btnSubmitForm.disabled = false;
+        btnSubmitForm.textContent = 'Adicionar Entrada';
+    }
 }
 
 function handleDuplicateClick(e) {
@@ -567,28 +612,43 @@ function handleDuplicateClick(e) {
     valorInput.value = formatCurrency(parseFloat(tr.dataset.valor));
     kmInput.value = tr.dataset.km;
     horasInput.value = (parseInt(tr.dataset.horas)/60).toFixed(2);
+    comprovanteInput.value = ''; // Limpa o comprovante
     descricaoInput.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// v5.1: Modificado para excluir arquivo do Storage
 function handleDeleteClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
     const id = tr.dataset.id;
     const valor = parseFloat(tr.dataset.valor);
     const data = tr.dataset.data;
+    const comprovantePath = tr.dataset.comprovantePath; // Pega o path
     const [entryYear, entryMonth] = data.split('-');
     
     modalMessage.textContent = 'Excluir esta entrada?';
     showModal('modal-confirm', async () => {
         try {
             await updateSaldoGlobal(-valor);
+            
+            // 1. Exclui o arquivo do Storage (se existir)
+            if (comprovantePath) {
+                await deleteFile(comprovantePath);
+            }
+            
+            // 2. Exclui o registro do RTDB
             await remove(ref(db, `dados/${userId}/entradas/${entryYear}-${entryMonth}/${id}`));
+            
             hideModal('modal-confirm');
-        } catch (error) { console.error(error); }
+        } catch (error) { 
+            console.error(error); 
+            loadEntradas(); // Recarrega para garantir consistência
+        }
     });
 }
 
+// v5.1: Modificado para lidar com comprovantes
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -596,10 +656,14 @@ function handleEditClick(e) {
     const data = tr.dataset.data;
     const [entryYear, entryMonth] = data.split('-');
     
+    const comprovanteUrl = tr.dataset.comprovanteUrl;
+    const comprovantePath = tr.dataset.comprovantePath;
+    
     formEdit.dataset.id = id;
     formEdit.dataset.entryPath = `dados/${userId}/entradas/${entryYear}-${entryMonth}/${id}`;
     formEdit.dataset.valorAntigo = tr.dataset.valor;
-    formEdit.dataset.comprovanteAntigo = tr.dataset.comprovante;
+    formEdit.dataset.comprovanteAntigoUrl = comprovanteUrl;
+    formEdit.dataset.comprovanteAntigoPath = comprovantePath;
 
     editDataInput.value = data;
     editOrigemSelect.value = tr.dataset.origem;
@@ -608,52 +672,82 @@ function handleEditClick(e) {
     editKmInput.value = tr.dataset.km;
     editHorasInput.value = (parseInt(tr.dataset.horas)/60).toFixed(2);
     
-    const comp = tr.dataset.comprovante;
-    editComprovanteDisplay.textContent = comp ? `Arquivo atual: ${comp}` : '';
-    editComprovanteDisplay.style.display = comp ? 'block' : 'none';
+    const fileName = comprovantePath ? comprovantePath.split('-').slice(1).join('-') : '';
+    editComprovanteDisplay.textContent = fileName ? `Arquivo atual: ${fileName}` : '';
+    editComprovanteDisplay.style.display = fileName ? 'block' : 'none';
+    
+    const editFile = document.getElementById('edit-entrada-comprovante');
+    if (editFile) editFile.value = '';
     
     modalEdit.style.display = 'flex';
 }
 
+// v5.1: Modificado para lidar com upload/exclusão de comprovantes
 async function handleSaveEdit(e) {
     e.preventDefault();
     if (!userId) return;
+    
     const id = formEdit.dataset.id;
     const path = formEdit.dataset.entryPath;
     const valorAntigo = parseFloat(formEdit.dataset.valorAntigo);
-    const comprovanteAntigo = formEdit.dataset.comprovanteAntigo;
+    const comprovanteAntigoUrl = formEdit.dataset.comprovanteAntigoUrl;
+    const comprovanteAntigoPath = formEdit.dataset.comprovanteAntigoPath;
     
-    let comprovanteNome = comprovanteAntigo;
+    let comprovanteData = (comprovanteAntigoUrl && comprovanteAntigoPath) 
+        ? { url: comprovanteAntigoUrl, path: comprovanteAntigoPath } 
+        : null;
+
     const editFile = document.getElementById('edit-entrada-comprovante');
-    if (editFile && editFile.files.length > 0) comprovanteNome = editFile.files[0].name;
-
-    const novosDados = {
-        id: id,
-        data: editDataInput.value,
-        origem: editOrigemSelect.value,
-        descricao: editDescricaoInput.value,
-        valor: parseCurrency(editValorInput.value),
-        km: parseFloat(editKmInput.value) || 0,
-        horas: parseInputParaMinutos(editHorasInput.value),
-        comprovante: comprovanteNome
-    };
-
-    const ajuste = novosDados.valor - valorAntigo;
-    if (ajuste < 0) {
-        if (!(await verificarSaldoSuficiente(Math.abs(ajuste)))) {
-            alert("Saldo insuficiente para esta alteração!"); return;
-        }
-    }
+    let novoArquivoSelecionado = false;
 
     try {
+        if (editFile && editFile.files.length > 0) {
+            novoArquivoSelecionado = true;
+            const file = editFile.files[0];
+            comprovanteData = await uploadFile(file);
+        }
+
+        const novosDados = {
+            id: id,
+            data: editDataInput.value,
+            origem: editOrigemSelect.value,
+            descricao: editDescricaoInput.value,
+            valor: parseCurrency(editValorInput.value),
+            km: parseFloat(editKmInput.value) || 0,
+            horas: parseInputParaMinutos(editHorasInput.value),
+            comprovante: comprovanteData
+        };
+
+        const ajuste = novosDados.valor - valorAntigo;
+        if (ajuste < 0) {
+            if (!(await verificarSaldoSuficiente(Math.abs(ajuste)))) {
+                throw new Error("Saldo insuficiente para esta alteração!");
+            }
+        }
+        
         await remove(ref(db, path));
         const [ny, nm] = novosDados.data.split('-');
         await set(ref(db, `dados/${userId}/entradas/${ny}-${nm}/${id}`), novosDados);
+        
         if (ajuste !== 0) await updateSaldoGlobal(ajuste);
+        
+        if (novoArquivoSelecionado && comprovanteAntigoPath) {
+            await deleteFile(comprovanteAntigoPath);
+        }
+        
         modalEdit.style.display = 'none';
-    } catch (error) { console.error(error); alert("Erro ao editar."); }
+
+    } catch (error) { 
+        console.error(error); 
+        alert("Erro ao editar: " + error.message);
+        
+        if (novoArquivoSelecionado && comprovanteData) {
+            await deleteFile(comprovanteData.path);
+        }
+    }
 }
 
+// (Funções de utilidade - Sem mudanças)
 function parseInputParaMinutos(str) {
     if (!str) return 0;
     if (str.includes(':')) {

@@ -1225,11 +1225,11 @@ ul.despesas-list li.total-geral strong {
 }
 
 /* ===============================================================
-   ESTILOS PARA ENTRADAS v5.0 (Comprovante)
+   ESTILOS PARA ENTRADAS/DESPESAS v5.0 (Comprovante)
    =============================================================== */
 
-/* Botão pequeno para o ícone de comprovante na tabela */
-.btn-icon-small {
+/* Transforma o link <a> do comprovante em um botão-ícone */
+a.btn-icon-small {
     background: none;
     border: none;
     cursor: pointer;
@@ -1240,8 +1240,9 @@ ul.despesas-list li.total-geral strong {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    text-decoration: none; /* Remove o sublinhado do link */
 }
-.btn-icon-small:hover {
+a.btn-icon-small:hover {
     background: var(--primary-transparent);
 }
 .text-center {

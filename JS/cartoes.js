@@ -1,5 +1,6 @@
 // js/cartoes.js
-// VERSÃO 5.4 (Corrigido: Bug de agregação, bugs do modal 'Reverter' e Pagamento salvo em 'despesas')
+// VERSÃO 6.0 (Corrigido: Bug de lógica de parcelas, destino do pagamento e lógica de reversão)
+// ADICIONADO: Cálculo de Limite Disponível
 
 import { 
     db, 
@@ -33,7 +34,7 @@ let estadoFaturas = {};
 const categoriaIcones = {
     "Casa": "🏠", "Alimentação": "🛒", "Restaurante": "🍽️", "Transporte": "🚗",
     "Lazer": "🍿", "Saúde": "🩺", "Educação": "🎓", "Compras": "🛍️",
-    "Serviços": "⚙️", "Outros": "📦", "Fatura": "💳" // Categoria para o pagamento
+    "Serviços": "⚙️", "Outros": "📦", "Fatura": "💳" // v6.0: Categoria para o pagamento
 };
 const categoriaFixosIcones = {
     "Moradia": "🏠", "Contas": "💡", "Internet": "📺", "Transporte": "🚗",
@@ -68,6 +69,8 @@ const btnCancelEdit = document.getElementById('modal-edit-btn-cancel');
 
 const modalReverter = document.getElementById('modal-reverter-confirm');
 const modalReverterMessage = document.getElementById('modal-reverter-message');
+const btnReverterConfirm = document.getElementById('modal-reverter-btn-confirm');
+const btnReverterCancel = document.getElementById('modal-reverter-btn-cancel');
 
 // ---- INICIALIZAÇÃO ----
 document.addEventListener('authReady', (e) => {
@@ -99,6 +102,8 @@ function limparListeners() {
 // ===============================================================
 // FASE 2A: GERENCIADOR DE CARTÕES
 // ===============================================================
+
+// (v5.2) Carrega a config e DEPOIS carrega os gastos
 function loadGerenciadorCartoes() {
     limparListeners(); 
     
@@ -107,18 +112,21 @@ function loadGerenciadorCartoes() {
 
     const configCallback = onValue(configRef, (snapshot) => {
         meusCartoes = snapshot.val() || {};
-        loadGastosAgregados();
+        loadGastosAgregados(); // Dispara o recálculo de faturas
     });
     
     activeListeners.push({ ref: configRef, callback: configCallback, eventType: 'value' });
 }
 
+/**
+ * v6.0: Atualiza a tabela de gestão, agora incluindo o limite disponível
+ */
 function atualizarTabelaCartoesSalvos() {
     tbodyMeusCartoes.innerHTML = '';
     const cartoes = Object.values(meusCartoes);
 
     if (cartoes.length === 0) {
-        tbodyMeusCartoes.innerHTML = '<tr><td colspan="5">Nenhum cartão cadastrado.</td></tr>';
+        tbodyMeusCartoes.innerHTML = '<tr><td colspan="6">Nenhum cartão cadastrado.</td></tr>';
         return;
     }
 
@@ -133,9 +141,17 @@ function atualizarTabelaCartoesSalvos() {
         const toggleText = isBloqueado ? 'Desbloquear' : 'Bloquear';
         const toggleIcon = isBloqueado ? 'lock_open' : 'lock';
 
+        // v6.0: Calcula Limite Disponível (simplificado)
+        const limiteTotal = cartao.limiteTotal || 0;
+        // Pega o total da fatura atual que foi calculado em 'renderizarFaturas'
+        const faturaTotal = estadoFaturas[cartao.id]?.total || 0;
+        const limiteDisponivel = limiteTotal - faturaTotal;
+        const limiteDisponivelCor = limiteDisponivel < 0 ? 'var(--danger-color)' : 'var(--text-color)';
+
         tr.innerHTML = `
             <td>${cartao.icone} ${cartao.nome}</td>
-            <td>${formatCurrency(cartao.limiteTotal || 0)}</td>
+            <td>${formatCurrency(limiteTotal)}</td>
+            <td style="color: ${limiteDisponivelCor}; font-weight: 500;">${formatCurrency(limiteDisponivel)}</td>
             <td><span class="tag ${statusClass}">${statusIcon} ${statusText}</span></td>
             <td>Dia ${cartao.diaVencimento}</td>
             <td class="actions">
@@ -158,6 +174,7 @@ function atualizarTabelaCartoesSalvos() {
     });
 }
 
+// (v5.0 - Sem mudanças)
 async function handleSalvarCartao(e) {
     e.preventDefault();
     const nome = cartaoNomeInput.value;
@@ -188,6 +205,7 @@ async function handleSalvarCartao(e) {
     }
 }
 
+// (v5.0 - Sem mudanças)
 function handleEditCartaoClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return; 
@@ -206,6 +224,7 @@ function handleEditCartaoClick(e) {
     modalEdit.style.display = 'flex';
 }
 
+// (v5.0 - Sem mudanças)
 async function handleSalvarEditCartao(e) {
     e.preventDefault();
     const id = formEdit.dataset.id;
@@ -240,6 +259,7 @@ async function handleSalvarEditCartao(e) {
     }
 }
 
+// (v5.0 - Sem mudanças)
 function handleDeleteCartaoClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -263,6 +283,7 @@ function handleDeleteCartaoClick(e) {
     showModal('modal-confirm', deleteFn);
 }
 
+// (v5.0 - Sem mudanças)
 async function handleBlockToggleClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -286,6 +307,7 @@ async function handleBlockToggleClick(e) {
 // FASE 3A: LÓGICA DE FATURAS (v5.2)
 // ===============================================================
 
+// (v5.2) Busca (get) todos os dados de uma vez.
 async function loadGastosAgregados() {
     estadoFaturas = {}; 
 
@@ -302,7 +324,7 @@ async function loadGastosAgregados() {
         fixosAtual: `dados/${userId}/fixos/${mesAtualPath}`,
         fixosAnt: `dados/${userId}/fixos/${mesAnteriorPath}`,
         specs: `dados/${userId}/cartoes_specs`,
-        pendencias: `dados/${userId}/pendencias` // Busca TUDO
+        pendencias: `dados/${userId}/pendencias`
     };
 
     const promises = Object.keys(paths).map(key => get(ref(db, paths[key])));
@@ -326,7 +348,7 @@ async function loadGastosAgregados() {
         // (v5.2) ORDEM CORRIGIDA:
         atualizarAbasFatura(); 
         renderizarFaturas(estadoGastos); 
-        atualizarTabelaCartoesSalvos(); 
+        atualizarTabelaCartoesSalvos(); // v6.0: Agora depende de 'renderizarFaturas'
         ativarPrimeiraAba(); 
         renderTotalGastosCartoes();
 
@@ -336,6 +358,9 @@ async function loadGastosAgregados() {
     }
 }
 
+/**
+ * (UI) Cria as abas e os containers (v5.2)
+ */
 function atualizarAbasFatura() {
     faturasTabNav.innerHTML = '';
     faturasTabContent.innerHTML = '';
@@ -355,7 +380,7 @@ function atualizarAbasFatura() {
         let melhorDia = (cartao.diaFechamento || 0) + 1;
         if (melhorDia > 31) melhorDia = 1; 
         
-        const faturaAtual = 0; 
+        const faturaAtual = 0; // Placeholder, 'renderizarFaturas' preenche
         
         tabBtn.innerHTML = `
             <div>${cartao.icone} ${cartao.nome}</div>
@@ -372,13 +397,14 @@ function atualizarAbasFatura() {
         tabContent.dataset.cartaoId = cartao.id;
         tabContent.style.display = 'none'; 
         
+        // v6.0: Adicionado Limite Disponível no header
         tabContent.innerHTML = `
             <div class="fatura-header">
                 <div>
                     <h2 id="total-fatura-${cartao.id}">R$ 0,00</h2>
-                    <small>Fechamento: Dia ${cartao.diaFechamento} / Vencimento: Dia ${cartao.diaVencimento}</small>
-                    <small style="color: var(--success-color); font-weight: 500; display: block; margin-top: 4px;">
-                        Melhor dia de compra: Dia ${melhorDia}
+                    <small>Vencimento: Dia ${cartao.diaVencimento} (Fechamento: Dia ${cartao.diaFechamento})</small>
+                    <small id="limite-disponivel-${cartao.id}" style="font-weight: 500; display: block; margin-top: 4px;">
+                        Limite Disponível: Calculando...
                     </small>
                 </div>
                 <div class="fatura-actions">
@@ -398,9 +424,7 @@ function atualizarAbasFatura() {
             </div>
         `;
         
-        // ===============================================================
-        // CORREÇÃO (v5.3): Usa e.currentTarget
-        // ===============================================================
+        // (v5.3) Usa e.currentTarget
         tabContent.querySelector(`#btn-pagar-${cartao.id}`).addEventListener('click', (e) => {
             const total = parseFloat(e.currentTarget.dataset.totalValor || 0);
             handlePagarFaturaClick(cartao, total); 
@@ -410,7 +434,6 @@ function atualizarAbasFatura() {
             const total = parseFloat(e.currentTarget.dataset.totalValor || 0);
             handleReverterPagamentoClick(cartao, total); 
         });
-        // ===============================================================
 
         faturasTabContent.appendChild(tabContent);
     });
@@ -430,7 +453,7 @@ function ativarPrimeiraAba() {
 }
 
 /**
- * Função MESTRA de cálculo (v5.2)
+ * Função MESTRA de cálculo (v6.0)
  */
 function renderizarFaturas(estadoGastos) {
     if (Object.keys(meusCartoes).length === 0) return; 
@@ -448,9 +471,7 @@ function renderizarFaturas(estadoGastos) {
     Object.values(meusCartoes).forEach(cartao => {
         const nomeFatura = `Pagamento Fatura ${cartao.nome}`;
         
-        // ===============================================================
-        // MUDANÇA (v5.4): Verifica 'despesas' E 'pendencias' para pagamento
-        // ===============================================================
+        // v6.0: Verifica 'despesas' E 'pendencias' para pagamento
         const pagoEmDespesas = Object.values(estadoGastos.despesas[mesAtualPath] || {}).some(p => 
             p.descricao === nomeFatura && p.categoria === 'Fatura'
         );
@@ -459,7 +480,6 @@ function renderizarFaturas(estadoGastos) {
         );
         statusPagamentoAtual[cartao.id] = pagoEmDespesas || pagoEmPendencias;
         
-        // Verifica o mês anterior (apenas em pendências, pois o sistema antigo só salvava lá)
         statusPagamentoAnterior[cartao.id] = Object.values(estadoGastos.pendencias[mesAnteriorPath] || {}).some(p => 
             p.descricao === nomeFatura && p.status === 'pago'
         );
@@ -483,7 +503,7 @@ function renderizarFaturas(estadoGastos) {
     ];
     
     fontesGastos.forEach(gasto => {
-        // v5.4: Ignora o próprio pagamento da fatura
+        // v6.0: Ignora o próprio pagamento da fatura
         if (gasto.categoria === 'Fatura') return; 
 
         if (!gasto.data && !gasto.vencimento) return;
@@ -522,15 +542,21 @@ function renderizarFaturas(estadoGastos) {
              return;
         }
 
-        const [anoCompra, mesCompra] = compra.dataInicio.split('-');
-        let dataInicioVirtual = new Date(anoCompra, mesCompra - 1, 1);
+        // ===============================================================
+        // CORREÇÃO (v6.0): Lógica de cálculo de parcela
+        // ===============================================================
+
+        // 1. Get ORIGINAL start date (para o label)
+        const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
+        
+        // 2. Find VIRTUAL start date (para a lógica de "virada")
+        let dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
         
         while (true) {
             const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
             const pendenciasDesseMes = estadoGastos.pendencias[path] || {};
-            
-            // v5.4: Verifica 'despesas' E 'pendencias'
             const despesasDesseMes = estadoGastos.despesas[path] || {};
+
             const faturaPagaEmPendencias = Object.values(pendenciasDesseMes).some(p => 
                 p.descricao === `Pagamento Fatura ${cartaoConfig.nome}` && p.status === 'pago'
             );
@@ -545,14 +571,16 @@ function renderizarFaturas(estadoGastos) {
             }
         }
         
-        const [startYear, startMonth] = [dataInicioVirtual.getFullYear(), dataInicioVirtual.getMonth() + 1];
-        const currentYearFatura = dataFatura.getFullYear();
-        const currentMonthFatura = dataFatura.getMonth() + 1; 
+        // 3. Check if this fatura (dataFatura) é a próxima a ser paga
+        const isFaturaAtual = (dataInicioVirtual.getFullYear() === dataFatura.getFullYear() &&
+                               dataInicioVirtual.getMonth() === dataFatura.getMonth());
 
-        let mesesDiff = (currentYearFatura - startYear) * 12 + (currentMonthFatura - startMonth);
-        let parcelaAtual = mesesDiff + 1; 
-        
-        if (parcelaAtual >= 1 && parcelaAtual <= compra.parcelas) {
+        // 4. Calculate the LABEL using the ORIGINAL date
+        let mesesDiffLabel = (dataFatura.getFullYear() - anoInicioOriginal) * 12 + (dataFatura.getMonth() + 1 - mesInicioOriginal);
+        let parcelaAtualLabel = mesesDiffLabel + 1;
+
+        // 5. Se for a fatura atual E o label estiver correto...
+        if (isFaturaAtual && parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
             
             if (statusPagamentoAtual[cartaoConfig.id]) { 
                 return; 
@@ -563,7 +591,7 @@ function renderizarFaturas(estadoGastos) {
             
             let valorParaTotal = 0;
             let isStrikethrough = false;
-            let parcelaLabel = `(${parcelaAtual}/${compra.parcelas})`;
+            let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`; // Usa o label corrigido
 
             if (status === 'estornado') {
                 isStrikethrough = true;
@@ -592,8 +620,10 @@ function renderizarFaturas(estadoGastos) {
                 isStrikethrough: isStrikethrough 
             });
         }
+        // --- FIM DA CORREÇÃO (v6.0) ---
     });
 
+    // 5. Atualizar a UI (v6.0: Adiciona Limite Disponível)
     Object.values(meusCartoes).forEach(cartao => {
         const fatura = estadoFaturas[cartao.id];
         const totalAbaEl = document.getElementById(`total-aba-${cartao.id}`); 
@@ -601,9 +631,18 @@ function renderizarFaturas(estadoGastos) {
         const tbodyEl = document.getElementById(`tbody-fatura-${cartao.id}`);
         const btnPagarEl = document.getElementById(`btn-pagar-${cartao.id}`);
         const btnReverterEl = document.getElementById(`btn-reverter-pagamento-${cartao.id}`); 
+        const limiteDisponivelEl = document.getElementById(`limite-disponivel-${cartao.id}`); // NOVO
 
-        if (!totalEl || !tbodyEl || !btnPagarEl || !btnReverterEl || !totalAbaEl) return;
+        if (!totalEl || !tbodyEl || !btnPagarEl || !btnReverterEl || !totalAbaEl || !limiteDisponivelEl) return;
 
+        // v6.0: Calcula Limite Disponível
+        const limiteTotal = cartao.limiteTotal || 0;
+        const limiteDisponivel = limiteTotal - fatura.total;
+        const limiteCor = limiteDisponivel < 0 ? 'var(--danger-color)' : 'var(--text-color)';
+        
+        limiteDisponivelEl.textContent = `Limite Disponível: ${formatCurrency(limiteDisponivel)}`;
+        limiteDisponivelEl.style.color = limiteCor;
+        
         totalEl.textContent = formatCurrency(fatura.total);
         totalAbaEl.textContent = formatCurrency(fatura.total); 
         tbodyEl.innerHTML = fatura.html || '<tr><td colspan="3">Nenhum gasto este mês.</td></tr>';
@@ -669,12 +708,10 @@ function renderLinhaGasto(gasto) {
     const dataFormatada = `${d}/${m}/${y}`;
     
     let icone = "💳";
-    // v5.4: Adiciona ícone de Fatura
     if (gasto.tipo === 'variavel') icone = categoriaIcones[gasto.categoria] || "📦";
     else if (gasto.tipo === 'fixo') icone = categoriaFixosIcones[gasto.categoria] || "📦";
     else if (gasto.tipo === 'spec') icone = "🔄";
     else if (gasto.categoria === 'Fatura') icone = categoriaIcones[gasto.categoria] || "💳";
-
 
     const isStrikethrough = gasto.isStrikethrough || false;
     const openTag = isStrikethrough ? '<del style="color: var(--text-light);">' : ''; 
@@ -753,8 +790,8 @@ async function handlePagarFaturaClick(cartao, valor) {
 // ===============================================================
 async function handleReverterPagamentoClick(cartao, valor) {
     if (valor <= 0) {
-        console.warn("Tentativa de reverter fatura com valor zero.");
-        return;
+        console.warn("Tentativa de reverter fatura com valor zero. Buscando valor no DB...");
+        // O valor será buscado dentro da função 'reverterFn'
     }
     
     modalReverterMessage.textContent = `Tem certeza que quer reverter o pagamento da fatura ${cartao.nome} (${formatCurrency(valor)})? O valor será devolvido ao seu Saldo em Caixa.`;
@@ -764,9 +801,11 @@ async function handleReverterPagamentoClick(cartao, valor) {
         const despesasPath = `dados/${userId}/despesas/${currentYear}-${currentMonth}`;
         const pendenciasPath = `dados/${userId}/pendencias/${currentYear}-${currentMonth}`;
         
+        let valorAReverter = valor; // Usa o valor do botão como fallback
+
         try {
             let pagamentoId = null;
-            let localPagamento = null; // 'despesas' ou 'pendencias'
+            let localPagamento = null; 
 
             // 1. Procura em 'despesas'
             const despesasSnap = await get(ref(db, despesasPath));
@@ -775,6 +814,7 @@ async function handleReverterPagamentoClick(cartao, valor) {
                     const despesa = child.val();
                     if (despesa.descricao === `Pagamento Fatura ${cartao.nome}` && despesa.categoria === 'Fatura') {
                         pagamentoId = despesa.id;
+                        valorAReverter = despesa.valor; // Pega o valor real
                         localPagamento = 'despesas';
                     }
                 });
@@ -788,6 +828,7 @@ async function handleReverterPagamentoClick(cartao, valor) {
                         const pendencia = child.val();
                         if (pendencia.descricao === `Pagamento Fatura ${cartao.nome}` && pendencia.status === 'pago') {
                             pagamentoId = pendencia.id;
+                            valorAReverter = pendencia.valor; // Pega o valor real
                             localPagamento = 'pendencias';
                         }
                     });
@@ -797,13 +838,17 @@ async function handleReverterPagamentoClick(cartao, valor) {
             if (!pagamentoId || !localPagamento) {
                  throw new Error("Registo de pagamento não encontrado.");
             }
+            
+            if (valorAReverter <= 0) {
+                throw new Error("Valor do pagamento é zero. Não é possível reverter.");
+            }
 
             // 3. Remove o registo de pagamento do local correto
             const pathToRemover = (localPagamento === 'despesas') ? despesasPath : pendenciasPath;
             await remove(ref(db, `${pathToRemover}/${pagamentoId}`));
             
             // 4. Devolve o dinheiro ao saldo
-            await updateSaldoGlobal(valor);
+            await updateSaldoGlobal(valorAReverter);
             
             hideModal('modal-reverter-confirm');
             loadGastosAgregados(); 
@@ -815,18 +860,17 @@ async function handleReverterPagamentoClick(cartao, valor) {
         }
     };
 
-    // --- CORREÇÃO (v5.3): Busca os botões do DOM pelo ID ---
-    const currentConfirmBtn = document.getElementById('modal-reverter-btn-confirm');
-    const currentCancelBtn = document.getElementById('modal-reverter-btn-cancel');
+    // --- CORREÇÃO (v5.4): Busca os botões do DOM pelo ID e só atribui o click ---
+    const btnConfirm = document.getElementById('modal-reverter-btn-confirm');
+    const btnCancel = document.getElementById('modal-reverter-btn-cancel');
 
-    if (!currentConfirmBtn || !currentCancelBtn) {
+    if (!btnConfirm || !btnCancel) {
         console.error("Botões do modal 'modal-reverter-confirm' não encontrados.");
         return;
     }
-
-    // (v5.4) Simplifica a lógica: apenas atribui o onclick, sem clonar.
-    currentConfirmBtn.onclick = reverterFn;
-    currentCancelBtn.onclick = () => hideModal('modal-reverter-confirm');
+    
+    btnConfirm.onclick = reverterFn;
+    btnCancel.onclick = () => hideModal('modal-reverter-confirm');
     
     modalReverter.style.display = 'flex';
 }
@@ -848,6 +892,10 @@ async function updateSaldoGlobal(ajuste) {
 // ===============================================================
 // NOVA FUNÇÃO (v5.4): Registra o pagamento em 'despesas'
 // ===============================================================
+/**
+ * Salva o pagamento da fatura como um item em 'despesas'
+ * em vez de 'pendencias', para que apareça nos gráficos do dashboard.
+ */
 async function registrarPagamentoComoDespesa(cartao, valor) {
     const path = `dados/${userId}/despesas/${currentYear}-${currentMonth}`;
     
