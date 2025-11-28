@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Caminho do ícone corrigido -->
     <link rel="icon" type="image/png" href="logo.png">
     
     <title>Painel Principal - Controle Financeiro</title>
@@ -83,32 +82,32 @@
             </div>
         </header>
 
-        <!-- O seu conteúdo principal (KPIs, Gráficos, Metas, etc.) - sem alterações -->
+        <!-- O seu conteúdo principal (KPIs, Gráficos, Metas, etc.) - IDs MANTIDOS -->
         <section class="kpi-grid" id="kpi-grid-dashboard">
              <div class="card kpi-card">
                  <h4>Total Entradas</h4>
-                 <h2 id="kpi-total-entradas">R$ 0,00</h2>
+                 <h2 id="total-entradas">R$ 0,00</h2> <!-- ID Mantido -->
              </div>
              <div class="card kpi-card">
                  <h4>Despesas (do Saldo)</h4>
-                 <h2 id="kpi-total-despesas">R$ 0,00</h2>
+                 <h2 id="total-despesas">R$ 0,00</h2> <!-- ID Mantido -->
              </div>
              <div class="card kpi-card kpi-lucro">
                  <h4>Lucro Líquido (do Saldo)</h4>
-                 <h2 id="kpi-lucro-liquido">R$ 0,00</h2>
+                 <h2 id="lucro-liquido">R$ 0,00</h2> <!-- ID Mantido -->
              </div>
              <div class="card kpi-card">
                  <h4>Saldo em Caixa</h4>
-                 <h2 id="kpi-saldo-acumulado">R$ 0,00</h2>
-                 <small>Saldo anterior: <span id="saldo-mes-anterior">R$ 0,00</span></small>
+                 <h2 id="saldo-caixa">R$ 0,00</h2> <!-- ID Mantido -->
+                 <small>Saldo anterior: <span id="saldo-acumulado">R$ 0,00</span></small> <!-- ID Mantido -->
              </div>
              <div class="card kpi-card">
                  <h4>Horas Trabalhadas</h4>
-                 <h2 id="kpi-total-horas">0h 00m</h2>
+                 <h2 id="horas-total">0h 00m</h2> <!-- ID Mantido -->
              </div>
              <div class="card kpi-card">
                  <h4>KM Total</h4>
-                 <h2 id="kpi-total-km">0 km</h2>
+                 <h2 id="km-total">0 km</h2> <!-- ID Mantido -->
              </div>
         </section>
 
@@ -133,17 +132,15 @@
                 <h3>Meta de Entradas</h3>
                 <div class="goal-container">
                     <div class="goal-header">
-                        <span>Meta: <strong id="meta-entrada-valor">R$ 0,00</strong></span>
-                        <button id="btn-definir-meta" class="btn-icon"><span
+                        <span>Meta: <strong id="meta-valor">R$ 0,00</strong></span> <!-- ID Mantido -->
+                        <button id="btn-edit-meta" class="btn-icon"><span <!-- ID Mantido -->
                                 class="material-icons-sharp">edit</span></button>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress" id="meta-entrada-progress" style="width: 0%;"></div>
+                        <div class="progress" id="meta-progress" style="width: 0%;"></div> <!-- ID Mantido -->
                     </div>
-                    <p>
-                        <strong id="meta-entrada-percent">0%</strong>
-                         (<span id="meta-entrada-restante">R$ 0,00 restantes</span>)
-                    </p>
+                    <p>Faltam <strong id="meta-faltante">R$ 0,00</strong> (<span id="meta-percentual">0%</span>) para <!-- IDs Mantidos -->
+                        bater a meta.</p>
                 </div>
             </div>
             <div class="card">
@@ -151,19 +148,20 @@
                 <div class="goal-container">
                     <div class="goal-header">
                         <span>Limite: <strong id="meta-gasto-valor">R$ 0,00</strong></span>
-                        <button id="btn-definir-meta-gasto" class="btn-icon"><span
+                        <button id="btn-edit-meta-gasto" class="btn-icon"><span
                                 class="material-icons-sharp">edit</span></button>
                     </div>
                     <div class="progress-bar">
                         <div class="progress" id="meta-gasto-progress" style="width: 0%;"></div>
                     </div>
-                     <div class="goal-details">
-                        <small><strong id="meta-gasto-percent">0%</strong> Usado</small>
+                    <div class="goal-details">
+                        <small>Gasto: <strong id="meta-gasto-gasto">R$ 0,00</strong></small>
                         <small>Restante: <strong id="meta-gasto-restante">R$ 0,00</strong></small>
                     </div>
                 </div>
             </div>
         </section>
+
         
         <section class="main-grid two-cols">
             <div class="card">
@@ -178,7 +176,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbody-gastos-categoria">
-                            <!-- Preenchido por JS -->
+                             <!-- Preenchido por JS -->
                         </tbody>
                     </table>
                 </div>
@@ -239,7 +237,7 @@
     <!-- MODAIS (Início) -->
     <!-- =============================================================== -->
 
-    <!-- Modal: Confirmar Ação (Usado pelo Logout) -->
+    <!-- Modal: Confirmar Ação (Padrão) -->
     <div id="modal-confirm" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -265,7 +263,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="input-meta-entrada">Valor da Meta Mensal</label>
-                        <input type="text" id="input-meta-entrada" placeholder="Ex: 3500,00">
+                        <input type="text" id="input-meta-entrada" class="currency" placeholder="Ex: 3500,00">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -286,7 +284,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="input-meta-gasto">Valor do Limite Mensal (para gastos do saldo)</label>
-                        <input type="text" id="input-meta-gasto" placeholder="Ex: 1500,00">
+                        <input type="text" id="input-meta-gasto" class="currency" placeholder="Ex: 1500,00">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -297,9 +295,7 @@
         </div>
     </div>
 
-    <!-- =============================================================== -->
-    <!-- NOVO: MODAL DE CONFIRMAÇÃO DE LOGOUT (Adicionado v4.1) -->
-    <!-- =============================================================== -->
+    <!-- Modal de Confirmação de Logout -->
     <div id="modal-logout-confirm" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -322,6 +318,8 @@
     <!-- =============================================================== -->
     <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
     <!-- =============================================================== -->
+    
+    <!-- Scripts 'compat' ANTIGOS REMOVIDOS -->
     
     <!-- Scripts de Bibliotecas (Chart.js, jsPDF) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
