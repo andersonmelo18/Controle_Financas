@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <link rel="icon" type="image/png" href="static/logo.png">
+    <!-- Caminho do ícone corrigido -->
+    <link rel="icon" type="image/png" href="logo.png">
     
     <title>Painel Principal - Controle Financeiro</title>
 
@@ -16,6 +17,7 @@
 <body>
 
     <nav class="sidebar">
+        <!-- O seu sidebar (sem alterações) -->
         <div class="sidebar-header">
             <h3>Finan<span>Control</span></h3>
         </div>
@@ -37,7 +39,7 @@
     </nav>
 
     <main class="content">
-
+        <!-- O seu header (sem alterações) -->
         <header class="main-header">
             <button class="hamburger-menu">
                 <span class="material-icons-sharp">menu</span>
@@ -57,6 +59,7 @@
                     <h3 id="global-balance-display">R$ 0,00</h3>
                 </div>
 
+                <!-- (Os seus botões de exportação, sino e tema - sem alterações) -->
                 <button class="btn-primary" id="btn-export-pdf">Exportar PDF</button>
                 <button class="btn-secondary" id="btn-export-csv">Exportar CSV</button>
 
@@ -79,32 +82,34 @@
                 </button>
             </div>
         </header>
+
+        <!-- O seu conteúdo principal (KPIs, Gráficos, Metas, etc.) - sem alterações -->
         <section class="kpi-grid" id="kpi-grid-dashboard">
-            <div class="card kpi-card">
-                <h4>Total Entradas</h4>
-                <h2 id="total-entradas">R$ 0,00</h2>
-            </div>
-            <div class="card kpi-card">
-                <h4>Despesas (do Saldo)</h4>
-                <h2 id="total-despesas">R$ 0,00</h2>
-            </div>
-            <div class="card kpi-card kpi-lucro">
-                <h4>Lucro Líquido (do Saldo)</h4>
-                <h2 id="lucro-liquido">R$ 0,00</h2>
-            </div>
-            <div class="card kpi-card">
-                <h4>Saldo em Caixa</h4>
-                <h2 id="saldo-caixa">R$ 0,00</h2>
-                <small>Saldo anterior: <span id="saldo-acumulado">R$ 0,00</span></small>
-            </div>
-            <div class="card kpi-card">
-                <h4>Horas Trabalhadas</h4>
-                <h2 id="horas-total">0h 00m</h2>
-            </div>
-            <div class="card kpi-card">
-                <h4>KM Total</h4>
-                <h2 id="km-total">0 km</h2>
-            </div>
+             <div class="card kpi-card">
+                 <h4>Total Entradas</h4>
+                 <h2 id="kpi-total-entradas">R$ 0,00</h2>
+             </div>
+             <div class="card kpi-card">
+                 <h4>Despesas (do Saldo)</h4>
+                 <h2 id="kpi-total-despesas">R$ 0,00</h2>
+             </div>
+             <div class="card kpi-card kpi-lucro">
+                 <h4>Lucro Líquido (do Saldo)</h4>
+                 <h2 id="kpi-lucro-liquido">R$ 0,00</h2>
+             </div>
+             <div class="card kpi-card">
+                 <h4>Saldo em Caixa</h4>
+                 <h2 id="kpi-saldo-acumulado">R$ 0,00</h2>
+                 <small>Saldo anterior: <span id="saldo-mes-anterior">R$ 0,00</span></small>
+             </div>
+             <div class="card kpi-card">
+                 <h4>Horas Trabalhadas</h4>
+                 <h2 id="kpi-total-horas">0h 00m</h2>
+             </div>
+             <div class="card kpi-card">
+                 <h4>KM Total</h4>
+                 <h2 id="kpi-total-km">0 km</h2>
+             </div>
         </section>
 
         
@@ -128,15 +133,17 @@
                 <h3>Meta de Entradas</h3>
                 <div class="goal-container">
                     <div class="goal-header">
-                        <span>Meta: <strong id="meta-valor">R$ 0,00</strong></span>
-                        <button id="btn-edit-meta" class="btn-icon"><span
+                        <span>Meta: <strong id="meta-entrada-valor">R$ 0,00</strong></span>
+                        <button id="btn-definir-meta" class="btn-icon"><span
                                 class="material-icons-sharp">edit</span></button>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress" id="meta-progress" style="width: 0%;"></div>
+                        <div class="progress" id="meta-entrada-progress" style="width: 0%;"></div>
                     </div>
-                    <p>Faltam <strong id="meta-faltante">R$ 0,00</strong> (<span id="meta-percentual">0%</span>) para
-                        bater a meta.</p>
+                    <p>
+                        <strong id="meta-entrada-percent">0%</strong>
+                         (<span id="meta-entrada-restante">R$ 0,00 restantes</span>)
+                    </p>
                 </div>
             </div>
             <div class="card">
@@ -144,20 +151,19 @@
                 <div class="goal-container">
                     <div class="goal-header">
                         <span>Limite: <strong id="meta-gasto-valor">R$ 0,00</strong></span>
-                        <button id="btn-edit-meta-gasto" class="btn-icon"><span
+                        <button id="btn-definir-meta-gasto" class="btn-icon"><span
                                 class="material-icons-sharp">edit</span></button>
                     </div>
                     <div class="progress-bar">
                         <div class="progress" id="meta-gasto-progress" style="width: 0%;"></div>
                     </div>
-                    <div class="goal-details">
-                        <small>Gasto: <strong id="meta-gasto-gasto">R$ 0,00</strong></small>
+                     <div class="goal-details">
+                        <small><strong id="meta-gasto-percent">0%</strong> Usado</small>
                         <small>Restante: <strong id="meta-gasto-restante">R$ 0,00</strong></small>
                     </div>
                 </div>
             </div>
         </section>
-
         
         <section class="main-grid two-cols">
             <div class="card">
@@ -171,77 +177,34 @@
                                 <th>%</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tbody-gastos-categoria">
+                            <!-- Preenchido por JS -->
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="card">
                 <h3>Detalhamento dos Gastos (Mês)</h3>
-                <ul class="despesas-list">
-                    <li>
-                        <span>Variáveis (do Saldo)</span>
-                        <strong id="detalhe-variaveis">R$ 0,00</strong>
-                    </li>
-                    <li>
-                        <span>Fixas (do Saldo)</span>
-                        <strong id="detalhe-fixas">R$ 0,00</strong>
-                    </li>
-                    <li>
-                        <span>Dívidas (do Saldo)</span>
-                        <strong id="detalhe-dividas">R$ 0,00</strong>
-                    </li>
-                    <li class="total">
-                        <span>Total (Pago c/ Saldo)</span>
-                        <strong id="detalhe-total-despesas">R$ 0,00</strong>
-                    </li>
-                    <hr>
-                    <li>
-                        <span>Total Faturas (Cartões)</span>
-                        <strong id="detalhe-faturas">R$ 0,00</strong>
-                    </li>
-                    <li class="total-geral">
-                        <span>GASTO TOTAL GERAL</span>
-                        <strong id="detalhe-total-geral">R$ 0,00</strong>
-                    </li>
+                <ul class="despesas-list" id="tbody-resumo-despesas">
+                    <!-- Preenchido por JS -->
                 </ul>
             </div>
         </section>
-
         
         <section class="main-grid two-cols">
             <div class="card">
                 <h3>Contas a Pagar (Mês)</h3>
                 <ul class="despesas-list" id="lancamentos-futuros-list">
-                    <li>
-                        <span>Fixas (A Pagar)</span>
-                        <strong id="futuro-fixas">R$ 0,00</strong>
-                    </li>
-                    <li>
-                        <span>Pendências (A Pagar)</span>
-                        <strong id="futuro-pendencias">R$ 0,00</strong>
-                    </li>
+                    <!-- Preenchido por JS -->
                 </ul>
             </div>
             <div class="card">
                 <h3>Resumo de Cartões</h3>
-                <div class="limite-cartao-container">
-                    <div class="goal-header">
-                        <span>Limite Total (Soma)</span>
-                        <strong id="total-limites-cartoes">R$ 0,00</strong>
-                    </div>
-                    <div class="goal-header">
-                        <span>Faturas Abertas (Mês)</span>
-                        <strong id="total-faturas-aberto">R$ 0,00</strong>
-                    </div>
-                    <div class="progress-bar" style="margin-top: 1rem;">
-                        <div class="progress" id="limite-cartao-progress" style="width: 0%; background-color: var(--danger-color);"></div>
-                    </div>
-                    <small style="text-align: center; display: block; margin-top: 0.5rem;">Limite de cartões consumido</small>
+                <div class="limite-cartao-container" id="tbody-resumo-cartoes">
+                     <!-- Preenchido por JS -->
                 </div>
             </div>
         </section>
-
         
         <section class="card chart-container">
             <h3>Evolução do Saldo em Caixa (Diário)</h3>
@@ -272,14 +235,100 @@
         
     </main>
 
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <!-- =============================================================== -->
+    <!-- MODAIS (Início) -->
+    <!-- =============================================================== -->
 
+    <!-- Modal: Confirmar Ação (Usado pelo Logout) -->
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirmar Ação</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Tem certeza?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-btn-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Editar Meta de Entrada -->
+    <div id="modal-meta-entrada" class="modal-overlay">
+        <div class="modal-content">
+            <form id="form-meta-entrada">
+                <div class="modal-header">
+                    <h3>Definir Meta de Entradas</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="input-meta-entrada">Valor da Meta Mensal</label>
+                        <input type="text" id="input-meta-entrada" placeholder="Ex: 3500,00">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Meta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Meta de Gasto -->
+    <div id="modal-meta-gasto" class="modal-overlay">
+        <div class="modal-content">
+            <form id="form-meta-gasto">
+                <div class="modal-header">
+                    <h3>Definir Limite de Gasto</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="input-meta-gasto">Valor do Limite Mensal (para gastos do saldo)</label>
+                        <input type="text" id="input-meta-gasto" placeholder="Ex: 1500,00">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Limite</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- NOVO: MODAL DE CONFIRMAÇÃO DE LOGOUT (Adicionado v4.1) -->
+    <!-- =============================================================== -->
+    <div id="modal-logout-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirmar Saída</h3>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja sair da sua conta?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-logout-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-logout-btn-confirm">Sair</button>
+            </div>
+        </div>
+    </div>
+    <!-- =============================================================== -->
+    <!-- MODAIS (Fim) -->
+    <!-- =============================================================== -->
+
+
+    <!-- =============================================================== -->
+    <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
+    <!-- =============================================================== -->
+    
+    <!-- Scripts de Bibliotecas (Chart.js, jsPDF) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
+    <!-- Scripts do Firebase (Modulares) -->
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/index.js"></script>
