@@ -1,5 +1,5 @@
 // js/despesas.js
-// VERSÃO 5.0 (Com Upload de Comprovantes para o Firebase Storage)
+// VERSÃO 5.1 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
 import {
     db, 
@@ -44,7 +44,7 @@ const PAGAMENTO_AFETA_SALDO = ['Saldo em Caixa', 'Pix', 'Dinheiro'];
 const categoriaIcones = {
     "Casa": "🏠", "Alimentação": "🛒", "Restaurante": "🍽️", "Transporte": "🚗",
     "Lazer": "🍿", "Saúde": "🩺", "Educação": "🎓", "Compras": "🛍️",
-    "Serviços": "⚙️", "Outros": "📦", "Fatura": "💳" // (Adicionado do v5.4 de cartoes)
+    "Serviços": "⚙️", "Outros": "📦", "Fatura": "💳" 
 };
 const pagamentoIcones = {
     "Saldo em Caixa": "🏦",
@@ -60,7 +60,7 @@ const descricaoInput = document.getElementById('despesa-descricao');
 const formaPagamentoSelect = document.getElementById('despesa-forma-pagamento');
 const valorInput = document.getElementById('despesa-valor');
 const comprovanteInput = document.getElementById('despesa-comprovante'); 
-const btnSubmitForm = form.querySelector('button[type="submit"]'); // Botão de submit
+const btnSubmitForm = form.querySelector('button[type="submit"]'); 
 
 // ---- Elementos DOM (Tabela e Totais) ----
 const tbody = document.getElementById('tbody-despesas-variaveis');
@@ -156,15 +156,18 @@ function populateFilterCategorias() {
     }
 }
 
+// v5.1: Caminho atualizado
 async function loadDynamicCardData() {
     if (!userId) return;
+    // getCartoesHtmlOptions() já busca de 'usuarios/' (via main.js v4.1)
     const cartoesHtml = await getCartoesHtmlOptions();
 
     if (formaPagamentoSelect) formaPagamentoSelect.innerHTML += cartoesHtml;
     if (editFormaPagamentoSelect) editFormaPagamentoSelect.innerHTML += cartoesHtml;
     if (filtroFormaPagamento) filtroFormaPagamento.innerHTML += cartoesHtml;
 
-    const configRef = ref(db, `dados/${userId}/cartoes/config`);
+    // v5.1: Caminho atualizado
+    const configRef = ref(db, `usuarios/${userId}/cartoes/config`);
     try {
         const snapshot = await get(configRef);
         if (snapshot.exists()) {
@@ -198,40 +201,29 @@ function updateDataInput() {
 }
 
 // ===============================================================
-// 2. NOVAS FUNÇÕES DE UPLOAD (v5.0)
+// 2. NOVAS FUNÇÕES DE UPLOAD (v5.1 - Caminho atualizado)
 // ===============================================================
 
-/**
- * Faz o upload de um arquivo para o Firebase Storage.
- * @param {File} file O arquivo do input
- * @returns {Promise<object>} Um objeto com a URL e o Path do arquivo.
- */
 async function uploadFile(file) {
     if (!userId) throw new Error("Usuário não autenticado.");
     
-    // Cria um nome de arquivo único para evitar sobrescrever
     const timestamp = Date.now();
     const uniqueFileName = `${timestamp}-${file.name}`;
-    const storagePath = `dados/${userId}/comprovantes/${uniqueFileName}`;
+    // v5.1: Caminho atualizado
+    const storagePath = `usuarios/${userId}/comprovantes/${uniqueFileName}`;
     
     const fileRef = storageRef(storage, storagePath);
 
-    // 1. Faz o upload
     await uploadBytes(fileRef, file);
     
-    // 2. Obtém a URL de download
     const downloadURL = await getDownloadURL(fileRef);
     
     return {
         url: downloadURL,
-        path: storagePath // Salva o path para sabermos qual arquivo excluir
+        path: storagePath 
     };
 }
 
-/**
- * Exclui um arquivo do Firebase Storage.
- * @param {string} path O caminho completo do arquivo no Storage.
- */
 async function deleteFile(path) {
     if (!path) return;
     
@@ -239,7 +231,6 @@ async function deleteFile(path) {
     try {
         await deleteObject(fileRef);
     } catch (error) {
-        // Se o arquivo não existir (ex: já foi deletado), ignora o erro
         if (error.code !== 'storage/object-not-found') {
             console.error("Erro ao excluir arquivo do Storage:", error);
         }
@@ -248,23 +239,21 @@ async function deleteFile(path) {
 
 
 // ===============================================================
-// 3. LÓGICA DO FORMULÁRIO (CRIAR) - (v5.0 - Modificado)
+// 3. LÓGICA DO FORMULÁRIO (CRIAR) - (v5.1 - Caminho atualizado)
 // ===============================================================
 async function handleFormSubmit(e) {
     e.preventDefault();
     if (!userId) return;
 
-    // Desabilita o botão para evitar cliques duplos
     btnSubmitForm.disabled = true;
     btnSubmitForm.textContent = 'Salvando...';
 
     let comprovanteData = null;
 
     try {
-        // 1. FAZ O UPLOAD PRIMEIRO (se houver arquivo)
         if (comprovanteInput && comprovanteInput.files.length > 0) {
             const file = comprovanteInput.files[0];
-            comprovanteData = await uploadFile(file);
+            comprovanteData = await uploadFile(file); // uploadFile já usa 'usuarios/'
         }
 
         const data = {
@@ -273,15 +262,15 @@ async function handleFormSubmit(e) {
             descricao: descricaoInput.value,
             formaPagamento: formaPagamentoSelect.value,
             valor: parseCurrency(valorInput.value),
-            comprovante: comprovanteData // Salva o objeto {url, path} ou null
+            comprovante: comprovanteData 
         };
 
         if (data.valor <= 0) {
             throw new Error("O valor da despesa deve ser maior que zero.");
         }
 
-        // 2. VERIFICA O SALDO
         if (PAGAMENTO_AFETA_SALDO.includes(data.formaPagamento)) {
+             // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
             const temSaldo = await verificarSaldoSuficiente(data.valor);
             if (!temSaldo) {
                 throw new Error("Saldo em Caixa insuficiente para registrar esta despesa!");
@@ -290,12 +279,11 @@ async function handleFormSubmit(e) {
 
         const [entryYear, entryMonth] = data.data.split('-');
         
-        // 3. SALVA NO REALTIME DATABASE
-        const path = `dados/${userId}/despesas/${entryYear}-${entryMonth}`;
+        // v5.1: Caminho atualizado
+        const path = `usuarios/${userId}/despesas/${entryYear}-${entryMonth}`;
         const newRef = push(ref(db, path));
         await set(newRef, { ...data, id: newRef.key });
 
-        // 4. ATUALIZA O SALDO (só se tudo deu certo)
         if (PAGAMENTO_AFETA_SALDO.includes(data.formaPagamento)) {
             await updateSaldoGlobal(-data.valor);
         }
@@ -308,26 +296,25 @@ async function handleFormSubmit(e) {
         console.error("Erro ao salvar despesa:", error);
         alert(`Não foi possível salvar a despesa. Erro: ${error.message}`);
         
-        // Se o upload foi feito mas o RTDB falhou, exclui o arquivo órfão
         if (comprovanteData && comprovanteData.path) {
             console.warn("Revertendo upload do arquivo órfão...");
             await deleteFile(comprovanteData.path);
         }
     } finally {
-        // Reabilita o botão
         btnSubmitForm.disabled = false;
         btnSubmitForm.textContent = 'Adicionar Despesa';
     }
 }
 
 // ===============================================================
-// 4. LÓGICA DE RENDERIZAÇÃO (v5.0 - Modificado)
+// 4. LÓGICA DE RENDERIZAÇÃO (v5.1 - Caminho atualizado)
 // ===============================================================
 function loadDespesas() {
     if (!userId) return;
     if (activeListener) off(activeListener.ref, 'value', activeListener.callback);
 
-    const path = `dados/${userId}/despesas/${currentYear}-${currentMonth}`;
+    // v5.1: Caminho atualizado
+    const path = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
     const dataRef = ref(db, path);
 
     const callback = (snapshot) => {
@@ -401,7 +388,7 @@ function renderTabela() {
 }
 
 /**
- * Renderiza UMA linha de despesa (v5.0 - Modificado para URL)
+ * Renderiza UMA linha de despesa (v5.0 - Lógica mantida)
  */
 function renderRow(despesa) {
     if (!despesa || !despesa.data) return;
@@ -414,7 +401,6 @@ function renderRow(despesa) {
     tr.dataset.categoria = despesa.categoria;
     tr.dataset.descricao = despesa.descricao;
     
-    // v5.0: Salva o path e a URL
     const comp = despesa.comprovante; // { url: "...", path: "..." }
     tr.dataset.comprovanteUrl = comp ? comp.url : '';
     tr.dataset.comprovantePath = comp ? comp.path : ''; 
@@ -428,7 +414,6 @@ function renderRow(despesa) {
     const pagamentoNome = despesa.formaPagamento;
     const pagIcone = pagamentoIcones[pagamentoNome] || "💳";
 
-    // v5.0: Lógica do Comprovante (agora é um link <a>)
     let comprovanteHtml = '-';
     if (comp && comp.url) {
         comprovanteHtml = `
@@ -478,7 +463,7 @@ function resetFilters() {
 }
 
 // ===============================================================
-// 5. LÓGICA DE AÇÕES (v5.0 - Modificado)
+// 5. LÓGICA DE AÇÕES (v5.1 - Caminhos atualizados)
 // ===============================================================
 
 function handleDuplicateClick(e) {
@@ -494,7 +479,7 @@ function handleDuplicateClick(e) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// v5.0: Modificado para excluir arquivo do Storage
+// v5.1: Caminho atualizado
 function handleDeleteClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -511,28 +496,25 @@ function handleDeleteClick(e) {
     }
 
     const [entryYear, entryMonth] = data.split('-');
-    const itemPath = `dados/${userId}/despesas/${entryYear}-${entryMonth}/${id}`;
+    // v5.1: Caminho atualizado
+    const itemPath = `usuarios/${userId}/despesas/${entryYear}-${entryMonth}/${id}`;
 
     const deleteFn = async () => {
         try {
-            // 1. Devolve o saldo (se necessário)
             if (PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
                 await updateSaldoGlobal(valor);
             }
             
-            // 2. Exclui o arquivo do Storage (se existir)
             if (comprovantePath) {
-                await deleteFile(comprovantePath);
+                await deleteFile(comprovantePath); // deleteFile já usa 'usuarios/'
             }
             
-            // 3. Exclui o registro do RTDB
             await remove(ref(db, itemPath));
             
             hideModal('modal-confirm');
         } catch (error) {
             console.error("Erro ao excluir despesa:", error);
             alert("Não foi possível excluir a despesa.");
-            // Se falhar, recarrega os dados para garantir consistência
             loadDespesas();
         }
     };
@@ -541,7 +523,7 @@ function handleDeleteClick(e) {
     showModal('modal-confirm', deleteFn);
 }
 
-// v5.0: Modificado para lidar com comprovantes
+// v5.1: Caminho atualizado
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -550,16 +532,15 @@ function handleEditClick(e) {
     const data = tr.dataset.data;
     const [entryYear, entryMonth] = data.split('-');
     
-    // Pega os dados do comprovante
     const comprovanteUrl = tr.dataset.comprovanteUrl;
     const comprovantePath = tr.dataset.comprovantePath;
     
     formEdit.dataset.id = id;
-    formEdit.dataset.entryPath = `dados/${userId}/despesas/${entryYear}-${entryMonth}/${id}`;
+    // v5.1: Caminho atualizado
+    formEdit.dataset.entryPath = `usuarios/${userId}/despesas/${entryYear}-${entryMonth}/${id}`;
     formEdit.dataset.valorAntigo = tr.dataset.valor;
     formEdit.dataset.formaPagamentoAntiga = tr.dataset.formaPagamento;
     
-    // Salva os dados do arquivo antigo no formulário
     formEdit.dataset.comprovanteAntigoUrl = comprovanteUrl;
     formEdit.dataset.comprovanteAntigoPath = comprovantePath;
 
@@ -580,35 +561,31 @@ function handleEditClick(e) {
         editFormaPagamentoSelect.value = formaPagamento;
     }
 
-    // Mostra o nome do arquivo atual
     if (editComprovanteDisplay) {
-        // Extrai o nome original do arquivo
         const fileName = comprovantePath ? comprovantePath.split('-').slice(1).join('-') : '';
         editComprovanteDisplay.textContent = fileName ? `Arquivo atual: ${fileName}` : '';
         editComprovanteDisplay.style.display = fileName ? 'block' : 'none';
     }
     
     const editFile = document.getElementById('edit-despesa-comprovante');
-    if (editFile) editFile.value = ''; // Limpa o input de arquivo
+    if (editFile) editFile.value = ''; 
 
     modalEdit.style.display = 'flex';
 }
 
-// v5.0: Modificado para lidar com upload/exclusão de comprovantes
+// v5.1: Caminho atualizado
 async function handleSaveEdit(e) {
     e.preventDefault();
     if (!userId) return;
 
     const id = formEdit.dataset.id;
-    const path = formEdit.dataset.entryPath;
+    const path = formEdit.dataset.entryPath; // Já contém 'usuarios/'
     const valorAntigo = parseFloat(formEdit.dataset.valorAntigo);
     const formaPagamentoAntiga = formEdit.dataset.formaPagamentoAntiga;
     
-    // Pega os dados do arquivo antigo
     const comprovanteAntigoUrl = formEdit.dataset.comprovanteAntigoUrl;
     const comprovanteAntigoPath = formEdit.dataset.comprovanteAntigoPath;
     
-    // Assume que vamos manter o antigo, a menos que um novo seja enviado
     let comprovanteData = (comprovanteAntigoUrl && comprovanteAntigoPath) 
         ? { url: comprovanteAntigoUrl, path: comprovanteAntigoPath } 
         : null;
@@ -617,12 +594,10 @@ async function handleSaveEdit(e) {
     let novoArquivoSelecionado = false;
 
     try {
-        // 1. VERIFICA SE UM NOVO ARQUIVO FOI ENVIADO
         if (editFile && editFile.files.length > 0) {
             novoArquivoSelecionado = true;
             const file = editFile.files[0];
-            // 1a. Faz upload do novo arquivo
-            comprovanteData = await uploadFile(file);
+            comprovanteData = await uploadFile(file); // uploadFile já usa 'usuarios/'
         }
 
         const novosDados = {
@@ -632,12 +607,11 @@ async function handleSaveEdit(e) {
             descricao: editDescricaoInput.value,
             formaPagamento: editFormaPagamentoSelect.value,
             valor: parseCurrency(editValorInput.value),
-            comprovante: comprovanteData // Salva o comprovante (novo ou o antigo)
+            comprovante: comprovanteData 
         };
 
         if (novosDados.valor <= 0) throw new Error("O valor deve ser maior que zero.");
 
-        // 2. CALCULA AJUSTE DE SALDO
         const ajusteSaldo = await calcularAjusteSaldo(
             valorAntigo,
             novosDados.valor,
@@ -646,26 +620,24 @@ async function handleSaveEdit(e) {
         );
 
         if (ajusteSaldo < 0) {
+            // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
             const temSaldo = await verificarSaldoSuficiente(Math.abs(ajusteSaldo));
             if (!temSaldo) throw new Error("Saldo em Caixa insuficiente para esta alteração!");
         }
 
-        // 3. ATUALIZA O RTDB
-        // Remove do mês antigo
         await remove(ref(db, path));
-        // Adiciona ao mês novo (pode ser o mesmo ou um diferente)
+        
         const [newYear, newMonth] = novosDados.data.split('-');
-        const newPath = `dados/${userId}/despesas/${newYear}-${newMonth}/${id}`;
+        // v5.1: Caminho atualizado
+        const newPath = `usuarios/${userId}/despesas/${newYear}-${newMonth}/${id}`;
         await set(ref(db, newPath), novosDados);
 
-        // 4. ATUALIZA O SALDO
         if (ajusteSaldo !== 0) {
             await updateSaldoGlobal(ajusteSaldo);
         }
         
-        // 5. EXCLUI O ARQUIVO ANTIGO (se um novo foi enviado)
         if (novoArquivoSelecionado && comprovanteAntigoPath) {
-            await deleteFile(comprovanteAntigoPath);
+            await deleteFile(comprovanteAntigoPath); // deleteFile já usa 'usuarios/'
         }
 
         modalEdit.style.display = 'none';
@@ -674,7 +646,6 @@ async function handleSaveEdit(e) {
         console.error("Erro ao salvar edição:", error);
         alert(`Não foi possível salvar as alterações. Erro: ${error.message}`);
         
-        // Se o erro aconteceu DEPOIS do upload, exclui o novo arquivo órfão
         if (novoArquivoSelecionado && comprovanteData) {
             await deleteFile(comprovanteData.path);
         }
@@ -682,7 +653,6 @@ async function handleSaveEdit(e) {
 }
 
 // (Funções de cálculo de saldo, update de saldo e modais - Sem mudanças)
-
 async function calcularAjusteSaldo(valorAntigo, valorNovo, formaAntiga, formaNova) {
     const antigoAfeta = PAGAMENTO_AFETA_SALDO.includes(formaAntiga);
     const novoAfeta = PAGAMENTO_AFETA_SALDO.includes(formaNova);
@@ -698,9 +668,11 @@ async function calcularAjusteSaldo(valorAntigo, valorNovo, formaAntiga, formaNov
     return ajuste;
 }
 
+// v5.1: Caminho atualizado
 async function updateSaldoGlobal(valor) {
     if (valor === 0) return;
-    const saldoRef = ref(db, `dados/${userId}/saldo/global`);
+    // v5.1: Caminho atualizado
+    const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
     try {
         const snapshot = await get(saldoRef);
         let saldoAcumulado = snapshot.val()?.saldoAcumulado || 0;
@@ -717,7 +689,6 @@ function showModal(modalId, confirmFn) {
     const btnConfirm = document.getElementById('modal-btn-confirm');
     const btnCancel = document.getElementById('modal-btn-cancel');
     
-    // Remove listeners antigos clonando e substituindo
     const newBtnConfirm = btnConfirm.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);
     

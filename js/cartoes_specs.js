@@ -1,5 +1,5 @@
 // js/cartoes_specs.js
-// VERSÃO 4.1 (Corrigido: Bug de 'submit' fora do 'authReady')
+// VERSÃO 4.2 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
 import { 
     db, 
@@ -72,7 +72,7 @@ const btnEstornoCancel = document.getElementById('modal-estorno-btn-cancel');
 
 
 // ===============================================================
-// 1. INICIALIZAÇÃO (CORRIGIDA)
+// 1. INICIALIZAÇÃO (v4.1 - Lógica mantida)
 // ===============================================================
 document.addEventListener('authReady', async (e) => {
     userId = e.detail.userId;
@@ -94,58 +94,55 @@ document.addEventListener('authReady', async (e) => {
     await loadDynamicCardData(); // Espera os cartões carregarem
     loadAllData(); // Começa a ouvir os dados
 
-    // ===============================================================
-    // CORREÇÃO (v4.1): O listener do formulário principal VAI AQUI DENTRO
-    // ===============================================================
-    // A função 'handleFormSubmit' está definida mais abaixo
     form.addEventListener('submit', handleFormSubmit);
-    // ===============================================================
-
     formEdit.addEventListener('submit', handleSaveEdit);
     btnCancelEdit.addEventListener('click', () => modalEdit.style.display = 'none');
 });
 
 
 function limparListeners() {
-    activeListeners.forEach(l => off(l.ref, 'value', l.callback));
+    activeListeners.forEach(l => off(l.ref, l.eventType, l.callback));
     activeListeners = [];
 }
 
 function listenToPath(path, callback) {
     const dataRef = ref(db, path);
     const listenerCallback = onValue(dataRef, callback);
-    activeListeners.push({ ref: dataRef, callback: listenerCallback });
+    activeListeners.push({ ref: dataRef, callback: listenerCallback, eventType: 'value' });
 }
 
 // ===============================================================
-// 2. CARREGAMENTO DE DADOS (v4.0 - Sem mudanças)
+// 2. CARREGAMENTO DE DADOS (v4.2 - Caminhos atualizados)
 // ===============================================================
 
 function loadAllData() {
     limparListeners();
     if (!userId) return;
 
-    listenToPath(`dados/${userId}/cartoes_specs`, (snapshot) => {
+    // v4.2: Caminhos atualizados
+    listenToPath(`usuarios/${userId}/cartoes_specs`, (snapshot) => {
         allSpecs = snapshot.val() || {};
         renderUI();
     });
 
-    listenToPath(`dados/${userId}/pendencias`, (snapshot) => {
+    listenToPath(`usuarios/${userId}/pendencias`, (snapshot) => {
         allPendencias = snapshot.val() || {};
         renderUI();
     });
 }
 
+// v4.2: Caminho atualizado
 async function loadDynamicCardData() {
     if (!userId) return;
     
-    // Esta função vem do main.js (v3.3) e agora funciona
+    // getCartoesHtmlOptions() já busca de 'usuarios/' (via main.js v4.1)
     const cartoesHtml = await getCartoesHtmlOptions(); 
 
     if (cartaoSelect) cartaoSelect.innerHTML = cartoesHtml; 
     if (editCartaoSelect) editCartaoSelect.innerHTML = cartoesHtml; 
 
-    const configRef = ref(db, `dados/${userId}/cartoes/config`);
+    // v4.2: Caminho atualizado
+    const configRef = ref(db, `usuarios/${userId}/cartoes/config`);
     try {
         const snapshot = await get(configRef);
         cartaoConfigMap = {}; 
@@ -165,7 +162,7 @@ async function loadDynamicCardData() {
 }
 
 // ===============================================================
-// 3. RENDERIZAÇÃO DA UI (v4.0 - Sem mudanças)
+// 3. RENDERIZAÇÃO DA UI (v4.0 - Lógica mantida)
 // ===============================================================
 function renderUI() {
     if (!userId) return;
@@ -190,7 +187,6 @@ function renderParcelasDoMes() {
             return;
         }
         
-        // v4.1: Proteção contra dados corrompidos
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
              console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
              return;
@@ -234,7 +230,6 @@ function renderMasterList() {
     compras.forEach(compra => {
         if (compra.status === 'quitado_pagamento') return;
         
-        // v4.1: Proteção contra dados corrompidos
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
              console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
              return;
@@ -319,10 +314,9 @@ function renderMasterList() {
 }
 
 // ===============================================================
-// 4. LÓGICA DO FORMULÁRIO (CRIAR) (CORRIGIDO v4.1)
+// 4. LÓGICA DO FORMULÁRIO (CRIAR) (v4.2 - Caminho atualizado)
 // ===============================================================
 
-// Esta função agora é chamada pelo listener DENTRO do authReady
 async function handleFormSubmit(e) {
     e.preventDefault();
     if (!userId) return;
@@ -346,8 +340,6 @@ async function handleFormSubmit(e) {
         return;
     }
 
-    // --- LÓGICA DE VIRADA ---
-    // (Agora 'cartaoConfigMap' está garantido de estar carregado)
     const cartaoConfig = cartaoConfigMap[cartaoNome];
     if (!cartaoConfig) {
         alert("Erro: Configuração do cartão não encontrada. Tente recarregar a página.");
@@ -359,9 +351,9 @@ async function handleFormSubmit(e) {
     
     const mesPrimeiraParcela = calcularMesFatura(dataCompraObj, diaFechamento);
     const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
-    // --- FIM DA LÓGICA DE VIRADA ---
 
-    const path = `dados/${userId}/cartoes_specs`;
+    // v4.2: Caminho atualizado
+    const path = `usuarios/${userId}/cartoes_specs`;
     const newCompraRef = push(ref(db, path));
     
     await set(newCompraRef, {
@@ -381,7 +373,7 @@ async function handleFormSubmit(e) {
 }
 
 // ===============================================================
-// 5. HELPER (Funções de Cálculo) (v4.0 - Sem mudanças)
+// 5. HELPER (Funções de Cálculo) (v4.0 - Lógica mantida)
 // ===============================================================
 function calcularMesFatura(dataGasto, diaFechamento) {
     const dia = dataGasto.getDate();
@@ -398,7 +390,6 @@ function calcularMesFatura(dataGasto, diaFechamento) {
 function calcularDataInicioVirtual(compra) {
     if (!compra || !compra.dataInicio) return new Date(); 
 
-    // v4.1: Proteção contra dados corrompidos
     const [anoCompra, mesCompra] = compra.dataInicio.split('-');
     if (!anoCompra || !mesCompra) return new Date();
 
@@ -448,14 +439,17 @@ function calcularValorRestante(compra) {
 }
 
 // ===============================================================
-// 6. AÇÕES DA TABELA (v4.0 - Sem mudanças)
+// 6. AÇÕES DA TABELA (v4.2 - Caminhos atualizados)
 // ===============================================================
+
+// v4.2: Caminho atualizado
 function handleDeleteClick(e) {
     const tr = e.target.closest('tr');
     const masterId = tr.dataset.id; 
 
     const deleteFn = async () => {
-        await remove(ref(db, `dados/${userId}/cartoes_specs/${masterId}`));
+        // v4.2: Caminho atualizado
+        await remove(ref(db, `usuarios/${userId}/cartoes_specs/${masterId}`));
         hideModal('modal-confirm');
     };
 
@@ -463,6 +457,7 @@ function handleDeleteClick(e) {
     showModal('modal-confirm', deleteFn); 
 }
 
+// v4.2: Caminho atualizado
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
     
@@ -474,7 +469,8 @@ function handleEditClick(e) {
     const dataInicio = tr.dataset.dataInicio;
 
     formEdit.dataset.id = id;
-    formEdit.dataset.path = `dados/${userId}/cartoes_specs/${id}`;
+    // v4.2: Caminho atualizado
+    formEdit.dataset.path = `usuarios/${userId}/cartoes_specs/${id}`;
     
     editCartaoSelect.value = cartao; 
     editDescricaoInput.value = descricao;
@@ -490,7 +486,7 @@ async function handleSaveEdit(e) {
     if (!userId) return;
 
     const id = formEdit.dataset.id;
-    const path = formEdit.dataset.path;
+    const path = formEdit.dataset.path; // Já contém 'usuarios/'
     
     const novosDados = {
         cartao: editCartaoSelect.value, 
@@ -532,8 +528,9 @@ function handleQuitarClick(e) {
     modalQuitar.style.display = 'flex';
 }
 
+// v4.2: Caminhos atualizados
 async function executarQuitacao(compra, valorRestante) {
-    const pathCompra = `dados/${userId}/cartoes_specs/${compra.id}`;
+    const pathCompra = `usuarios/${userId}/cartoes_specs/${compra.id}`;
     await update(ref(db, pathCompra), { status: 'quitado' });
 
     const cartaoConfig = cartaoConfigMap[compra.cartao];
@@ -549,7 +546,8 @@ async function executarQuitacao(compra, valorRestante) {
     const mesPrimeiraParcela = calcularMesFatura(today, cartaoConfig.diaFechamento);
     const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
 
-    const path = `dados/${userId}/cartoes_specs`;
+    // v4.2: Caminho atualizado
+    const path = `usuarios/${userId}/cartoes_specs`;
     const newCompraRef = push(ref(db, path));
     
     await set(newCompraRef, {
@@ -583,14 +581,15 @@ function handleEstornoClick(e) {
     modalEstorno.style.display = 'flex';
 }
 
+// v4.2: Caminho atualizado
 async function executarEstorno(compra) {
-    const pathCompra = `dados/${userId}/cartoes_specs/${compra.id}`;
+    const pathCompra = `usuarios/${userId}/cartoes_specs/${compra.id}`;
     await update(ref(db, pathCompra), { status: 'estornado' });
     hideModal('modal-estorno-confirm');
 }
 
 // ===============================================================
-// 7. Funções Utilitárias de Data e Modal (v4.0 - Sem mudanças)
+// 7. Funções Utilitárias de Data e Modal (v4.0 - Lógica mantida)
 // ===============================================================
 function updateDataInput() { 
     const today = new Date();
