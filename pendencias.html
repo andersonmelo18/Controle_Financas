@@ -110,7 +110,8 @@
                         <option value="Pix">📱 Pix</option>
                         <option value="Dinheiro">💵 Dinheiro</option>
                         <option value="Outro">🧩 Outro</option>
-                        </select>
+                        <!-- Cartões são adicionados por JS -->
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="pendencia-parcelas">Nº de Parcelas</label>
@@ -142,6 +143,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbody-eu-devo">
+                            <!-- JS Preenche aqui -->
                         </tbody>
                     </table>
                 </div>
@@ -164,6 +166,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbody-me-devem">
+                            <!-- JS Preenche aqui -->
                         </tbody>
                     </table>
                 </div>
@@ -172,8 +175,9 @@
                 </h3>
                 </div>
         </section>
-        </main>
+    </main>
 
+    <!-- Modal de Confirmação Padrão (Excluir) -->
     <div id="modal-confirm" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -189,6 +193,7 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmação de Parcela (Excluir) -->
     <div id="modal-parcela-confirm" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -205,6 +210,7 @@
         </div>
     </div>
 
+    <!-- Modal de Edição -->
     <div class="modal-container" id="modal-edit-pendencia" style="display: none;">
         <div class="modal-content">
             <h2>Editar Pendência</h2>
@@ -243,7 +249,8 @@
                         <option value="Pix">📱 Pix</option>
                         <option value="Dinheiro">💵 Dinheiro</option>
                         <option value="Outro">🧩 Outro</option>
-                        </select>
+                        <!-- Cartões são adicionados por JS -->
+                    </select>
                 </div>
 
                 <div class="modal-buttons">
@@ -254,30 +261,30 @@
         </div>
     </div>
     
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
-
+    <!-- =============================================================== -->
+    <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
+    <!-- =============================================================== -->
+    
+    <!-- REMOVIDOS os 3 scripts 'compat' antigos -->
+    
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/pendencias.js"></script>
     
-    <!-- =============================================================== -->
-<!-- 2. NOVO: MODAL DE CONFIRMAÇÃO DE LOGOUT (Adicionado v4.1) -->
-<!-- =============================================================== -->
-<div id="modal-logout-confirm" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Confirmar Saída</h3>
-        </div>
-        <div class="modal-body">
-            <p>Tem certeza que deseja sair da sua conta?</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-secondary" id="modal-logout-btn-cancel">Cancelar</button>
-            <button class="btn-danger" id="modal-logout-btn-confirm">Sair</button>
+    <!-- Modal de Logout (Copiado do index.html) -->
+    <div id="modal-logout-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirmar Saída</h3>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja sair da sua conta?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-logout-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-logout-btn-confirm">Sair</button>
+            </div>
         </div>
     </div>
-</div>
 </body>
 </html>
