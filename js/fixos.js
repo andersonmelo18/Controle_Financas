@@ -1,5 +1,5 @@
 // js/fixos.js
-// VERSÃO 3.1 (Com Gráfico Anual de Comparação)
+// VERSÃO 3.2 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
 import { 
     db, 
@@ -108,27 +108,21 @@ document.addEventListener('authReady', (e) => {
 });
 
 // ===============================================================
-// FUNÇÕES DO GRÁFICO ANUAL (NOVAS)
+// FUNÇÕES DO GRÁFICO ANUAL (v3.2 - Caminho atualizado)
 // ===============================================================
 
-/**
- * 1. Gera uma cor HSL distinta baseada no índice.
- */
 function generateHslColor(index) {
-    // Usa a fórmula de golden ratio conjugado para espalhar as cores (melhor distinção)
     const hue = (index * 137.508) % 360; 
     return `hsl(${hue}, 70%, 50%)`;
 }
 
-/**
- * 2. Busca os dados de todos os meses do ano atual.
- */
 async function loadAnnualHistory() {
     if (!userId || !annualChartEl) return;
     
     const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
     const fetchPromises = months.map(month => {
-        const path = `dados/${userId}/fixos/${currentYear}-${month}`;
+        // v3.2: Caminho atualizado
+        const path = `usuarios/${userId}/fixos/${currentYear}-${month}`;
         return get(ref(db, path));
     });
 
@@ -141,9 +135,6 @@ async function loadAnnualHistory() {
     }
 }
 
-/**
- * 3. Processa os snapshots do Firebase para o formato do Chart.js.
- */
 function processAnnualData(snapshots) {
     const expensesHistory = {};
     const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -153,10 +144,8 @@ function processAnnualData(snapshots) {
         if (snapshot.exists()) {
             snapshot.forEach(child => {
                 const despesa = child.val();
-                // Normaliza a descrição para garantir que "Energia " e "Energia" sejam o mesmo
                 const key = despesa.descricao.trim(); 
                 
-                // Inicializa o array se a despesa for nova
                 if (!expensesHistory[key]) {
                     expensesHistory[key] = {
                         data: new Array(12).fill(0),
@@ -164,13 +153,11 @@ function processAnnualData(snapshots) {
                     }; 
                 }
                 
-                // Adiciona o valor ao mês correto
                 expensesHistory[key].data[monthIndex] += despesa.valor;
             });
         }
     });
 
-    // Converte o objeto de histórico para o formato de dataset do Chart.js
     const datasets = Object.keys(expensesHistory).map((description) => {
         const item = expensesHistory[description];
         const color = generateHslColor(item.index); 
@@ -178,9 +165,9 @@ function processAnnualData(snapshots) {
             label: description,
             data: item.data,
             borderColor: color,
-            backgroundColor: color + '33', // Cor com transparência
+            backgroundColor: color + '33', 
             fill: false,
-            tension: 0.2 // Curvatura da linha
+            tension: 0.2 
         };
     });
     
@@ -190,16 +177,12 @@ function processAnnualData(snapshots) {
     };
 }
 
-/**
- * 4. Renderiza o gráfico anual.
- */
 function renderAnnualChart(data) {
     if (!annualChartEl || typeof Chart === 'undefined') {
         console.warn("Elemento do gráfico ou biblioteca Chart.js não encontrado.");
         return;
     }
 
-    // Destrói a instância anterior, se existir, para evitar vazamento de memória
     if (annualChartInstance) {
         annualChartInstance.destroy();
     }
@@ -245,16 +228,12 @@ function renderAnnualChart(data) {
 
 
 // ===============================================================
-// 3. NOVA FUNÇÃO PARA CARREGAR OS CARTÕES (MANTIDA)
+// 3. CARREGAR CARTÕES (v3.2 - Caminho atualizado)
 // ===============================================================
-/**
- * Carrega os cartões dinâmicos do Firebase e os insere nos selects
- * e no mapa de ícones.
- */
 async function loadDynamicCardData() {
     if (!userId) return;
 
-    // 1. Busca os <option> dos cartões (Ex: "<option value='NuBank'>🟣 NuBank</option>")
+    // 1. getCartoesHtmlOptions() já busca de 'usuarios/' (via main.js v4.1)
     const cartoesHtml = await getCartoesHtmlOptions();
 
     // 2. Insere as opções nos dois selects da página
@@ -265,14 +244,13 @@ async function loadDynamicCardData() {
         editFormaPagamentoSelect.innerHTML += cartoesHtml;
     }
 
-    // 3. Atualiza o mapa de ÍCONES para a tabela (busca a config)
-    const configRef = ref(db, `dados/${userId}/cartoes/config`);
+    // 3. v3.2: Caminho atualizado
+    const configRef = ref(db, `usuarios/${userId}/cartoes/config`);
     try {
         const snapshot = await get(configRef);
         if (snapshot.exists()) {
             snapshot.forEach(child => {
                 const cartao = child.val();
-                // Adiciona ao mapa de ícones: "NuBank": "🟣"
                 if (cartao.nome && cartao.icone) {
                     pagamentoIcones[cartao.nome] = cartao.icone;
                 }
@@ -292,7 +270,7 @@ function updateAvisoMes() {
     vencimentoInput.value = `${currentYear}-${currentMonth}-10`;
 }
 
-// ---- LÓGICA DO FORMULÁRIO (CRIAR) ----
+// ---- LÓGICA DO FORMULÁRIO (CRIAR) (v3.2 - Caminho atualizado) ----
 recorrenciaSelect.addEventListener('change', () => {
     parcelasGroup.style.display = (recorrenciaSelect.value === 'parcelada') ? 'flex' : 'none';
 });
@@ -322,7 +300,8 @@ form.addEventListener('submit', async (e) => {
     const [startYear, startMonth, startDay] = data.vencimento.split('-').map(Number);
     
     if (data.recorrencia === 'mensal') {
-        const regraRef = ref(db, `dados/${userId}/fixos/regras/${data.grupoId}`);
+        // v3.2: Caminho atualizado
+        const regraRef = ref(db, `usuarios/${userId}/fixos/regras/${data.grupoId}`);
         await set(regraRef, data);
         await salvarInstanciaFixo(data, startYear, startMonth.toString().padStart(2, '0'), startDay, 1, 'mensal');
         
@@ -345,8 +324,9 @@ form.addEventListener('submit', async (e) => {
     vencimentoInput.value = `${currentYear}-${currentMonth}-10`;
 });
 
+// v3.2: Caminho atualizado
 async function salvarInstanciaFixo(data, pYear, pMonth, pDay, parcelaAtual, parcelaTotal) {
-    const path = `dados/${userId}/fixos/${pYear}-${pMonth}`;
+    const path = `usuarios/${userId}/fixos/${pYear}-${pMonth}`;
     const newRef = push(ref(db, path));
     
     const diaString = pDay.toString().padStart(2, '0');
@@ -367,7 +347,7 @@ async function salvarInstanciaFixo(data, pYear, pMonth, pDay, parcelaAtual, parc
 }
 
 
-// ---- CARREGAR DESPESAS DO MÊS ----
+// ---- CARREGAR DESPESAS DO MÊS (v3.2 - Caminho atualizado) ----
 async function loadDespesasFixas() {
     if (!userId) return;
 
@@ -381,7 +361,8 @@ async function loadDespesasFixas() {
         console.error("Erro ao aplicar regras mensais:", error);
     }
     
-    const path = `dados/${userId}/fixos/${currentYear}-${currentMonth}`;
+    // v3.2: Caminho atualizado
+    const path = `usuarios/${userId}/fixos/${currentYear}-${currentMonth}`;
     const dataRef = ref(db, path);
     
     const callback = (snapshot) => {
@@ -404,7 +385,6 @@ async function loadDespesasFixas() {
         totalPagoEl.textContent = formatCurrency(totalPago);
         totalPendenteEl.textContent = formatCurrency(totalPendente);
 
-        // Chama a atualização do histórico anual após renderizar a tabela
         loadAnnualHistory(); 
     };
     
@@ -412,12 +392,13 @@ async function loadDespesasFixas() {
     activeListener = { ref: dataRef, callback: callback };
 }
 
+// v3.2: Caminhos atualizados
 async function aplicarRegrasMensais() {
-    const regrasRef = ref(db, `dados/${userId}/fixos/regras`);
+    const regrasRef = ref(db, `usuarios/${userId}/fixos/regras`);
     const regrasSnapshot = await get(regrasRef);
     if (!regrasSnapshot.exists()) return;
     
-    const mesAtualPath = `dados/${userId}/fixos/${currentYear}-${currentMonth}`;
+    const mesAtualPath = `usuarios/${userId}/fixos/${currentYear}-${currentMonth}`;
     const mesAtualSnapshot = await get(ref(db, mesAtualPath));
     const despesasMesAtual = mesAtualSnapshot.val() || {};
 
@@ -428,7 +409,8 @@ async function aplicarRegrasMensais() {
         if (!regra) return; 
 
         const existeNoMes = Object.values(despesasMesAtual).some(d => d.grupoId === regra.grupoId);
-        const excecaoPath = `dados/${userId}/fixos/regras/${regra.grupoId}/excecoes/${currentYear}-${currentMonth}`;
+        // v3.2: Caminho atualizado
+        const excecaoPath = `usuarios/${userId}/fixos/regras/${regra.grupoId}/excecoes/${currentYear}-${currentMonth}`;
         
         if (!existeNoMes) {
             promessasDeAplicacao.push(
@@ -455,7 +437,7 @@ async function aplicarRegrasMensais() {
     await Promise.all(promessasDeAplicacao);
 }
 
-// ---- RENDERROW ----
+// ---- RENDERROW (v3.1 - Lógica mantida) ----
 function renderRow(despesa) {
     if (!despesa || !despesa.vencimento) return; 
 
@@ -522,7 +504,7 @@ function renderRow(despesa) {
     tr.querySelector('.btn-edit').addEventListener('click', handleEditClick);
 }
 
-// ---- FUNÇÕES DE AÇÃO ----
+// ---- FUNÇÕES DE AÇÃO (v3.2 - Caminhos atualizados) ----
 
 async function handleCheckboxChange(e) {
     const tr = e.target.closest('tr');
@@ -533,6 +515,7 @@ async function handleCheckboxChange(e) {
     const vencimento = tr.dataset.vencimento; 
     
     if (newStatus === 'pago' && PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
+        // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
         const temSaldo = await verificarSaldoSuficiente(valor);
         if (!temSaldo) {
             alert("❌ Saldo em Caixa insuficiente para pagar esta conta!");
@@ -543,7 +526,8 @@ async function handleCheckboxChange(e) {
 
     try {
         const [entryYear, entryMonth] = vencimento.split('-');
-        const path = `dados/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
+        // v3.2: Caminho atualizado
+        const path = `usuarios/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
         
         await update(ref(db, path), { status: newStatus }); 
         tr.dataset.status = newStatus;
@@ -570,7 +554,8 @@ function handleDeleteClick(e) {
     const vencimento = tr.dataset.vencimento; 
     
     const [entryYear, entryMonth] = vencimento.split('-');
-    const itemPath = `dados/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
+    // v3.2: Caminho atualizado
+    const itemPath = `usuarios/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
 
     const deleteFn = async () => {
         const btnApenasEsta = document.getElementById('modal-parcela-btn-apenas-esta');
@@ -583,7 +568,8 @@ function handleDeleteClick(e) {
         await remove(ref(db, itemPath));
         
         if(recorrencia === 'mensal') {
-            const excecaoPath = `dados/${userId}/fixos/regras/${grupoId}/excecoes/${entryYear}-${entryMonth}`;
+            // v3.2: Caminho atualizado
+            const excecaoPath = `usuarios/${userId}/fixos/regras/${grupoId}/excecoes/${entryYear}-${entryMonth}`;
             await set(ref(db, excecaoPath), true);
         }
         
@@ -602,7 +588,8 @@ function handleDeleteClick(e) {
             await remove(ref(db, itemPath)); 
 
             if (recorrencia === 'mensal') {
-                await remove(ref(db, `dados/${userId}/fixos/regras/${grupoId}`));
+                // v3.2: Caminho atualizado
+                await remove(ref(db, `usuarios/${userId}/fixos/regras/${grupoId}`));
             }
             
             const [startYear, startMonth] = vencimento.split('-').map(Number);
@@ -614,7 +601,8 @@ function handleDeleteClick(e) {
                 const futuraYear = dataBase.getFullYear();
                 const futuraMonth = (dataBase.getMonth() + 1).toString().padStart(2, '0');
                 
-                const pathBusca = `dados/${userId}/fixos/${futuraYear}-${futuraMonth}`;
+                // v3.2: Caminho atualizado
+                const pathBusca = `usuarios/${userId}/fixos/${futuraYear}-${futuraMonth}`;
                 
                 const snapshot = await get(ref(db, pathBusca));
                 if (snapshot.exists()) {
@@ -641,21 +629,24 @@ function handleDeleteClick(e) {
     };
     
     if (recorrencia === 'unica' || recorrencia === undefined) {
-        // Usa o modal 'modal-confirm' para exclusão simples 
-        if(confirm("Tem certeza que deseja excluir esta despesa?")) {
-            (async () => {
-                if (status === 'pago' && PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
-                    await updateSaldoGlobal(valor); 
-                }
-                await remove(ref(db, itemPath));
-            })();
+        // v3.2: Corrigido para usar o modal 'modal-confirm' (estava usando 'confirm()' nativo)
+        const modal = document.getElementById('modal-confirm');
+        const modalMessage = document.getElementById('modal-message');
+        if(modal && modalMessage) {
+            modalMessage.textContent = 'Tem certeza que deseja excluir esta despesa?';
+            showModal('modal-confirm', deleteFn); // Mostra o modal de confirmação simples
+        } else {
+             // Fallback caso o modal-confirm não esteja no HTML (embora devesse estar)
+             if(confirm("Tem certeza que deseja excluir esta despesa?")) {
+                deleteFn();
+             }
         }
     } else {
         showModal('modal-parcela-confirm', deleteFn, deleteAllFn);
     }
 }
 
-// ---- FUNÇÕES DE EDIÇÃO ----
+// ---- FUNÇÕES DE EDIÇÃO (v3.2 - Caminhos atualizados) ----
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
     
@@ -669,7 +660,8 @@ function handleEditClick(e) {
 
     const [entryYear, entryMonth] = vencimento.split('-');
     formEdit.dataset.id = id;
-    formEdit.dataset.entryPath = `dados/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
+    // v3.2: Caminho atualizado
+    formEdit.dataset.entryPath = `usuarios/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
     formEdit.dataset.valorAntigo = valor;
     formEdit.dataset.formaPagamentoAntiga = formaPagamento;
     formEdit.dataset.statusAntigo = status;
@@ -688,7 +680,7 @@ async function handleSaveEdit(e) {
     if (!userId) return;
 
     const id = formEdit.dataset.id;
-    const path = formEdit.dataset.entryPath;
+    const path = formEdit.dataset.entryPath; // Já contém 'usuarios/'
     const valorAntigo = parseFloat(formEdit.dataset.valorAntigo);
     const formaPagamentoAntiga = formEdit.dataset.formaPagamentoAntiga;
     const statusAntigo = formEdit.dataset.statusAntigo; 
@@ -715,6 +707,7 @@ async function handleSaveEdit(e) {
         );
 
         if (ajusteSaldo < 0) { 
+            // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
             const temSaldo = await verificarSaldoSuficiente(Math.abs(ajusteSaldo));
             if (!temSaldo) {
                 alert("❌ Saldo em Caixa insuficiente para esta alteração!");
@@ -722,7 +715,6 @@ async function handleSaveEdit(e) {
             }
         }
 
-        // Atualiza os dados no mesmo nó
         await update(ref(db, path), novosDados);
         
         if (ajusteSaldo !== 0) {
@@ -756,14 +748,14 @@ async function calcularAjusteSaldo(valorAntigo, valorNovo, formaAntiga, formaNov
     else if (!antigoAfeta && novoAfeta) {
         ajuste = -valorNovo;
     }
-    // else (!antigoAfeta && !novoAfeta) -> Ajuste = 0
-
     return ajuste;
 }
 
-// ---- Funções Utilitárias ----
+// ---- Funções Utilitárias (v3.2 - Caminho atualizado) ----
+// v3.2: Caminho atualizado
 async function updateSaldoGlobal(valor) {
-    const saldoRef = ref(db, `dados/${userId}/saldo/global`);
+    if (valor === 0) return;
+    const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
     try {
         const snapshot = await get(saldoRef);
         let saldoAcumulado = snapshot.val()?.saldoAcumulado || 0;
@@ -774,32 +766,46 @@ async function updateSaldoGlobal(valor) {
     }
 }
 
-// ---- FUNÇÃO DO MODAL (Exclusão) ----
+// ---- FUNÇÃO DO MODAL (Exclusão) (v3.2 - Corrigida para usar modal-confirm) ----
 function showModal(modalId, confirmFn, deleteAllFn) {
     const modal = document.getElementById(modalId);
+    if (!modal) return;
     modal.style.display = 'flex';
 
-    const oldBtnApenasEsta = document.getElementById('modal-parcela-btn-apenas-esta');
-    const oldBtnTodas = document.getElementById('modal-parcela-btn-todas');
-    const oldBtnCancel = document.getElementById('modal-parcela-btn-cancel');
+    if (modalId === 'modal-confirm') {
+        const btnConfirm = document.getElementById('modal-btn-confirm');
+        const btnCancel = document.getElementById('modal-btn-cancel');
+        const newBtnConfirm = btnConfirm.cloneNode(true);
+        const newBtnCancel = btnCancel.cloneNode(true);
+        
+        newBtnConfirm.onclick = confirmFn;
+        newBtnCancel.onclick = () => hideModal(modalId);
+        
+        btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+        btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
 
-    // Clonar para remover listeners antigos
-    const newBtnApenasEsta = oldBtnApenasEsta.cloneNode(true);
-    const newBtnTodas = oldBtnTodas.cloneNode(true);
-    const newBtnCancel = oldBtnCancel.cloneNode(true);
+    } else if (modalId === 'modal-parcela-confirm') {
+        const oldBtnApenasEsta = document.getElementById('modal-parcela-btn-apenas-esta');
+        const oldBtnTodas = document.getElementById('modal-parcela-btn-todas');
+        const oldBtnCancel = document.getElementById('modal-parcela-btn-cancel');
 
-    newBtnApenasEsta.disabled = false;
-    newBtnApenasEsta.textContent = "Excluir Apenas Este Mês";
-    newBtnTodas.disabled = false;
-    newBtnTodas.textContent = "Excluir Todas as Futuras";
+        const newBtnApenasEsta = oldBtnApenasEsta.cloneNode(true);
+        const newBtnTodas = oldBtnTodas.cloneNode(true);
+        const newBtnCancel = oldBtnCancel.cloneNode(true);
 
-    newBtnApenasEsta.addEventListener('click', confirmFn);
-    newBtnTodas.addEventListener('click', deleteAllFn);
-    newBtnCancel.addEventListener('click', () => hideModal(modalId));
+        newBtnApenasEsta.disabled = false;
+        newBtnApenasEsta.textContent = "Excluir Apenas Este Mês";
+        newBtnTodas.disabled = false;
+        newBtnTodas.textContent = "Excluir Todas as Futuras";
 
-    oldBtnApenasEsta.replaceWith(newBtnApenasEsta);
-    oldBtnTodas.replaceWith(newBtnTodas);
-    oldBtnCancel.replaceWith(newBtnCancel);
+        newBtnApenasEsta.addEventListener('click', confirmFn);
+        newBtnTodas.addEventListener('click', deleteAllFn);
+        newBtnCancel.addEventListener('click', () => hideModal(modalId));
+
+        oldBtnApenasEsta.replaceWith(newBtnApenasEsta);
+        oldBtnTodas.replaceWith(newBtnTodas);
+        oldBtnCancel.replaceWith(newBtnCancel);
+    }
 }
 
 function hideModal(modalId) {

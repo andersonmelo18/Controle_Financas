@@ -1,5 +1,5 @@
 // js/entradas.js
-// VERSÃO 5.1 (Com Upload de Comprovantes para o Firebase Storage)
+// VERSÃO 5.2 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
 import { 
     db, 
@@ -209,20 +209,16 @@ function updateDataInput() {
 }
 
 // ===============================================================
-// 2. NOVAS FUNÇÕES DE UPLOAD (v5.1)
+// 2. NOVAS FUNÇÕES DE UPLOAD (v5.2 - Caminho atualizado)
 // ===============================================================
 
-/**
- * Faz o upload de um arquivo para o Firebase Storage.
- * @param {File} file O arquivo do input
- * @returns {Promise<object>} Um objeto com a URL e o Path do arquivo.
- */
 async function uploadFile(file) {
     if (!userId) throw new Error("Usuário não autenticado.");
     
     const timestamp = Date.now();
     const uniqueFileName = `${timestamp}-${file.name}`;
-    const storagePath = `dados/${userId}/comprovantes/${uniqueFileName}`;
+    // v5.2: Caminho atualizado
+    const storagePath = `usuarios/${userId}/comprovantes/${uniqueFileName}`;
     
     const fileRef = storageRef(storage, storagePath);
     await uploadBytes(fileRef, file);
@@ -234,10 +230,6 @@ async function uploadFile(file) {
     };
 }
 
-/**
- * Exclui um arquivo do Firebase Storage.
- * @param {string} path O caminho completo do arquivo no Storage.
- */
 async function deleteFile(path) {
     if (!path) return;
     
@@ -252,13 +244,14 @@ async function deleteFile(path) {
 }
 
 // ===============================================================
-// 3. LÓGICA DE DADOS (Load & Render) - (v5.1 - Modificado)
+// 3. LÓGICA DE DADOS (Load & Render) - (v5.2 - Caminho atualizado)
 // ===============================================================
 function loadEntradas() {
     if (!userId) return;
     if (activeListener) off(activeListener.ref, 'value', activeListener.callback);
     
-    const path = `dados/${userId}/entradas/${currentYear}-${currentMonth}`;
+    // v5.2: Caminho atualizado
+    const path = `usuarios/${userId}/entradas/${currentYear}-${currentMonth}`;
     const dataRef = ref(db, path);
     
     const callback = (snapshot) => {
@@ -342,7 +335,7 @@ function renderTabela() {
 }
 
 /**
- * Renderiza a linha (TR) (v5.1 - Modificado)
+ * Renderiza a linha (TR) (v5.1 - Lógica mantida)
  */
 function renderRow(entrada) {
     if (!entrada.data) return;
@@ -397,7 +390,7 @@ function renderRow(entrada) {
 }
 
 // ===============================================================
-// 4. GRÁFICOS (v5.0 - Sem mudanças)
+// 4. GRÁFICOS (v5.0 - Lógica mantida)
 // ===============================================================
 function renderGraficoSemanal() {
     if (!filtroSemana || !canvasGraficoSemanal) return;
@@ -546,7 +539,7 @@ function renderGraficoEntradas(entradasPorDia) {
 }
 
 // ===============================================================
-// 5. FUNÇÕES DE AÇÃO (v5.1 - Modificado)
+// 5. FUNÇÕES DE AÇÃO (v5.2 - Caminhos atualizados)
 // ===============================================================
 
 async function handleFormSubmit(e) {
@@ -559,10 +552,9 @@ async function handleFormSubmit(e) {
     let comprovanteData = null;
 
     try {
-        // 1. FAZ O UPLOAD PRIMEIRO
         if (comprovanteInput.files.length > 0) {
             const file = comprovanteInput.files[0];
-            comprovanteData = await uploadFile(file);
+            comprovanteData = await uploadFile(file); // uploadFile já usa 'usuarios/'
         }
 
         const data = {
@@ -572,17 +564,16 @@ async function handleFormSubmit(e) {
             valor: parseCurrency(valorInput.value),
             km: parseFloat(kmInput.value) || 0,
             horas: parseInputParaMinutos(horasInput.value),
-            comprovante: comprovanteData // Salva {url, path} ou null
+            comprovante: comprovanteData 
         };
 
         if (data.valor <= 0) throw new Error("Valor deve ser maior que zero.");
         
-        // 2. SALVA NO RTDB
         const [entryYear, entryMonth] = data.data.split('-');
-        const newRef = push(ref(db, `dados/${userId}/entradas/${entryYear}-${entryMonth}`));
+        // v5.2: Caminho atualizado
+        const newRef = push(ref(db, `usuarios/${userId}/entradas/${entryYear}-${entryMonth}`));
         await set(newRef, { ...data, id: newRef.key });
         
-        // 3. ATUALIZA O SALDO
         await updateSaldoGlobal(data.valor); 
         
         form.reset();
@@ -592,7 +583,6 @@ async function handleFormSubmit(e) {
         console.error(error); 
         alert("Erro ao salvar: " + error.message);
         
-        // 4. Se o upload foi feito mas o RTDB falhou, exclui o arquivo órfão
         if (comprovanteData && comprovanteData.path) {
             console.warn("Revertendo upload do arquivo órfão...");
             await deleteFile(comprovanteData.path);
@@ -612,19 +602,19 @@ function handleDuplicateClick(e) {
     valorInput.value = formatCurrency(parseFloat(tr.dataset.valor));
     kmInput.value = tr.dataset.km;
     horasInput.value = (parseInt(tr.dataset.horas)/60).toFixed(2);
-    comprovanteInput.value = ''; // Limpa o comprovante
+    comprovanteInput.value = ''; 
     descricaoInput.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// v5.1: Modificado para excluir arquivo do Storage
+// v5.2: Caminho atualizado
 function handleDeleteClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
     const id = tr.dataset.id;
     const valor = parseFloat(tr.dataset.valor);
     const data = tr.dataset.data;
-    const comprovantePath = tr.dataset.comprovantePath; // Pega o path
+    const comprovantePath = tr.dataset.comprovantePath; 
     const [entryYear, entryMonth] = data.split('-');
     
     modalMessage.textContent = 'Excluir esta entrada?';
@@ -632,23 +622,22 @@ function handleDeleteClick(e) {
         try {
             await updateSaldoGlobal(-valor);
             
-            // 1. Exclui o arquivo do Storage (se existir)
             if (comprovantePath) {
-                await deleteFile(comprovantePath);
+                await deleteFile(comprovantePath); // deleteFile já usa 'usuarios/'
             }
             
-            // 2. Exclui o registro do RTDB
-            await remove(ref(db, `dados/${userId}/entradas/${entryYear}-${entryMonth}/${id}`));
+            // v5.2: Caminho atualizado
+            await remove(ref(db, `usuarios/${userId}/entradas/${entryYear}-${entryMonth}/${id}`));
             
             hideModal('modal-confirm');
         } catch (error) { 
             console.error(error); 
-            loadEntradas(); // Recarrega para garantir consistência
+            loadEntradas(); 
         }
     });
 }
 
-// v5.1: Modificado para lidar com comprovantes
+// v5.2: Caminho atualizado
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -660,7 +649,8 @@ function handleEditClick(e) {
     const comprovantePath = tr.dataset.comprovantePath;
     
     formEdit.dataset.id = id;
-    formEdit.dataset.entryPath = `dados/${userId}/entradas/${entryYear}-${entryMonth}/${id}`;
+    // v5.2: Caminho atualizado
+    formEdit.dataset.entryPath = `usuarios/${userId}/entradas/${entryYear}-${entryMonth}/${id}`;
     formEdit.dataset.valorAntigo = tr.dataset.valor;
     formEdit.dataset.comprovanteAntigoUrl = comprovanteUrl;
     formEdit.dataset.comprovanteAntigoPath = comprovantePath;
@@ -682,13 +672,13 @@ function handleEditClick(e) {
     modalEdit.style.display = 'flex';
 }
 
-// v5.1: Modificado para lidar com upload/exclusão de comprovantes
+// v5.2: Caminho atualizado
 async function handleSaveEdit(e) {
     e.preventDefault();
     if (!userId) return;
     
     const id = formEdit.dataset.id;
-    const path = formEdit.dataset.entryPath;
+    const path = formEdit.dataset.entryPath; // Já contém 'usuarios/'
     const valorAntigo = parseFloat(formEdit.dataset.valorAntigo);
     const comprovanteAntigoUrl = formEdit.dataset.comprovanteAntigoUrl;
     const comprovanteAntigoPath = formEdit.dataset.comprovanteAntigoPath;
@@ -704,7 +694,7 @@ async function handleSaveEdit(e) {
         if (editFile && editFile.files.length > 0) {
             novoArquivoSelecionado = true;
             const file = editFile.files[0];
-            comprovanteData = await uploadFile(file);
+            comprovanteData = await uploadFile(file); // uploadFile já usa 'usuarios/'
         }
 
         const novosDados = {
@@ -720,6 +710,7 @@ async function handleSaveEdit(e) {
 
         const ajuste = novosDados.valor - valorAntigo;
         if (ajuste < 0) {
+             // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
             if (!(await verificarSaldoSuficiente(Math.abs(ajuste)))) {
                 throw new Error("Saldo insuficiente para esta alteração!");
             }
@@ -727,12 +718,13 @@ async function handleSaveEdit(e) {
         
         await remove(ref(db, path));
         const [ny, nm] = novosDados.data.split('-');
-        await set(ref(db, `dados/${userId}/entradas/${ny}-${nm}/${id}`), novosDados);
+        // v5.2: Caminho atualizado
+        await set(ref(db, `usuarios/${userId}/entradas/${ny}-${nm}/${id}`), novosDados);
         
         if (ajuste !== 0) await updateSaldoGlobal(ajuste);
         
         if (novoArquivoSelecionado && comprovanteAntigoPath) {
-            await deleteFile(comprovanteAntigoPath);
+            await deleteFile(comprovanteAntigoPath); // deleteFile já usa 'usuarios/'
         }
         
         modalEdit.style.display = 'none';
@@ -747,7 +739,7 @@ async function handleSaveEdit(e) {
     }
 }
 
-// (Funções de utilidade - Sem mudanças)
+// (Funções de utilidade - Lógica mantida)
 function parseInputParaMinutos(str) {
     if (!str) return 0;
     if (str.includes(':')) {
@@ -763,9 +755,11 @@ function formatHoras(min) {
     return `${h}h ${m.toString().padStart(2,'0')}m`;
 }
 
+// v5.2: Caminho atualizado
 async function updateSaldoGlobal(valor) {
     if (valor === 0) return;
-    const sRef = ref(db, `dados/${userId}/saldo/global`);
+    // v5.2: Caminho atualizado
+    const sRef = ref(db, `usuarios/${userId}/saldo/global`);
     const snap = await get(sRef);
     let atual = snap.val()?.saldoAcumulado || 0;
     await set(sRef, { saldoAcumulado: atual + valor });

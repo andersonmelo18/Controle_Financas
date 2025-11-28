@@ -1,5 +1,5 @@
 // js/investimentos.js
-// VERSÃO 3.4 (Com Gráfico de Evolução e Alertas de Vencimento)
+// VERSÃO 3.5 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
 import { 
     db, 
@@ -24,14 +24,12 @@ import {
 
 // ---- Variáveis Globais ----
 let userId = null;
-let cdiBaseRate = 0.1125; // Padrão 11.25%
+let cdiBaseRate = 0.1125; 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
 
-// ===============================================================
-// 1. VARIÁVEIS DO GRÁFICO
-// ===============================================================
-let graficoDivisao = null; // Armazena a instância do gráfico de pizza
-let graficoEvolucao = null; // Armazena a instância do gráfico de linha
+// ---- Variáveis do Gráfico ----
+let graficoDivisao = null; 
+let graficoEvolucao = null; 
 
 // ---- Mapas de Ícones e Cores ----
 const bankIcons = {
@@ -41,12 +39,11 @@ const bankIcons = {
 const tipoIcons = {
     'Renda Fixa': '💰', 'Renda Variável': '📊', 'Cripto': '🪙', 'Fundos': '👥'
 };
-
 const CHART_COLORS = {
-    'Renda Fixa': 'rgba(118, 193, 107, 0.7)', // Verde
-    'Renda Variável': 'rgba(75, 137, 218, 0.7)', // Azul
-    'Cripto': 'rgba(240, 185, 11, 0.7)', // Amarelo
-    'Fundos': 'rgba(168, 113, 221, 0.7)' // Roxo
+    'Renda Fixa': 'rgba(118, 193, 107, 0.7)', 
+    'Renda Variável': 'rgba(75, 137, 218, 0.7)',
+    'Cripto': 'rgba(240, 185, 11, 0.7)', 
+    'Fundos': 'rgba(168, 113, 221, 0.7)' 
 };
 const CHART_BORDER_COLORS = {
     'Renda Fixa': 'rgb(118, 193, 107)',
@@ -54,8 +51,6 @@ const CHART_BORDER_COLORS = {
     'Cripto': 'rgb(240, 185, 11)',
     'Fundos': 'rgb(168, 113, 221)'
 };
-// ===============================================================
-
 
 // ---- Elementos DOM (Formulário Principal) ----
 const form = document.getElementById('form-movimentacao');
@@ -89,14 +84,12 @@ const btnSaveCdiBase = document.getElementById('btn-save-cdi-base');
 // ---- Elementos DOM (Modais) ----
 const modalEditRentabilidade = document.getElementById('modal-edit-rentabilidade');
 const modalCdiInput = document.getElementById('modal-input-cdi');
-
 const modalResgateRapido = document.getElementById('modal-resgate-rapido');
 const formResgateRapido = document.getElementById('form-resgate-rapido');
 const resgateInfoEl = document.getElementById('resgate-info');
 const resgateValorDisponivelEl = document.getElementById('resgate-valor-disponivel');
 const resgateValorInput = document.getElementById('resgate-valor');
 const resgateDataInput = document.getElementById('resgate-data');
-
 const modalUpdateManual = document.getElementById('modal-update-manual');
 const formUpdateManual = document.getElementById('form-update-manual');
 const updateInfoEl = document.getElementById('update-info');
@@ -104,45 +97,38 @@ const updateValorInvestidoEl = document.getElementById('update-valor-investido')
 const updateValorAtualInput = document.getElementById('update-valor-atual');
 
 // ===============================================================
-// 1. HELPER DE DATA (CORREÇÃO DE FUSO)
+// HELPER DE DATA
 // ===============================================================
-/**
- * Retorna a data local atual no formato 'YYYY-MM-DD'
- */
 function getLocalDateISO() {
     const dataLocal = new Date();
-    // Ajusta para o fuso horário local antes de converter para ISO string
     dataLocal.setMinutes(dataLocal.getMinutes() - dataLocal.getTimezoneOffset());
     return dataLocal.toISOString().split('T')[0];
 }
-// ===============================================================
 
-// ---- INICIALIZAÇÃO ----
+// ===============================================================
+// INICIALIZAÇÃO
+// ===============================================================
 document.addEventListener('authReady', async (e) => {
     userId = e.detail.userId;
     await loadConfigCdi();
     loadPosicaoConsolidada();
     loadHistoricos();
     
-    // Define datas padrão (Corrigido com getLocalDateISO)
     dataInput.value = getLocalDateISO();
     resgateDataInput.value = getLocalDateISO();
 
-    // Listeners dos formulários
     form.addEventListener('submit', handleFormSubmit);
     formResgateRapido.addEventListener('submit', handleResgateRapidoSubmit);
     formUpdateManual.addEventListener('submit', handleUpdateManualSubmit);
     
-    // Listeners dos Modais
     document.getElementById('modal-resgate-btn-cancel').addEventListener('click', () => hideModal('modal-resgate-rapido'));
     document.getElementById('modal-update-btn-cancel').addEventListener('click', () => hideModal('modal-update-manual'));
 
-    // Listeners dos selects (lógica de UI)
     bancoSelect.addEventListener('change', () => {
         bancoOutroGroup.style.display = (bancoSelect.value === 'Outro') ? 'block' : 'none';
     });
     tipoGeralSelect.addEventListener('change', toggleCamposRendaFixa);
-    toggleCamposRendaFixa(); // Roda na inicialização
+    toggleCamposRendaFixa(); 
 });
 
 // ---- LÓGICA DE UI DOS FORMULÁRIOS ----
@@ -152,26 +138,28 @@ function toggleCamposRendaFixa() {
     vencimentoGroup.style.display = isRendaFixa ? 'block' : 'none';
 }
 
-// ---- LÓGICA DE CONFIG ----
+// ---- LÓGICA DE CONFIG (v3.5 - Caminho atualizado) ----
 btnSaveCdiBase.addEventListener('click', async () => {
     if (!userId) return;
     const newRate = parseFloat(cdiBaseInput.value) / 100;
     if (isNaN(newRate)) return alert("Taxa inválida.");
     
-    const configRef = ref(db, `dados/${userId}/investimentos/config`);
+    // v3.5: Caminho atualizado
+    const configRef = ref(db, `usuarios/${userId}/investimentos/config`);
     await set(configRef, { cdiBase: newRate });
     cdiBaseRate = newRate;
     alert("Taxa CDI Base salva!");
     
-    // Força recálculo
-    const posRef = ref(db, `dados/${userId}/investimentos/posicao`);
+    // v3.5: Caminho atualizado
+    const posRef = ref(db, `usuarios/${userId}/investimentos/posicao`);
     const snapshot = await get(posRef);
     loadPosicaoConsolidadaCallback(snapshot);
 });
 
+// v3.5: Caminho atualizado
 async function loadConfigCdi() {
     if (!userId) return;
-    const configRef = ref(db, `dados/${userId}/investimentos/config`);
+    const configRef = ref(db, `usuarios/${userId}/investimentos/config`);
     const snapshot = await get(configRef);
     if (snapshot.exists()) {
         cdiBaseRate = snapshot.val().cdiBase || 0.1125;
@@ -180,7 +168,7 @@ async function loadConfigCdi() {
 }
 
 // ===============================================================
-// 2. LÓGICA DE FORMULÁRIO (Refatorada)
+// 2. LÓGICA DE FORMULÁRIO (v3.4 - Lógica mantida)
 // ===============================================================
 async function handleFormSubmit(e) {
     e.preventDefault();
@@ -208,7 +196,7 @@ async function handleFormSubmit(e) {
             await handleResgate(data);
         }
         form.reset();
-        dataInput.value = getLocalDateISO(); // Corrigido
+        dataInput.value = getLocalDateISO(); 
         toggleCamposRendaFixa();
     } catch (error) {
         console.error("Erro na movimentação:", error);
@@ -217,17 +205,18 @@ async function handleFormSubmit(e) {
 }
 
 // ===============================================================
-// 3. LÓGICA DE APORTE E RESGATE (Refatorada para RF/RV/Cripto)
+// 3. LÓGICA DE APORTE E RESGATE (v3.5 - Caminhos atualizados)
 // ===============================================================
 async function handleAporte(data) {
     
-    // **A VERIFICAÇÃO DE SALDO VEM ANTES DE TUDO**
+    // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.0)
     const temSaldo = await verificarSaldoSuficiente(data.valor);
     if (!temSaldo) {
         throw new Error("Saldo em Caixa insuficiente para fazer este aporte!");
     }
 
-    const posicaoRef = ref(db, `dados/${userId}/investimentos/posicao`);
+    // v3.5: Caminho atualizado
+    const posicaoRef = ref(db, `usuarios/${userId}/investimentos/posicao`);
     const snapshot = await get(posicaoRef);
     let existingPosicao = null;
     let posicaoId = null;
@@ -235,8 +224,6 @@ async function handleAporte(data) {
     if (snapshot.exists()) {
         snapshot.forEach((child) => {
             const pos = child.val();
-            
-            // VERIFICAÇÃO DE SEGURANÇA (v3.2)
             if (pos && pos.banco && pos.tipoGeral && pos.tipoNome) {
                 if (pos.banco.toLowerCase() === data.banco.toLowerCase() &&
                     pos.tipoGeral === data.tipoGeral &&
@@ -250,21 +237,19 @@ async function handleAporte(data) {
     }
 
     if (existingPosicao) {
-        // --- JÁ EXISTE UMA POSIÇÃO ---
         const { novoValor: valorCalculado } = await calcularRendimento(existingPosicao);
         
         const valorFinal = valorCalculado + data.valor;
-        const novoValorInvestido = (existingPosicao.valorInvestido || 0) + data.valor; // Garante que valorInvestido exista
+        const novoValorInvestido = (existingPosicao.valorInvestido || 0) + data.valor; 
 
         await set(child(posicaoRef, posicaoId), {
             ...existingPosicao,
             valorAtual: valorFinal,
-            valorInvestido: novoValorInvestido, // Adiciona ao "custo"
+            valorInvestido: novoValorInvestido, 
             dataUltimoUpdate: new Date().toISOString()
         });
         
     } else {
-        // --- É UMA NOVA POSIÇÃO ---
         const newPosicaoRef = push(posicaoRef);
         await set(newPosicaoRef, {
             id: newPosicaoRef.key,
@@ -275,18 +260,20 @@ async function handleAporte(data) {
             vencimento: data.vencimento,
             cdiPercent: (data.tipoGeral === 'Renda Fixa') ? data.cdiPercent : null,
             valorAtual: data.valor,
-            valorInvestido: data.valor, // Custo inicial
+            valorInvestido: data.valor, 
             dataUltimoUpdate: new Date().toISOString()
         });
     }
     
-    await push(ref(db, `dados/${userId}/investimentos/historico`), data);
-    await updateSaldoGlobal(-data.valor); // Subtrai do saldo
+    // v3.5: Caminho atualizado
+    await push(ref(db, `usuarios/${userId}/investimentos/historico`), data);
+    await updateSaldoGlobal(-data.valor); 
     alert("Aporte realizado com sucesso!");
 }
 
 async function handleResgate(data) {
-    const posicaoRef = ref(db, `dados/${userId}/investimentos/posicao`);
+    // v3.5: Caminho atualizado
+    const posicaoRef = ref(db, `usuarios/${userId}/investimentos/posicao`);
     const snapshot = await get(posicaoRef);
     let existingPosicao = null;
     let posicaoId = null;
@@ -294,8 +281,6 @@ async function handleResgate(data) {
     if (snapshot.exists()) {
         snapshot.forEach((child) => {
             const pos = child.val();
-            
-            // VERIFICAÇÃO DE SEGURANÇA (v3.2)
             if (pos && pos.banco && pos.tipoGeral && pos.tipoNome) {
                 if (pos.banco.toLowerCase() === data.banco.toLowerCase() &&
                     pos.tipoGeral === data.tipoGeral &&
@@ -320,34 +305,31 @@ async function handleResgate(data) {
 
     const valorFinal = valorCalculado - data.valor;
     
-    // Proporção do resgate
-    const proporcaoResgate = (valorCalculado > 0) ? (data.valor / valorCalculado) : 1; // Evita divisão por zero
+    const proporcaoResgate = (valorCalculado > 0) ? (data.valor / valorCalculado) : 1; 
     const reducaoValorInvestido = (existingPosicao.valorInvestido || 0) * proporcaoResgate;
     const novoValorInvestido = (existingPosicao.valorInvestido || 0) - reducaoValorInvestido;
 
     await set(child(posicaoRef, posicaoId), {
         ...existingPosicao,
         valorAtual: valorFinal,
-        valorInvestido: novoValorInvestido, // Reduz o "custo" proporcionalmente
+        valorInvestido: novoValorInvestido,
         dataUltimoUpdate: new Date().toISOString()
     });
 
-    await push(ref(db, `dados/${userId}/investimentos/historico`), data);
-    await updateSaldoGlobal(data.valor); // Adiciona ao saldo
+    // v3.5: Caminho atualizado
+    await push(ref(db, `usuarios/${userId}/investimentos/historico`), data);
+    await updateSaldoGlobal(data.valor); 
     alert("Resgate realizado com sucesso!");
 }
 
-// ---- LÓGICA DE CÁLCULO DE RENDIMENTO ----
+// ---- LÓGICA DE CÁLCULO DE RENDIMENTO (v3.5 - Caminho atualizado) ----
 async function calcularRendimento(posicao) {
-    // Garante que valorInvestido exista, para cálculos de rendimento
     const valorInvestido = posicao.valorInvestido || 0;
 
-    // SÓ calcula rendimento se for Renda Fixa
     if (posicao.tipoGeral !== 'Renda Fixa') {
         return { novoValor: posicao.valorAtual, rendimento: (posicao.valorAtual - valorInvestido) };
     }
     
-    // Se for Renda Fixa, faz o cálculo CDI
     const agora = new Date();
     const ultimoUpdate = new Date(posicao.dataUltimoUpdate);
     
@@ -362,8 +344,8 @@ async function calcularRendimento(posicao) {
     const taxaDiaria = Math.pow(1 + taxaAnualEfetiva, 1 / 365) - 1;
     const novoValor = posicao.valorAtual * Math.pow(1 + taxaDiaria, diffDays);
     
-    const posicaoRef = ref(db, `dados/${userId}/investimentos/posicao/${posicao.id}`);
-    // Atualiza apenas os campos calculados
+    // v3.5: Caminho atualizado
+    const posicaoRef = ref(db, `usuarios/${userId}/investimentos/posicao/${posicao.id}`);
     await update(posicaoRef, {
         valorAtual: novoValor,
         dataUltimoUpdate: agora.toISOString()
@@ -374,29 +356,23 @@ async function calcularRendimento(posicao) {
     return { novoValor: novoValor, rendimento: rendimentoTotal };
 }
 
-// ---- RENDERIZAÇÃO E CARREGAMENTO ----
+// ---- RENDERIZAÇÃO E CARREGAMENTO (v3.5 - Caminho atualizado) ----
 
 function loadPosicaoConsolidada() {
     if (!userId) return;
-    const posRef = ref(db, `dados/${userId}/investimentos/posicao`);
-    
+    // v3.5: Caminho atualizado
+    const posRef = ref(db, `usuarios/${userId}/investimentos/posicao`);
     onValue(posRef, loadPosicaoConsolidadaCallback);
 }
 
-// ===============================================================
-// 2. FUNÇÃO ATUALIZADA (Com correção de bug do Total Investido)
-// ===============================================================
+// v3.5: Caminho atualizado
 async function loadPosicaoConsolidadaCallback(snapshot) {
     tbodyPosicao.innerHTML = '';
     let acumuladoTotal = 0;
-    let investidoTotal = 0; // <<-- BUG CORRIGIDO (movido para dentro do 'if')
+    let investidoTotal = 0; 
     
-    // Objeto para agregar os dados do gráfico
     let dadosGrafico = {
-        'Renda Fixa': 0,
-        'Renda Variável': 0,
-        'Cripto': 0,
-        'Fundos': 0
+        'Renda Fixa': 0, 'Renda Variável': 0, 'Cripto': 0, 'Fundos': 0
     };
     
     if (snapshot.exists()) {
@@ -405,10 +381,9 @@ async function loadPosicaoConsolidadaCallback(snapshot) {
         
         snapshot.forEach((child) => {
             const posicao = child.val();
-            // Garante que a posição tenha os dados mínimos (v3.2)
             if (posicao && posicao.banco && posicao.tipoGeral && posicao.tipoNome) { 
                 posicoes.push(posicao);
-                promises.push(calcularRendimento(posicao)); // Recalcula tudo
+                promises.push(calcularRendimento(posicao)); 
             }
         });
 
@@ -417,21 +392,17 @@ async function loadPosicaoConsolidadaCallback(snapshot) {
         resultados.forEach((resultado, index) => {
             const { novoValor, rendimento } = resultado;
             const posicao = posicoes[index];
-
-            // BUG CORRIGIDO: O 'valorInvestido' (custo) só deve ser somado
-            // se a posição for válida e não estiver zerada.
             const valorInvestidoNum = posicao.valorInvestido || 0;
 
             if (novoValor < 0.01 && valorInvestidoNum < 0.01) {
-                // Se está zerado, remove
-                remove(ref(db, `dados/${userId}/investimentos/posicao/${posicao.id}`));
+                // v3.5: Caminho atualizado
+                remove(ref(db, `usuarios/${userId}/investimentos/posicao/${posicao.id}`));
                 return;
             }
 
             acumuladoTotal += novoValor;
-            investidoTotal += valorInvestidoNum; // <<-- BUG CORRIGIDO
+            investidoTotal += valorInvestidoNum; 
             
-            // Agrega para o gráfico
             if(dadosGrafico.hasOwnProperty(posicao.tipoGeral)) {
                 dadosGrafico[posicao.tipoGeral] += novoValor;
             }
@@ -440,26 +411,17 @@ async function loadPosicaoConsolidadaCallback(snapshot) {
         });
     }
     
-    // Atualiza os KPIs
     kpiTotalAcumuladoEl.textContent = formatCurrency(acumuladoTotal);
     kpiTotalInvestidoEl.textContent = formatCurrency(investidoTotal);
     const lucroPrejuizo = acumuladoTotal - investidoTotal;
     kpiLucroPrejuizoEl.textContent = formatCurrency(lucroPrejuizo);
     
-    if (lucroPrejuizo < 0) {
-        kpiLucroPrejuizoEl.style.color = 'var(--danger-color)';
-    } else {
-        kpiLucroPrejuizoEl.style.color = 'var(--success-color)';
-    }
+    kpiLucroPrejuizoEl.style.color = (lucroPrejuizo < 0) ? 'var(--danger-color)' : 'var(--success-color)';
 
-    // Renderiza o gráfico de pizza
     renderizarGraficoDivisao(dadosGrafico);
 }
 
-// ===============================================================
-// 3. FUNÇÃO ATUALIZADA (Com Alertas de Vencimento)
-// ===============================================================
-// Renderiza uma linha na tabela de Posição
+// (v3.4 - Lógica mantida)
 function renderPosicaoRow(posicao, valorAtualizado, rendimento) {
     const tr = document.createElement('tr');
     tr.dataset.id = posicao.id;
@@ -470,7 +432,6 @@ function renderPosicaoRow(posicao, valorAtualizado, rendimento) {
     
     const lucroPrejCor = rendimento < 0 ? 'var(--danger-color)' : 'var(--text-color)';
     
-    // --- LÓGICA DE ALERTA DE VENCIMENTO ---
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
 
@@ -482,12 +443,11 @@ function renderPosicaoRow(posicao, valorAtualizado, rendimento) {
         const diffDays = Math.ceil(diffTime / DAY_IN_MS);
 
         if (diffDays < 0) {
-            tr.classList.add('vencido'); // Vencido (vermelho)
+            tr.classList.add('vencido'); 
         } else if (diffDays <= 30) {
-            tr.classList.add('proximo'); // Próximo (amarelo)
+            tr.classList.add('proximo'); 
         }
     }
-    // --- FIM DA LÓGICA ---
 
     tr.innerHTML = `
         <td><span title="${posicao.banco}">${iconBank}</span> ${posicao.banco}</td>
@@ -514,12 +474,10 @@ function renderPosicaoRow(posicao, valorAtualizado, rendimento) {
         </td>
     `;
     
-    // Listeners dos botões da linha
     tr.querySelector('.btn-resgatar').addEventListener('click', () => {
         showModalResgate(posicao, valorAtualizado);
     });
     
-    // Adiciona listener se o botão existir
     const btnEditRentabilidade = tr.querySelector('.btn-edit-rentabilidade');
     if (btnEditRentabilidade) {
         btnEditRentabilidade.addEventListener('click', () => {
@@ -537,14 +495,12 @@ function renderPosicaoRow(posicao, valorAtualizado, rendimento) {
     tbodyPosicao.appendChild(tr);
 }
 
-// ===============================================================
-// 4. FUNÇÃO ATUALIZADA (Para alimentar o Gráfico de Evolução)
-// ===============================================================
-// Carrega Histórico Geral
+// (v3.5 - Caminho atualizado)
 function loadHistoricos() {
     if (!userId) return;
     
-    const histRef = ref(db, `dados/${userId}/investimentos/historico`);
+    // v3.5: Caminho atualizado
+    const histRef = ref(db, `usuarios/${userId}/investimentos/historico`);
     const queryGeral = query(histRef, orderByChild('data'));
     
     onValue(queryGeral, (snapshot) => {
@@ -554,14 +510,12 @@ function loadHistoricos() {
             snapshot.forEach(child => items.push(child.val()));
         }
         
-        // Renderiza a tabela (ordem reversa, mais novo primeiro)
         items.slice().reverse().forEach(renderHistoricoGeralRow);
-        
-        // Renderiza o gráfico de evolução (ordem cronológica)
         renderizarGraficoEvolucao(items);
     });
 }
 
+// (v3.4 - Lógica mantida)
 function renderHistoricoGeralRow(item) {
     const tr = document.createElement('tr');
     const [y, m, d] = item.data.split('-');
@@ -581,7 +535,7 @@ function renderHistoricoGeralRow(item) {
 }
 
 // ===============================================================
-// 5. NOVA LÓGICA DE GRÁFICOS (Chart.js)
+// 5. LÓGICA DE GRÁFICOS (v3.4 - Lógica mantida)
 // ===============================================================
 function renderizarGraficoDivisao(dados) {
     const ctx = document.getElementById('graficoDivisao').getContext('2d');
@@ -589,7 +543,6 @@ function renderizarGraficoDivisao(dados) {
     const labels = Object.keys(dados);
     const dataValues = Object.values(dados);
     
-    // Remove dados zerados para não poluir o gráfico
     const labelsFiltrados = [];
     const dataFiltrada = [];
     const colorsFiltrados = [];
@@ -605,16 +558,13 @@ function renderizarGraficoDivisao(dados) {
         }
     });
 
-    // Pega a cor do texto do CSS para o gráfico (tema dark/light)
     const estiloComputado = getComputedStyle(document.body);
     const corTexto = estiloComputado.getPropertyValue('--text-color') || '#000';
 
-    // Se já existe um gráfico, destrói antes de criar um novo
     if (graficoDivisao) {
         graficoDivisao.destroy();
     }
     
-    // Se não há dados, mostra mensagem
     if(dataFiltrada.length === 0) {
         document.getElementById('chart-divisao-container').innerHTML = 
             '<p style="text-align: center; padding: 2rem; color: var(--text-light);">Sem dados para o gráfico de divisão.</p>';
@@ -622,7 +572,7 @@ function renderizarGraficoDivisao(dados) {
     }
 
     graficoDivisao = new Chart(ctx, {
-        type: 'doughnut', // Tipo "pizza"
+        type: 'doughnut', 
         data: {
             labels: labelsFiltrados,
             datasets: [{
@@ -640,7 +590,7 @@ function renderizarGraficoDivisao(dados) {
                 legend: {
                     position: 'top',
                     labels: {
-                        color: corTexto // Cor da legenda
+                        color: corTexto 
                     }
                 },
                 tooltip: {
@@ -659,14 +609,10 @@ function renderizarGraficoDivisao(dados) {
     });
 }
 
-/**
- * NOVO (v3.4): Renderiza o gráfico de evolução do *Valor Investido*
- */
 function renderizarGraficoEvolucao(items) {
     const ctx = document.getElementById('graficoEvolucao').getContext('2d');
     const placeholder = document.getElementById('evolucao-placeholder');
     
-    // Pega a cor do texto do CSS
     const estiloComputado = getComputedStyle(document.body);
     const corTexto = estiloComputado.getPropertyValue('--text-color') || '#000';
     const corGrid = estiloComputado.getPropertyValue('--text-light') || '#ccc';
@@ -682,7 +628,6 @@ function renderizarGraficoEvolucao(items) {
     
     placeholder.style.display = 'none';
 
-    // Processa os dados: (items já vêm ordenados por data)
     let runningTotal = 0;
     const labels = [];
     const data = [];
@@ -694,7 +639,6 @@ function renderizarGraficoEvolucao(items) {
             runningTotal -= item.valor;
         }
         
-        // Formata data (DD/MM/YYYY)
         const [y, m, d] = item.data.split('-');
         labels.push(`${d}/${m}/${y}`);
         data.push(runningTotal);
@@ -744,7 +688,7 @@ function renderizarGraficoEvolucao(items) {
 // ===============================================================
 
 
-// ---- Funções dos Modais ---- (Sem mudanças)
+// ---- Funções dos Modais ---- (v3.5 - Caminhos atualizados)
 
 function showModalEditRentabilidade(posicao) {
     modalEditRentabilidade.style.display = 'flex';
@@ -757,21 +701,20 @@ function showModalEditRentabilidade(posicao) {
         const newPercent = parseFloat(modalCdiInput.value);
         if (isNaN(newPercent) || newPercent < 0) return alert("Valor inválido.");
         
-        const posRef = ref(db, `dados/${userId}/investimentos/posicao/${posicao.id}/cdiPercent`);
+        // v3.5: Caminho atualizado
+        const posRef = ref(db, `usuarios/${userId}/investimentos/posicao/${posicao.id}/cdiPercent`);
         await set(posRef, newPercent);
         
         hideModal('modal-edit-rentabilidade');
         
-        // Força recálculo
-        const posSnapshot = await get(ref(db, `dados/${userId}/investimentos/posicao`));
+        // v3.5: Caminho atualizado
+        const posSnapshot = await get(ref(db, `usuarios/${userId}/investimentos/posicao`));
         loadPosicaoConsolidadaCallback(posSnapshot);
     };
 
-    // Remove listeners antigos
     btnConfirm.replaceWith(btnConfirm.cloneNode(true));
     btnCancel.replaceWith(btnCancel.cloneNode(true));
     
-    // Adiciona novos
     document.getElementById('modal-cdi-btn-confirm').onclick = confirmHandler;
     document.getElementById('modal-cdi-btn-cancel').onclick = () => hideModal('modal-edit-rentabilidade');
 }
@@ -784,13 +727,15 @@ function showModalResgate(posicao, valorAtualizado) {
     modalResgateRapido.style.display = 'flex';
 }
 
+// v3.5: Caminho atualizado
 async function handleResgateRapidoSubmit(e) {
     e.preventDefault();
     const id = formResgateRapido.dataset.posicaoId;
     const valor = parseCurrency(resgateValorInput.value);
     const data = resgateDataInput.value;
     
-    const posRef = ref(db, `dados/${userId}/investimentos/posicao/${id}`);
+    // v3.5: Caminho atualizado
+    const posRef = ref(db, `usuarios/${userId}/investimentos/posicao/${id}`);
     const snapshot = await get(posRef);
     if (!snapshot.exists()) {
         alert("Erro: Posição não encontrada.");
@@ -798,7 +743,6 @@ async function handleResgateRapidoSubmit(e) {
     }
     const posicao = snapshot.val();
     
-    // Prepara os dados para a função 'handleResgate'
     const dataResgate = {
         tipoMov: 'Resgate',
         data: data,
@@ -819,11 +763,12 @@ async function handleResgateRapidoSubmit(e) {
 function showModalUpdateManual(posicao) {
     formUpdateManual.dataset.posicaoId = posicao.id;
     updateInfoEl.textContent = `${posicao.banco} - ${posicao.tipoNome}`;
-    updateValorInvestidoEl.textContent = formatCurrency(posicao.valorInvestido || 0); // Garante que não mostre 'undefined'
-    updateValorAtualInput.value = formatCurrency(posicao.valorAtual); // Preenche com o valor atual
+    updateValorInvestidoEl.textContent = formatCurrency(posicao.valorInvestido || 0); 
+    updateValorAtualInput.value = formatCurrency(posicao.valorAtual); 
     modalUpdateManual.style.display = 'flex';
 }
 
+// v3.5: Caminho atualizado
 async function handleUpdateManualSubmit(e) {
     e.preventDefault();
     const id = formUpdateManual.dataset.posicaoId;
@@ -831,10 +776,10 @@ async function handleUpdateManualSubmit(e) {
 
     if (novoValor < 0) return alert("O valor não pode ser negativo.");
 
-    const posRef = ref(db, `dados/${userId}/investimentos/posicao/${id}`);
+    // v3.5: Caminho atualizado
+    const posRef = ref(db, `usuarios/${userId}/investimentos/posicao/${id}`);
     
     try {
-        // Atualiza apenas o valorAtual e a data
         await update(posRef, {
             valorAtual: novoValor,
             dataUltimoUpdate: new Date().toISOString()
@@ -853,9 +798,11 @@ function hideModal(modalId) {
     }
 }
 
+// v3.5: Caminho atualizado
 async function updateSaldoGlobal(valor) {
     if (valor === 0) return;
-    const saldoRef = ref(db, `dados/${userId}/saldo/global`);
+    // v3.5: Caminho atualizado
+    const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
     try {
         const snapshot = await get(saldoRef);
         let saldoAcumulado = snapshot.val()?.saldoAcumulado || 0;

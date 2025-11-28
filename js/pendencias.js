@@ -1,5 +1,5 @@
 // js/pendencias.js
-// VERSÃO 3.1 (Com Destaques de Vencimento e Totais)
+// VERSÃO 3.2 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
 import { 
     db, 
@@ -41,8 +41,8 @@ const parcelasInput = document.getElementById('pendencia-parcelas');
 // ---- Elementos DOM (Tabelas e Totais) ----
 const tbodyEuDevo = document.getElementById('tbody-eu-devo');
 const tbodyMeDevem = document.getElementById('tbody-me-devem');
-const totalEuDevoPendenteEl = document.getElementById('total-eu-devo-pendente'); // NOVO
-const totalMeDevemPendenteEl = document.getElementById('total-me-devem-pendente'); // NOVO
+const totalEuDevoPendenteEl = document.getElementById('total-eu-devo-pendente');
+const totalMeDevemPendenteEl = document.getElementById('total-me-devem-pendente');
 
 // Elementos DOM (Abas)
 const btnTabEuDevo = document.getElementById('btn-tab-eu-devo');
@@ -54,8 +54,6 @@ const cardMeDevem = document.getElementById('card-me-devem');
 const modalConfirm = document.getElementById('modal-confirm');
 const modalParcela = document.getElementById('modal-parcela-confirm');
 const modalMessage = document.getElementById('modal-message');
-
-// Elementos do Modal de Edição
 const modalEdit = document.getElementById('modal-edit-pendencia');
 const formEdit = document.getElementById('form-edit-pendencia');
 const editTipoInput = document.getElementById('edit-pendencia-tipo');
@@ -115,10 +113,11 @@ document.addEventListener('authReady', (e) => {
 });
 
 // ===============================================================
-// FUNÇÃO PARA CARREGAR OS CARTÕES (Sem mudanças)
+// FUNÇÃO PARA CARREGAR OS CARTÕES (v3.2 - Caminho atualizado)
 // ===============================================================
 async function loadDynamicCardData() {
     if (!userId) return;
+    // getCartoesHtmlOptions() já busca de 'usuarios/' (via main.js v4.0)
     const cartoesHtml = await getCartoesHtmlOptions();
 
     if (formaPagamentoInput) {
@@ -128,7 +127,8 @@ async function loadDynamicCardData() {
         editFormaPagamentoSelect.innerHTML += cartoesHtml;
     }
 
-    const configRef = ref(db, `dados/${userId}/cartoes/config`);
+    // v3.2: Caminho atualizado
+    const configRef = ref(db, `usuarios/${userId}/cartoes/config`);
     try {
         const snapshot = await get(configRef);
         if (snapshot.exists()) {
@@ -144,7 +144,7 @@ async function loadDynamicCardData() {
     }
 }
 
-// ---- LÓGICA DO FORMULÁRIO (CRIAR) ---- (Sem mudanças)
+// ---- LÓGICA DO FORMULÁRIO (CRIAR) ----
 tipoSelect.addEventListener('change', () => {
     const isMeDeve = tipoSelect.value === 'meDeve';
     pessoaGroup.style.display = isMeDeve ? 'flex' : 'none';
@@ -156,6 +156,7 @@ tipoSelect.addEventListener('change', () => {
 pessoaGroup.style.display = 'none';
 pessoaInput.placeholder = 'Para quem você deve';
 
+// v3.2: Caminho atualizado
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!userId) return;
@@ -188,7 +189,8 @@ form.addEventListener('submit', async (e) => {
         const parcelaMonth = (parcelaDate.getMonth() + 1).toString().padStart(2, '0');
         const parcelaDay = parcelaDate.getDate().toString().padStart(2, '0');
         
-        const path = `dados/${userId}/pendencias/${parcelaYear}-${parcelaMonth}`;
+        // v3.2: Caminho atualizado
+        const path = `usuarios/${userId}/pendencias/${parcelaYear}-${parcelaMonth}`;
         const newPendenciaRef = push(ref(db, path));
         
         const pendenciaData = {
@@ -215,7 +217,7 @@ form.addEventListener('submit', async (e) => {
     pessoaInput.placeholder = 'Para quem você deve';
 });
 
-// MAPA DE PAGAMENTO (Sem mudanças)
+// MAPA DE PAGAMENTO
 const pagamentoIcones = {
     "Saldo em Caixa": "🏦", 
     "Pix": "📱", 
@@ -225,7 +227,7 @@ const pagamentoIcones = {
 
 
 // ===============================================================
-// ATUALIZADO (para calcular totais)
+// CARREGAR DADOS (v3.2 - Caminho atualizado)
 // ===============================================================
 function loadPendencias() {
     if (!userId) return;
@@ -234,7 +236,8 @@ function loadPendencias() {
         off(activeListener.ref, 'value', activeListener.callback);
     }
     
-    const path = `dados/${userId}/pendencias/${currentYear}-${currentMonth}`;
+    // v3.2: Caminho atualizado
+    const path = `usuarios/${userId}/pendencias/${currentYear}-${currentMonth}`;
     const pendenciasRef = ref(db, path);
     
     const callback = (snapshot) => {
@@ -249,7 +252,6 @@ function loadPendencias() {
                 const pendencia = childSnapshot.val();
                 if (!pendencia) return;
 
-                // Calcula totais
                 if (pendencia.status === 'pendente') {
                     if (pendencia.tipo === 'euDevo') {
                         totalDevo += pendencia.valor;
@@ -262,7 +264,6 @@ function loadPendencias() {
             });
         }
 
-        // Atualiza os KPIs (totais)
         if (totalEuDevoPendenteEl) {
             totalEuDevoPendenteEl.textContent = formatCurrency(totalDevo);
         }
@@ -276,7 +277,7 @@ function loadPendencias() {
 }
 
 // ===============================================================
-// ATUALIZADO (para destacar linhas vencidas/próximas)
+// RENDERIZAR LINHA (v3.1 - Lógica mantida)
 // ===============================================================
 function renderRow(pendencia) {
     if (!pendencia.vencimento) {
@@ -315,14 +316,9 @@ function renderRow(pendencia) {
         ? `${pendencia.pessoa}` 
         : 'N/A';
 
-    // --- LÓGICA DE DESTAQUE VISUAL ---
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Zera a hora para comparar só a data
+    today.setHours(0, 0, 0, 0); 
 
-    // Corrige para a data de hoje (24/11/2025)
-    // NOTA: O 'new Date(string)' sem 'T' pode causar problemas de fuso.
-    // Usar 'T12:00:00' (meio-dia) garante que a data seja a correta
-    // independente do fuso horário do usuário.
     const vencimentoDate = new Date(pendencia.vencimento + 'T12:00:00'); 
     vencimentoDate.setHours(0, 0, 0, 0);
 
@@ -332,13 +328,12 @@ function renderRow(pendencia) {
     if (isPago) {
         tr.classList.add('pago');
     } else if (diffDays < 0) {
-        tr.classList.add('vencido'); // Vencido (vermelho)
+        tr.classList.add('vencido'); 
     } else if (diffDays <= 3) {
-        tr.classList.add('proximo'); // Próximo (amarelo) - 3 dias ou menos
+        tr.classList.add('proximo'); 
     }
-    // --- FIM DA LÓGICA ---
 
-    const pagIcone = pagamentoIcones[pendencia.formaPagamento] || "💳"; // Padrão
+    const pagIcone = pagamentoIcones[pendencia.formaPagamento] || "💳"; 
 
     tr.innerHTML = `
         <td>${vencimentoFormatado}</td>
@@ -370,7 +365,7 @@ function renderRow(pendencia) {
 }
 
 // ===============================================================
-// ATUALIZADO (para recarregar os totais ao marcar/desmarcar)
+// AÇÕES (v3.2 - Caminhos atualizados)
 // ===============================================================
 async function handleCheckboxChange(e) {
     const tr = e.target.closest('tr');
@@ -380,11 +375,11 @@ async function handleCheckboxChange(e) {
     const newStatus = e.target.checked ? 'pago' : 'pendente';
     const vencimento = tr.dataset.vencimento; 
 
-    // Define quais pagamentos afetam o saldo (NÃO cartões)
     const pagamentosAfetamSaldo = ['Saldo em Caixa', 'Pix', 'Dinheiro'];
     const formaPagamento = tr.dataset.formaPagamento;
 
     if (tipo === 'euDevo' && newStatus === 'pago' && pagamentosAfetamSaldo.includes(formaPagamento)) {
+        // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.0)
         const temSaldo = await verificarSaldoSuficiente(valor);
         if (!temSaldo) {
             alert("❌ Saldo em Caixa insuficiente para pagar esta dívida!");
@@ -395,12 +390,12 @@ async function handleCheckboxChange(e) {
 
     try {
         const [entryYear, entryMonth] = vencimento.split('-');
-        const path = `dados/${userId}/pendencias/${entryYear}-${entryMonth}/${id}`;
+        // v3.2: Caminho atualizado
+        const path = `usuarios/${userId}/pendencias/${entryYear}-${entryMonth}/${id}`;
         
         await update(ref(db, path), { status: newStatus }); 
 
         let ajuste = 0;
-        // Só ajusta o saldo se for um pagamento que afeta o caixa
         if (pagamentosAfetamSaldo.includes(formaPagamento)) {
             if (tipo === 'euDevo') {
                 ajuste = newStatus === 'pago' ? -valor : valor; 
@@ -409,14 +404,11 @@ async function handleCheckboxChange(e) {
             }
         }
         
-        // Só atualiza o saldo se o ajuste for diferente de zero
         if (ajuste !== 0) {
             await updateSaldoGlobal(ajuste);
         }
         
-        // EM VEZ DE SÓ MUDAR A LINHA, RECARREGA TUDO
-        // Isso atualiza os totais e garante que os estilos estejam corretos
-        loadPendencias();
+        loadPendencias(); // Recarrega tudo para atualizar totais
 
     } catch (error) {
         console.error("Erro ao atualizar status:", error);
@@ -425,11 +417,6 @@ async function handleCheckboxChange(e) {
     }
 }
 
-// (O restante do arquivo - handleDeleteClick, handleEditClick, calcularAjusteSaldo,
-// updateSaldoGlobal, e as funções de Modal - permanecem EXATAMENTE IGUAIS 
-// ao v3.0 que você enviou, pois a lógica deles já estava correta.)
-
-// ... (Resto do seu JS v3.0, sem mudanças) ...
 async function handleDeleteClick(e) {
     const tr = e.target.closest('tr');
     const id = tr.dataset.id;
@@ -445,7 +432,8 @@ async function handleDeleteClick(e) {
     const pagamentosAfetamSaldo = ['Saldo em Caixa', 'Pix', 'Dinheiro'];
     
     const [entryYear, entryMonth] = vencimento.split('-');
-    const itemPath = `dados/${userId}/pendencias/${entryYear}-${entryMonth}/${id}`;
+    // v3.2: Caminho atualizado
+    const itemPath = `usuarios/${userId}/pendencias/${entryYear}-${entryMonth}/${id}`;
 
     const deleteFn = async () => {
         try {
@@ -479,7 +467,9 @@ async function handleDeleteClick(e) {
 
                 const futuraYear = futuraDate.getFullYear();
                 const futuraMonth = (futuraDate.getMonth() + 1).toString().padStart(2, '0');
-                const pathBusca = `dados/${userId}/pendencias/${futuraYear}-${futuraMonth}`;
+                
+                // v3.2: Caminho atualizado
+                const pathBusca = `usuarios/${userId}/pendencias/${futuraYear}-${futuraMonth}`;
                 
                 const snapshot = await get(ref(db, pathBusca));
                 if (snapshot.exists()) {
@@ -513,8 +503,7 @@ async function handleDeleteClick(e) {
     }
 }
 
-
-// ---- FUNÇÕES DE EDIÇÃO ----
+// v3.2: Caminho atualizado
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
     
@@ -529,7 +518,8 @@ function handleEditClick(e) {
 
     const [entryYear, entryMonth] = vencimento.split('-');
     formEdit.dataset.id = id;
-    formEdit.dataset.entryPath = `dados/${userId}/pendencias/${entryYear}-${entryMonth}/${id}`;
+    // v3.2: Caminho atualizado
+    formEdit.dataset.entryPath = `usuarios/${userId}/pendencias/${entryYear}-${entryMonth}/${id}`;
     formEdit.dataset.valorAntigo = valor;
     formEdit.dataset.statusAntigo = status; 
     formEdit.dataset.tipo = tipo; 
@@ -557,7 +547,7 @@ async function handleSaveEdit(e) {
     if (!userId) return;
 
     const id = formEdit.dataset.id;
-    const path = formEdit.dataset.entryPath;
+    const path = formEdit.dataset.entryPath; // Já contém o caminho 'usuarios/'
     const valorAntigo = parseFloat(formEdit.dataset.valorAntigo);
     const statusAntigo = formEdit.dataset.statusAntigo; 
     const tipo = formEdit.dataset.tipo; 
@@ -586,6 +576,7 @@ async function handleSaveEdit(e) {
         );
 
         if (ajusteSaldo < 0) { 
+            // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.0)
             const temSaldo = await verificarSaldoSuficiente(Math.abs(ajusteSaldo));
             if (!temSaldo) {
                 alert("❌ Saldo em Caixa insuficiente para esta alteração!");
@@ -606,7 +597,6 @@ async function handleSaveEdit(e) {
         alert("Não foi possível salvar as alterações.");
     }
 }
-
 
 function calcularAjusteSaldo(valorAntigo, valorNovo, statusAntigo, tipo, formaAntiga, formaNova) {
     if (statusAntigo === 'pendente') {
@@ -639,10 +629,12 @@ function calcularAjusteSaldo(valorAntigo, valorNovo, statusAntigo, tipo, formaAn
     return ajuste;
 }
 
+// v3.2: Caminho atualizado
 async function updateSaldoGlobal(ajuste) {
     if (ajuste === 0) return; 
     
-    const saldoRef = ref(db, `dados/${userId}/saldo/global`);
+    // v3.2: Caminho atualizado
+    const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
     try {
         const snapshot = await get(saldoRef);
         let saldoAcumulado = snapshot.val()?.saldoAcumulado || 0;
@@ -655,6 +647,7 @@ async function updateSaldoGlobal(ajuste) {
     }
 }
 
+// (Funções de Modal mantidas da v3.1)
 function showModal(modalId, confirmFn, deleteAllFn = null) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
