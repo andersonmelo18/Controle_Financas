@@ -1,847 +1,536 @@
-// js/fixos.js
-// VERSÃO 3.2 (Atualizado para Autenticação Google e caminho 'usuarios/')
+// js/main.js
+// VERSÃO 4.1 (Auth Google, Logout com Confirmação, Caminho 'usuarios/' e Correção de Alertas)
 
 import { 
     db, 
+    auth, 
     ref, 
     set, 
     get, 
-    push, 
-    remove, 
-    onValue, 
-    child,
+    onAuthStateChanged,
+    onValue,
     off,
-    update 
+    signOut // IMPORTA O signOut
 } from './firebase-config.js';
-import { 
-    getUserId, 
-    formatCurrency, 
-    parseCurrency,
-    verificarSaldoSuficiente,
-    getCartoesHtmlOptions 
-} from './main.js';
 
-// ---- Variáveis Globais ----
-let userId = null;
+let currentUserId = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
-let activeListener = null;
-let annualChartInstance = null; // Instância do Gráfico
 
-const PAGAMENTO_AFETA_SALDO = ['Saldo em Caixa', 'Pix', 'Dinheiro', 'Débito Automático'];
+// ---- ELEMENTOS DOM GLOBAIS ----
+const monthDisplay = document.getElementById('current-month-display');
+const prevMonthBtn = document.getElementById('prev-month');
+const nextMonthBtn = document.getElementById('next-month');
+const themeToggler = document.querySelector('.theme-toggler');
+const logoutButton = document.getElementById('logout-button'); 
 
-// ---- Elementos DOM (Formulário Principal) ----
-const form = document.getElementById('form-add-fixo');
-const vencimentoInput = document.getElementById('fixo-vencimento');
-const categoriaSelect = document.getElementById('fixo-categoria');
-const descricaoInput = document.getElementById('fixo-descricao');
-const formaPagamentoSelect = document.getElementById('fixo-forma-pagamento'); 
-const valorInput = document.getElementById('fixo-valor');
-const recorrenciaSelect = document.getElementById('fixo-recorrencia');
-const parcelasGroup = document.getElementById('group-num-parcelas');
-const parcelasInput = document.getElementById('fixo-num-parcelas');
-const avisoMesEl = document.getElementById('mes-aviso');
-const tbody = document.getElementById('tbody-despesas-fixas');
-const totalPagoEl = document.getElementById('total-fixo-pago');
-const totalPendenteEl = document.getElementById('total-fixo-pendente');
+// ---- ELEMENTOS DE NOTIFICAÇÃO ----
+const notificationButton = document.getElementById('notification-button');
+const notificationCount = document.getElementById('notification-count');
+const notificationDropdown = document.getElementById('notification-dropdown');
+const notificationList = document.getElementById('notification-list');
+const notificationPlaceholder = document.getElementById('notification-placeholder');
 
-// Elemento DOM do Gráfico (NOVO)
-const annualChartEl = document.getElementById('grafico-anual-fixos');
-
-// Modal de Edição
-const modalEdit = document.getElementById('modal-edit-fixo');
-const formEdit = document.getElementById('form-edit-fixo');
-const editVencimentoInput = document.getElementById('edit-fixo-vencimento');
-const editCategoriaSelect = document.getElementById('edit-fixo-categoria');
-const editDescricaoInput = document.getElementById('edit-fixo-descricao');
-const editFormaPagamentoSelect = document.getElementById('edit-fixo-forma-pagamento'); 
-const editValorInput = document.getElementById('edit-fixo-valor');
-const btnCancelEdit = document.getElementById('modal-edit-btn-cancel');
-
-
-// ---- MAPAS DE ÍCONES (Movido para o topo para melhor escopo) ----
-const categoriaIcones = {
-    "Moradia": "🏠", "Contas": "💡", "Internet": "📺", "Transporte": "🚗",
-    "Saude": "❤️", "Educacao": "🎓", "Seguros": "🛡️", "Outros": "📦"
-};
-
-const pagamentoIcones = {
-    "Débito Automático": "🔄", 
-    "Saldo em Caixa": "🏦", 
-    "Pix": "📱", 
-    "Dinheiro": "💵"
-    // Os ícones de cartão são adicionados em loadDynamicCardData()
+// ---- VARIÁVEIS GLOBAIS (Notificações) ----
+let globalAlertListeners = []; 
+let globalAlertData = {
+    fixos: {},
+    pendencias: {},
+    cartoes: {},
+    pagamentosFatura: [],
+    despesasAtual: {} // Adicionado para a correção do v4.0
 };
 
 
-// ---- INICIALIZAÇÃO ----
-document.addEventListener('authReady', (e) => {
-    userId = e.detail.userId;
-    document.addEventListener('monthChanged', (e) => {
-        currentYear = e.detail.year;
-        currentMonth = e.detail.month;
-        updateAvisoMes();
-        loadDespesasFixas();
-        loadAnnualHistory(); // CHAMA O CARREGAMENTO DO HISTÓRICO ANUAL
+// ===============================================================
+// LÓGICA DE AUTENTICAÇÃO (v4.1 - NOVO "AUTH GUARD")
+// ===============================================================
+onAuthStateChanged(auth, (user) => {
+    // Verifica se estamos na página de login para evitar loops
+    const isLoginPage = window.location.pathname.endsWith('login.html');
+
+    if (user) {
+        // 1. Usuário está logado (Google)
+        currentUserId = user.uid;
+        
+        // Se o usuário está logado e tentou aceder ao login.html, redireciona para o index
+        if (isLoginPage) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Dispara o evento que avisa os outros scripts que o ID está pronto
+        document.dispatchEvent(new CustomEvent('authReady', {
+            detail: { userId: currentUserId }
+        }));
+        
+        updateMonthDisplay();
+        listenToGlobalBalance(currentUserId);
+        listenToGlobalAlerts(currentUserId);
+
+    } else {
+        // 2. Usuário NÃO está logado
+        
+        // Se ele já está na página de login, não faz nada
+        if (isLoginPage) {
+            return;
+        }
+        
+        // Se ele está em qualquer outra página (index, cartoes, etc.) e NÃO está logado,
+        // redireciona para o login.
+        console.log("Usuário não está logado. Redirecionando para login.html");
+        window.location.href = 'login.html';
+    }
+});
+// ===============================================================
+
+
+// ---- LÓGICA DE MUDANÇA DE MÊS ----
+function updateMonthDisplay() {
+    if (!monthDisplay) return;
+    const date = new Date(currentYear, parseInt(currentMonth) - 1);
+    const monthName = date.toLocaleString('pt-BR', { month: 'long' });
+    const formattedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    monthDisplay.textContent = `${formattedMonth} ${currentYear}`;
+    monthDisplay.dataset.year = currentYear;
+    monthDisplay.dataset.month = currentMonth;
+}
+
+function changeMonth(offset) {
+    const oldYear = currentYear; 
+    
+    let date = new Date(currentYear, parseInt(currentMonth) - 1);
+    date.setMonth(date.getMonth() + offset);
+    currentYear = date.getFullYear();
+    currentMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+    
+    updateMonthDisplay();
+    
+    const yearChanged = (oldYear !== currentYear);
+    
+    document.dispatchEvent(new CustomEvent('monthChanged', {
+        detail: {
+            year: currentYear,
+            month: currentMonth,
+            yearChanged: yearChanged 
+        }
+    }));
+
+    listenToGlobalAlerts(currentUserId);
+}
+
+prevMonthBtn?.addEventListener('click', () => changeMonth(-1));
+nextMonthBtn?.addEventListener('click', () => changeMonth(1));
+
+// ---- LÓGICA DO TEMA (DARK/LIGHT) ----
+themeToggler?.addEventListener('click', () => {
+    document.body.classList.toggle('dark-theme');
+    themeToggler.querySelector('span:nth-child(1)').classList.toggle('active');
+    themeToggler.querySelector('span:nth-child(2)').classList.toggle('active');
+    
+    const isDark = document.body.classList.contains('dark-theme');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+});
+
+// ---- LÓGICAS QUE RODAM QUANDO A PÁGINA CARREGA ----
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // 1. Carrega a preferência de tema
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        themeToggler?.querySelector('span:nth-child(1)').classList.remove('active');
+        themeToggler?.querySelector('span:nth-child(2)').classList.add('active');
+    }
+
+    // 2. LÓGICA DO MENU HAMBURGER (MOBILE)
+    const hamburger = document.querySelector('.hamburger-menu');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (hamburger && sidebar) {
+        hamburger.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 800 && 
+                !sidebar.contains(e.target) && 
+                !hamburger.contains(e.target) && 
+                sidebar.classList.contains('active')) 
+            {
+                sidebar.classList.remove('active');
+            }
+        });
+    }
+
+    // 3. LISTENERS DO DROPDOWN DE NOTIFICAÇÃO
+    notificationButton?.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        notificationDropdown.classList.toggle('show');
     });
-    
-    const initialMonthEl = document.getElementById('current-month-display');
-    if (initialMonthEl) {
-        currentYear = initialMonthEl.dataset.year;
-        currentMonth = initialMonthEl.dataset.month;
-        updateAvisoMes();
-    }
-    
-    loadDynamicCardData(); 
-    loadDespesasFixas();
-    loadAnnualHistory(); // CHAMA O CARREGAMENTO INICIAL DO GRÁFICO
 
-    // Listeners do Modal de Edição
-    if (formEdit) {
-        formEdit.addEventListener('submit', handleSaveEdit);
-    }
-    if (btnCancelEdit) {
-        btnCancelEdit.addEventListener('click', () => {
-            modalEdit.style.display = 'none';
+    document.addEventListener('click', (e) => {
+        if (notificationDropdown && notificationDropdown.classList.contains('show')) {
+            if (!notificationButton.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        }
+    });
+
+    // 4. LISTENER DE LOGOUT (ATUALIZADO v4.1 - com Modal)
+    if (logoutButton) {
+        logoutButton.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            showLogoutConfirm(); // Mostra o modal em vez de deslogar direto
         });
     }
 });
 
-// ===============================================================
-// FUNÇÕES DO GRÁFICO ANUAL (v3.2 - Caminho atualizado)
-// ===============================================================
-
-/**
- * 1. Gera uma cor HSL distinta baseada no índice.
- */
-function generateHslColor(index) {
-    // Usa a fórmula de golden ratio conjugado para espalhar as cores (melhor distinção)
-    const hue = (index * 137.508) % 360; 
-    return `hsl(${hue}, 70%, 50%)`;
-}
-
-/**
- * 2. Busca os dados de todos os meses do ano atual.
- */
-async function loadAnnualHistory() {
-    if (!userId || !annualChartEl) return;
-    
-    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    const fetchPromises = months.map(month => {
-        // v3.2: Caminho atualizado
-        const path = `usuarios/${userId}/fixos/${currentYear}-${month}`;
-        return get(ref(db, path));
-    });
-
-    try {
-        const snapshots = await Promise.all(fetchPromises);
-        const annualData = processAnnualData(snapshots);
-        renderAnnualChart(annualData);
-    } catch (error) {
-        console.error("Erro ao carregar histórico anual:", error);
-    }
-}
-
-/**
- * 3. Processa os snapshots do Firebase para o formato do Chart.js.
- */
-function processAnnualData(snapshots) {
-    const expensesHistory = {};
-    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    let uniqueExpenseIndex = 0;
-
-    snapshots.forEach((snapshot, monthIndex) => {
-        if (snapshot.exists()) {
-            snapshot.forEach(child => {
-                const despesa = child.val();
-                // Normaliza a descrição para garantir que "Energia " e "Energia" sejam o mesmo
-                const key = despesa.descricao.trim(); 
-                
-                // Inicializa o array se a despesa for nova
-                if (!expensesHistory[key]) {
-                    expensesHistory[key] = {
-                        data: new Array(12).fill(0),
-                        index: uniqueExpenseIndex++
-                    }; 
-                }
-                
-                // Adiciona o valor ao mês correto
-                expensesHistory[key].data[monthIndex] += despesa.valor;
-            });
-        }
-    });
-
-    // Converte o objeto de histórico para o formato de dataset do Chart.js
-    const datasets = Object.keys(expensesHistory).map((description) => {
-        const item = expensesHistory[description];
-        const color = generateHslColor(item.index); 
-        return {
-            label: description,
-            data: item.data,
-            borderColor: color,
-            backgroundColor: color + '33', // Cor com transparência
-            fill: false,
-            tension: 0.2 // Curvatura da linha
-        };
-    });
-    
-    return {
-        labels: months,
-        datasets: datasets
-    };
-}
-
-/**
- * 4. Renderiza o gráfico anual.
- */
-function renderAnnualChart(data) {
-    if (!annualChartEl || typeof Chart === 'undefined') {
-        console.warn("Elemento do gráfico ou biblioteca Chart.js não encontrado.");
-        return;
-    }
-
-    // Destrói a instância anterior, se existir, para evitar vazamento de memória
-    if (annualChartInstance) {
-        annualChartInstance.destroy();
-    }
-
-    annualChartInstance = new Chart(annualChartEl.getContext('2d'), {
-        type: 'line',
-        data: data,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: `Comparação Anual de Despesas Fixas (${currentYear})`,
-                    font: { size: 16, weight: 'bold' }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            label += formatCurrency(context.parsed.y);
-                            return label;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Valor (R$)'
-                    },
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-// ===============================================================
-
-
-// ===============================================================
-// 3. NOVA FUNÇÃO PARA CARREGAR OS CARTÕES (v3.2 - Caminho atualizado)
-// ===============================================================
-async function loadDynamicCardData() {
-    if (!userId) return;
-
-    // 1. getCartoesHtmlOptions() já busca de 'usuarios/' (via main.js v4.1)
-    const cartoesHtml = await getCartoesHtmlOptions();
-
-    // 2. Insere as opções nos dois selects da página
-    if (formaPagamentoSelect) {
-        formaPagamentoSelect.innerHTML += cartoesHtml;
-    }
-    if (editFormaPagamentoSelect) {
-        editFormaPagamentoSelect.innerHTML += cartoesHtml;
-    }
-
-    // 3. v3.2: Caminho atualizado
-    const configRef = ref(db, `usuarios/${userId}/cartoes/config`);
-    try {
-        const snapshot = await get(configRef);
-        if (snapshot.exists()) {
-            snapshot.forEach(child => {
-                const cartao = child.val();
-                // Adiciona ao mapa de ícones: "NuBank": "🟣"
-                if (cartao.nome && cartao.icone) {
-                    pagamentoIcones[cartao.nome] = cartao.icone;
-                }
-            });
-        }
-    } catch (error) {
-        console.error("Erro ao carregar ícones dos cartões:", error);
-    }
-}
-// ===============================================================
-
-function updateAvisoMes() {
-    if (!avisoMesEl) return;
-    const displayEl = document.getElementById('current-month-display');
-    avisoMesEl.textContent = displayEl ? displayEl.textContent : `${currentMonth}/${currentYear}`;
-    
-    vencimentoInput.value = `${currentYear}-${currentMonth}-10`;
-}
-
-// ---- LÓGICA DO FORMULÁRIO (CRIAR) (v3.2 - Caminho atualizado) ----
-recorrenciaSelect.addEventListener('change', () => {
-    parcelasGroup.style.display = (recorrenciaSelect.value === 'parcelada') ? 'flex' : 'none';
-});
-
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!userId) return;
-
-    if (!vencimentoInput.value) {
-        alert("Por favor, selecione uma data de vencimento.");
-        return;
-    }
-
-    const data = {
-        vencimento: vencimentoInput.value,
-        categoria: categoriaSelect.value, 
-        descricao: descricaoInput.value,
-        formaPagamento: formaPagamentoSelect.value,
-        valor: parseCurrency(valorInput.value),
-        recorrencia: recorrenciaSelect.value,
-        numParcelas: (recorrenciaSelect.value === 'parcelada') ? parseInt(parcelasInput.value) : (recorrenciaSelect.value === 'unica' ? 1 : 'mensal'),
-        grupoId: push(child(ref(db), 'grupos')).key
-    };
-
-    if (data.valor <= 0) return alert("O valor deve ser maior que zero.");
-    
-    const [startYear, startMonth, startDay] = data.vencimento.split('-').map(Number);
-    
-    if (data.recorrencia === 'mensal') {
-        // v3.2: Caminho atualizado
-        const regraRef = ref(db, `usuarios/${userId}/fixos/regras/${data.grupoId}`);
-        await set(regraRef, data);
-        await salvarInstanciaFixo(data, startYear, startMonth.toString().padStart(2, '0'), startDay, 1, 'mensal');
-        
-    } else {
-        const totalParcelas = data.numParcelas;
-        for (let i = 1; i <= totalParcelas; i++) {
-            const parcelaDate = new Date(startYear, startMonth - 1, startDay);
-            parcelaDate.setMonth(parcelaDate.getMonth() + (i - 1));
-            
-            const pYear = parcelaDate.getFullYear();
-            const pMonth = (parcelaDate.getMonth() + 1).toString().padStart(2, '0');
-            const pDay = parcelaDate.getDate();
-            
-            await salvarInstanciaFixo(data, pYear, pMonth, pDay, i, totalParcelas);
-        }
-    }
-    
-    form.reset();
-    parcelasGroup.style.display = 'none';
-    vencimentoInput.value = `${currentYear}-${currentMonth}-10`;
-});
-
-// v3.2: Caminho atualizado
-async function salvarInstanciaFixo(data, pYear, pMonth, pDay, parcelaAtual, parcelaTotal) {
-    const path = `usuarios/${userId}/fixos/${pYear}-${pMonth}`;
-    const newRef = push(ref(db, path));
-    
-    const diaString = pDay.toString().padStart(2, '0');
-    
-    const instanciaData = {
-        ...data,
-        id: newRef.key,
-        vencimento: `${pYear}-${pMonth}-${diaString}`,
-        parcelaInfo: {
-            grupoId: data.grupoId,
-            atual: parcelaAtual,
-            total: parcelaTotal
-        },
-        status: 'pendente'
-    };
-    
-    await set(newRef, instanciaData);
-}
-
-
-// ---- CARREGAR DESPESAS DO MÊS (v3.2 - Caminhos atualizados) ----
-async function loadDespesasFixas() {
-    if (!userId) return;
-
-    if (activeListener) {
-        off(activeListener.ref, 'value', activeListener.callback);
-    }
-    
-    try {
-        await aplicarRegrasMensais();
-    } catch (error) {
-        console.error("Erro ao aplicar regras mensais:", error);
-    }
-    
-    // v3.2: Caminho atualizado
-    const path = `usuarios/${userId}/fixos/${currentYear}-${currentMonth}`;
-    const dataRef = ref(db, path);
-    
-    const callback = (snapshot) => {
-        tbody.innerHTML = '';
-        let totalPago = 0;
-        let totalPendente = 0;
-        
-        if (snapshot.exists()) {
-            snapshot.forEach((child) => {
-                const despesa = child.val();
-                renderRow(despesa);
-                
-                if (despesa.status === 'pago') {
-                    totalPago += despesa.valor;
-                } else {
-                    totalPendente += despesa.valor;
-                }
-            });
-        }
-        totalPagoEl.textContent = formatCurrency(totalPago);
-        totalPendenteEl.textContent = formatCurrency(totalPendente);
-
-        // Chama a atualização do histórico anual após renderizar a tabela
-        loadAnnualHistory(); 
-    };
-    
-    onValue(dataRef, callback);
-    activeListener = { ref: dataRef, callback: callback };
-}
-
-// v3.2: Caminhos atualizados
-async function aplicarRegrasMensais() {
-    const regrasRef = ref(db, `usuarios/${userId}/fixos/regras`);
-    const regrasSnapshot = await get(regrasRef);
-    if (!regrasSnapshot.exists()) return;
-    
-    const mesAtualPath = `usuarios/${userId}/fixos/${currentYear}-${currentMonth}`;
-    const mesAtualSnapshot = await get(ref(db, mesAtualPath));
-    const despesasMesAtual = mesAtualSnapshot.val() || {};
-
-    const promessasDeAplicacao = [];
-
-    regrasSnapshot.forEach((regraChild) => {
-        const regra = regraChild.val();
-        if (!regra) return; 
-
-        const existeNoMes = Object.values(despesasMesAtual).some(d => d.grupoId === regra.grupoId);
-        // v3.2: Caminho atualizado
-        const excecaoPath = `usuarios/${userId}/fixos/regras/${regra.grupoId}/excecoes/${currentYear}-${currentMonth}`;
-        
-        if (!existeNoMes) {
-            promessasDeAplicacao.push(
-                get(ref(db, excecaoPath)).then(excecaoSnapshot => {
-                    if (!excecaoSnapshot.exists()) {
-                        if (!regra.vencimento) {
-                            console.error("Regra Mestra corrompida ou sem vencimento. Pulando:", regraChild.key, regra);
-                            return null;
-                        }
-                        const [regraY, regraM, regraD] = regra.vencimento.split('-').map(Number);
-                        const mesesDiff = (currentYear - regraY) * 12 + (parseInt(currentMonth) - regraM);
-                        if (mesesDiff < 0) return null; 
-                        const parcelaAtual = mesesDiff + 1;
-                        const ultimoDiaDoMes = new Date(currentYear, parseInt(currentMonth), 0).getDate();
-                        const diaDoVencimento = Math.min(regraD, ultimoDiaDoMes);
-                        return salvarInstanciaFixo(regra, currentYear, currentMonth, diaDoVencimento, parcelaAtual, 'mensal');
-                    }
-                    return null;
-                })
-            );
-        }
-    });
-    
-    await Promise.all(promessasDeAplicacao);
-}
-
-// ---- RENDERROW (v3.1 - Lógica mantida) ----
-function renderRow(despesa) {
-    if (!despesa || !despesa.vencimento) return; 
-
-    const parcelaInfo = despesa.parcelaInfo || { 
-        grupoId: null, 
-        atual: 1, 
-        total: 1 
-    };
-
-    const tr = document.createElement('tr');
-    tr.dataset.id = despesa.id;
-    tr.dataset.grupoId = despesa.grupoId;
-    tr.dataset.recorrencia = despesa.recorrencia;
-    tr.dataset.valor = despesa.valor;
-    tr.dataset.status = despesa.status;
-    tr.dataset.formaPagamento = despesa.formaPagamento;
-    tr.dataset.vencimento = despesa.vencimento;
-    tr.dataset.categoria = despesa.categoria; 
-    tr.dataset.descricao = despesa.descricao; 
-    tr.dataset.parcelaTotal = parcelaInfo.total; 
-    
-    const [y, m, d] = despesa.vencimento.split('-');
-    const vencimentoFormatado = `${d}/${m}/${y}`;
-    const isPago = despesa.status === 'pago';
-    
-    let parcelaLabel = '';
-    if (parcelaInfo.total === 'mensal') {
-        parcelaLabel = `(Mês ${parcelaInfo.atual})`;
-    }
-    else if (typeof parcelaInfo.total === 'number' && parcelaInfo.total > 1) {
-        parcelaLabel = `(${parcelaInfo.atual}/${parcelaInfo.total})`;
-    }
-    
-    const categoriaNome = despesa.categoria;
-    const catIcone = categoriaIcones[categoriaNome] || "📦"; 
-
-    const pagamentoNome = despesa.formaPagamento;
-    const pagIcone = pagamentoIcones[pagamentoNome] || "💳"; // Padrão
-
-    tr.innerHTML = `
-        <td>${vencimentoFormatado}</td>
-        <td><span class="tag info">${catIcone} ${categoriaNome}</span></td>
-        <td>${despesa.descricao}</td>
-        <td>${parcelaLabel}</td>
-        <td>${pagIcone} ${pagamentoNome}</td>
-        <td>${formatCurrency(despesa.valor)}</td>
-        <td>
-            <input type="checkbox" class="status-checkbox" ${isPago ? 'checked' : ''}>
-        </td>
-        <td class="actions">
-            <button class="btn-icon warning btn-edit">
-                <span class="material-icons-sharp">edit</span>
-            </button>
-            <button class="btn-icon danger btn-delete">
-                <span class="material-icons-sharp">delete</span>
-            </button>
-        </td>
-    `;
-    
-    tbody.appendChild(tr);
-
-    tr.querySelector('.status-checkbox').addEventListener('change', handleCheckboxChange);
-    tr.querySelector('.btn-delete').addEventListener('click', handleDeleteClick);
-    tr.querySelector('.btn-edit').addEventListener('click', handleEditClick);
-}
-
-// ---- FUNÇÕES DE AÇÃO (v3.2 - Caminhos atualizados) ----
-
-async function handleCheckboxChange(e) {
-    const tr = e.target.closest('tr');
-    const id = tr.dataset.id;
-    const valor = parseFloat(tr.dataset.valor);
-    const formaPagamento = tr.dataset.formaPagamento;
-    const newStatus = e.target.checked ? 'pago' : 'pendente';
-    const vencimento = tr.dataset.vencimento; 
-    
-    if (newStatus === 'pago' && PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
-        // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
-        const temSaldo = await verificarSaldoSuficiente(valor);
-        if (!temSaldo) {
-            alert("❌ Saldo em Caixa insuficiente para pagar esta conta!");
-            e.target.checked = false; 
-            return; 
-        }
-    }
-
-    try {
-        const [entryYear, entryMonth] = vencimento.split('-');
-        // v3.2: Caminho atualizado
-        const path = `usuarios/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
-        
-        await update(ref(db, path), { status: newStatus }); 
-        tr.dataset.status = newStatus;
-        
-        if (PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
-            const ajuste = newStatus === 'pago' ? -valor : valor;
-            await updateSaldoGlobal(ajuste); 
-        }
-    } catch (error) {
-        console.error("Erro ao atualizar status:", error);
-        alert("Não foi possível atualizar o status.");
-        e.target.checked = !e.target.checked; 
-    }
-}
-
-// v3.2: Caminhos atualizados
-function handleDeleteClick(e) {
-    const tr = e.target.closest('tr');
-    const id = tr.dataset.id;
-    const grupoId = tr.dataset.grupoId;
-    const recorrencia = tr.dataset.recorrencia;
-    const valor = parseFloat(tr.dataset.valor);
-    const status = tr.dataset.status;
-    const formaPagamento = tr.dataset.formaPagamento;
-    const vencimento = tr.dataset.vencimento; 
-    
-    const [entryYear, entryMonth] = vencimento.split('-');
-    // v3.2: Caminho atualizado
-    const itemPath = `usuarios/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
-
-    const deleteFn = async () => {
-        const btnApenasEsta = document.getElementById('modal-parcela-btn-apenas-esta');
-        btnApenasEsta.disabled = true;
-        btnApenasEsta.textContent = "Excluindo...";
-        
-        if (status === 'pago' && PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
-            await updateSaldoGlobal(valor); 
-        }
-        await remove(ref(db, itemPath));
-        
-        if(recorrencia === 'mensal') {
-            // v3.2: Caminho atualizado
-            const excecaoPath = `usuarios/${userId}/fixos/regras/${grupoId}/excecoes/${entryYear}-${entryMonth}`;
-            await set(ref(db, excecaoPath), true);
-        }
-        
-        hideModal('modal-parcela-confirm');
-    };
-
-    const deleteAllFn = async () => {
-        const btnTodas = document.getElementById('modal-parcela-btn-todas');
-        btnTodas.disabled = true;
-        btnTodas.textContent = "Excluindo...";
-        
-        try {
-            if (status === 'pago' && PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
-                await updateSaldoGlobal(valor); 
-            }
-            await remove(ref(db, itemPath)); 
-
-            if (recorrencia === 'mensal') {
-                // v3.2: Caminho atualizado
-                await remove(ref(db, `usuarios/${userId}/fixos/regras/${grupoId}`));
-            }
-            
-            const [startYear, startMonth] = vencimento.split('-').map(Number);
-            
-            for (let i = 1; i <= 120; i++) { 
-                const dataBase = new Date(startYear, startMonth - 1, 1);
-                dataBase.setMonth(dataBase.getMonth() + i);
-                
-                const futuraYear = dataBase.getFullYear();
-                const futuraMonth = (dataBase.getMonth() + 1).toString().padStart(2, '0');
-                
-                // v3.2: Caminho atualizado
-                const pathBusca = `usuarios/${userId}/fixos/${futuraYear}-${futuraMonth}`;
-                
-                const snapshot = await get(ref(db, pathBusca));
-                if (snapshot.exists()) {
-                    const deletePromises = [];
-                    
-                    snapshot.forEach((child) => {
-                        const despesa = child.val();
-                        if (despesa.grupoId === grupoId) {
-                            if (despesa.status === 'pago' && PAGAMENTO_AFETA_SALDO.includes(despesa.formaPagamento)) {
-                                deletePromises.push(updateSaldoGlobal(despesa.valor));
-                            }
-                            deletePromises.push(remove(child.ref));
-                        }
-                    });
-                    
-                    await Promise.all(deletePromises);
-                }
-            }
-        } catch (error) {
-            console.error("Erro ao excluir todas as futuras:", error);
-        } finally {
-            hideModal('modal-parcela-confirm');
-        }
-    };
-    
-    if (recorrencia === 'unica' || recorrencia === undefined) {
-        // v3.2: Corrigido para usar o modal 'modal-confirm' (estava usando 'confirm()' nativo)
-        const modal = document.getElementById('modal-confirm');
-        const modalMessage = document.getElementById('modal-message');
-        if(modal && modalMessage) {
-            modalMessage.textContent = 'Tem certeza que deseja excluir esta despesa?';
-            showModal('modal-confirm', deleteFn); // Mostra o modal de confirmação simples
-        } else {
-             // Fallback caso o modal-confirm não esteja no HTML (embora devesse estar)
-             if(confirm("Tem certeza que deseja excluir esta despesa?")) {
-                (async () => {
-                    if (status === 'pago' && PAGAMENTO_AFETA_SALDO.includes(formaPagamento)) {
-                        await updateSaldoGlobal(valor); 
-                    }
-                    await remove(ref(db, itemPath));
-                })();
-             }
-        }
-    } else {
-        showModal('modal-parcela-confirm', deleteFn, deleteAllFn);
-    }
-}
-
-// ---- FUNÇÕES DE EDIÇÃO (v3.2 - Caminhos atualizados) ----
-function handleEditClick(e) {
-    const tr = e.target.closest('tr');
-    
-    const id = tr.dataset.id;
-    const vencimento = tr.dataset.vencimento;
-    const categoria = tr.dataset.categoria;
-    const descricao = tr.dataset.descricao;
-    const formaPagamento = tr.dataset.formaPagamento;
-    const valor = parseFloat(tr.dataset.valor);
-    const status = tr.dataset.status;
-
-    const [entryYear, entryMonth] = vencimento.split('-');
-    formEdit.dataset.id = id;
-    // v3.2: Caminho atualizado
-    formEdit.dataset.entryPath = `usuarios/${userId}/fixos/${entryYear}-${entryMonth}/${id}`;
-    formEdit.dataset.valorAntigo = valor;
-    formEdit.dataset.formaPagamentoAntiga = formaPagamento;
-    formEdit.dataset.statusAntigo = status;
-    
-    editVencimentoInput.value = vencimento;
-    editCategoriaSelect.value = categoria;
-    editDescricaoInput.value = descricao;
-    editFormaPagamentoSelect.value = formaPagamento; 
-    editValorInput.value = formatCurrency(valor);
-    
-    modalEdit.style.display = 'flex';
-}
-
-async function handleSaveEdit(e) {
-    e.preventDefault();
-    if (!userId) return;
-
-    const id = formEdit.dataset.id;
-    const path = formEdit.dataset.entryPath; // Já contém 'usuarios/'
-    const valorAntigo = parseFloat(formEdit.dataset.valorAntigo);
-    const formaPagamentoAntiga = formEdit.dataset.formaPagamentoAntiga;
-    const statusAntigo = formEdit.dataset.statusAntigo; 
-    
-    const novosDados = {
-        categoria: editCategoriaSelect.value,
-        descricao: editDescricaoInput.value,
-        formaPagamento: editFormaPagamentoSelect.value, 
-        valor: parseCurrency(editValorInput.value)
-    };
-
-    if (novosDados.valor <= 0) {
-        alert("O valor deve ser maior que zero.");
+// 5. NOVAS FUNÇÕES DE MODAL DE LOGOUT (v4.1)
+function showLogoutConfirm() {
+    const modal = document.getElementById('modal-logout-confirm');
+    if (!modal) {
+        console.error("Modal de logout não encontrado no HTML!");
+        // Se o modal não existe, faz o logout direto
+        (async () => {
+            try { await signOut(auth); } catch (e) { console.error(e); }
+        })();
         return;
     }
     
-    try {
-        const ajusteSaldo = await calcularAjusteSaldo(
-            valorAntigo, 
-            novosDados.valor, 
-            formaPagamentoAntiga, 
-            novosDados.formaPagamento,
-            statusAntigo 
-        );
+    const btnConfirm = document.getElementById('modal-logout-btn-confirm');
+    const btnCancel = document.getElementById('modal-logout-btn-cancel');
 
-        if (ajusteSaldo < 0) { 
-            // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
-            const temSaldo = await verificarSaldoSuficiente(Math.abs(ajusteSaldo));
-            if (!temSaldo) {
-                alert("❌ Saldo em Caixa insuficiente para esta alteração!");
-                return; 
-            }
-        }
-
-        // Atualiza os dados no mesmo nó
-        await update(ref(db, path), novosDados);
-        
-        if (ajusteSaldo !== 0) {
-            await updateSaldoGlobal(ajusteSaldo);
-        }
-        
-        modalEdit.style.display = 'none';
-        
-    } catch (error) {
-        console.error("Erro ao salvar edição:", error);
-        alert("Não foi possível salvar as alterações.");
-    }
-}
-
-async function calcularAjusteSaldo(valorAntigo, valorNovo, formaAntiga, formaNova, statusAntigo) {
-    if (statusAntigo === 'pendente') {
-        return 0;
-    }
-
-    const antigoAfeta = PAGAMENTO_AFETA_SALDO.includes(formaAntiga);
-    const novoAfeta = PAGAMENTO_AFETA_SALDO.includes(formaNova);
-    
-    let ajuste = 0;
-
-    if (antigoAfeta && novoAfeta) {
-        ajuste = valorAntigo - valorNovo;
-    } 
-    else if (antigoAfeta && !novoAfeta) {
-        ajuste = valorAntigo;
-    } 
-    else if (!antigoAfeta && novoAfeta) {
-        ajuste = -valorNovo;
-    }
-    // else (!antigoAfeta && !novoAfeta) -> Ajuste = 0
-
-    return ajuste;
-}
-
-// ---- Funções Utilitárias (v3.2 - Caminho atualizado) ----
-// v3.2: Caminho atualizado
-async function updateSaldoGlobal(valor) {
-    if (valor === 0) return;
-    const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
-    try {
-        const snapshot = await get(saldoRef);
-        let saldoAcumulado = snapshot.val()?.saldoAcumulado || 0;
-        saldoAcumulado += valor;
-        await set(saldoRef, { saldoAcumulado: saldoAcumulado });
-    } catch (error) {
-        console.error("Erro ao atualizar saldo global:", error);
-    }
-}
-
-// ---- FUNÇÃO DO MODAL (Exclusão) (v3.2 - Corrigida para usar modal-confirm) ----
-function showModal(modalId, confirmFn, deleteAllFn) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
     modal.style.display = 'flex';
 
-    if (modalId === 'modal-confirm') {
-        // v3.2: Adicionado suporte para o modal-confirm padrão
-        const btnConfirm = document.getElementById('modal-btn-confirm');
-        const btnCancel = document.getElementById('modal-btn-cancel');
-        const newBtnConfirm = btnConfirm.cloneNode(true);
-        const newBtnCancel = btnCancel.cloneNode(true);
-        
-        newBtnConfirm.onclick = confirmFn;
-        newBtnCancel.onclick = () => hideModal(modalId);
-        
-        btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
-        btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    // Garante que os listeners sejam atribuídos apenas uma vez (removendo e adicionando)
+    const newBtnConfirm = btnConfirm.cloneNode(true);
+    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+    
+    newBtnConfirm.onclick = async () => {
+        try {
+            await signOut(auth);
+            // O onAuthStateChanged (linha 88) fará o redirecionamento
+        } catch (error) {
+            console.error("Erro ao fazer logout:", error);
+        }
+    };
 
-    } else if (modalId === 'modal-parcela-confirm') {
-        const oldBtnApenasEsta = document.getElementById('modal-parcela-btn-apenas-esta');
-        const oldBtnTodas = document.getElementById('modal-parcela-btn-todas');
-        const oldBtnCancel = document.getElementById('modal-parcela-btn-cancel');
-
-        // Clonar para remover listeners antigos
-        const newBtnApenasEsta = oldBtnApenasEsta.cloneNode(true);
-        const newBtnTodas = oldBtnTodas.cloneNode(true);
-        const newBtnCancel = oldBtnCancel.cloneNode(true);
-
-        newBtnApenasEsta.disabled = false;
-        newBtnApenasEsta.textContent = "Excluir Apenas Este Mês";
-        newBtnTodas.disabled = false;
-        newBtnTodas.textContent = "Excluir Todas as Futuras";
-
-        newBtnApenasEsta.addEventListener('click', confirmFn);
-        newBtnTodas.addEventListener('click', deleteAllFn);
-        newBtnCancel.addEventListener('click', () => hideModal(modalId));
-
-        oldBtnApenasEsta.replaceWith(newBtnApenasEsta);
-        oldBtnTodas.replaceWith(newBtnTodas);
-        oldBtnCancel.replaceWith(newBtnCancel);
-    }
+    const newBtnCancel = btnCancel.cloneNode(true);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    
+    newBtnCancel.onclick = () => {
+        hideLogoutConfirm();
+    };
 }
 
-function hideModal(modalId) {
-    const modal = document.getElementById(modalId);
+function hideLogoutConfirm() {
+    const modal = document.getElementById('modal-logout-confirm');
     if (modal) {
         modal.style.display = 'none';
     }
+}
+
+
+// ===============================================================
+// 6. LÓGICA DE NOTIFICAÇÕES (v4.1 - Caminhos 'usuarios/' e 'despesas')
+// ===============================================================
+
+function limparAlertListeners() {
+    globalAlertListeners.forEach(l => off(l.ref, 'value', l.callback));
+    globalAlertListeners = [];
+}
+
+function listenToGlobalAlerts(userId) {
+    if (!userId) return;
+    
+    limparAlertListeners();
+    globalAlertData = { fixos: {}, pendencias: {}, cartoes: {}, pagamentosFatura: [], despesasAtual: {} }; 
+    
+    const dataAtual = new Date(currentYear, currentMonth - 1, 1);
+    const dataSeguinte = new Date(dataAtual);
+    dataSeguinte.setMonth(dataSeguinte.getMonth() + 1);
+    const mesAtualPath = `${currentYear}-${currentMonth}`;
+    const mesSeguintePath = `${dataSeguinte.getFullYear()}-${(dataSeguinte.getMonth() + 1).toString().padStart(2, '0')}`;
+    
+    // v4.1: Caminhos atualizados para 'usuarios/'
+    const pathsToListen = {
+        cartoes: `usuarios/${userId}/cartoes/config`,
+        fixosAtual: `usuarios/${userId}/fixos/${mesAtualPath}`,
+        fixosSeguinte: `usuarios/${userId}/fixos/${mesSeguintePath}`,
+        pendenciasAtual: `usuarios/${userId}/pendencias/${mesAtualPath}`,
+        pendenciasSeguinte: `usuarios/${userId}/pendencias/${mesSeguintePath}`,
+        despesasAtual: `usuarios/${userId}/despesas/${mesAtualPath}` // v4.1: Adicionado
+    };
+
+    // v4.1: Função interna para reprocessar pagamentos (evita 'race condition')
+    const reprocessarPagamentos = () => {
+        const pendencias = globalAlertData.pendencias[mesAtualPath] || {};
+        const despesas = globalAlertData.despesasAtual || {}; 
+
+        // Busca pagamentos em 'pendencias' (legado)
+        const p1 = Object.values(pendencias).filter(p => 
+            p.descricao.startsWith('Pagamento Fatura') && p.status === 'pago'
+        );
+        // Busca pagamentos em 'despesas' (novo v6.0 de cartoes.js)
+        const p2 = Object.values(despesas).filter(p => 
+            p.descricao.startsWith('Pagamento Fatura') && p.categoria === 'Fatura'
+        );
+        
+        globalAlertData.pagamentosFatura = [...p1, ...p2];
+        processAndRenderAlerts();
+    };
+
+    const cartoesRef = ref(db, pathsToListen.cartoes);
+    const cartoesCallback = onValue(cartoesRef, (snap) => {
+        globalAlertData.cartoes = snap.val() || {};
+        processAndRenderAlerts();
+    });
+    globalAlertListeners.push({ ref: cartoesRef, callback: cartoesCallback, eventType: 'value' });
+
+    const fixosAtualRef = ref(db, pathsToListen.fixosAtual);
+    const fixosAtualCallback = onValue(fixosAtualRef, (snap) => {
+        globalAlertData.fixos[mesAtualPath] = snap.val() || {};
+        processAndRenderAlerts();
+    });
+    globalAlertListeners.push({ ref: fixosAtualRef, callback: fixosAtualCallback, eventType: 'value' });
+    
+    const fixosSeguinteRef = ref(db, pathsToListen.fixosSeguinte);
+    const fixosSeguinteCallback = onValue(fixosSeguinteRef, (snap) => {
+        globalAlertData.fixos[mesSeguintePath] = snap.val() || {};
+        processAndRenderAlerts();
+    });
+    globalAlertListeners.push({ ref: fixosSeguinteRef, callback: fixosSeguinteCallback, eventType: 'value' });
+
+    const pendenciasAtualRef = ref(db, pathsToListen.pendenciasAtual);
+    const pendenciasAtualCallback = onValue(pendenciasAtualRef, (snap) => {
+        globalAlertData.pendencias[mesAtualPath] = snap.val() || {};
+        reprocessarPagamentos(); // Usa a função interna
+    });
+    globalAlertListeners.push({ ref: pendenciasAtualRef, callback: pendenciasAtualCallback, eventType: 'value' });
+
+    const pendenciasSeguinteRef = ref(db, pathsToListen.pendenciasSeguinte);
+    const pendenciasSeguinteCallback = onValue(pendenciasSeguinteRef, (snap) => {
+        globalAlertData.pendencias[mesSeguintePath] = snap.val() || {};
+        processAndRenderAlerts();
+    });
+    globalAlertListeners.push({ ref: pendenciasSeguinteRef, callback: pendenciasSeguinteCallback, eventType: 'value' });
+
+    // v4.1: Novo listener para despesas (para pagamentos de fatura)
+    const despesasAtualRef = ref(db, pathsToListen.despesasAtual);
+    const despesasAtualCallback = onValue(despesasAtualRef, (snap) => {
+        globalAlertData.despesasAtual = snap.val() || {};
+        reprocessarPagamentos(); // Usa a função interna
+    });
+    globalAlertListeners.push({ ref: despesasAtualRef, callback: despesasAtualCallback, eventType: 'value' });
+}
+
+// (Lógica de processar e renderizar alertas mantida do v3.3, mas agora
+// é chamada de forma mais segura pelo 'reprocessarPagamentos')
+function processAndRenderAlerts() {
+    let allAlerts = [];
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    Object.values(globalAlertData.fixos).forEach(mes => {
+        Object.values(mes).forEach(item => {
+            if (item.status === 'pendente') {
+                const diff = getDaysDiff(item.vencimento);
+                if (diff <= 3) { 
+                    allAlerts.push({ diffDays: diff, nome: item.descricao, tipo: 'fixo' });
+                }
+            }
+        });
+    });
+
+    Object.values(globalAlertData.pendencias).forEach(mes => {
+        Object.values(mes).forEach(item => {
+            if (item.status === 'pendente' && item.tipo === 'euDevo') {
+                const diff = getDaysDiff(item.vencimento);
+                if (diff <= 3) {
+                    allAlerts.push({ diffDays: diff, nome: item.descricao, tipo: 'pendencia' });
+                }
+            }
+        });
+    });
+
+    Object.values(globalAlertData.cartoes).forEach(cartao => {
+        // (v4.1) 'pagamentosFatura' agora é um Array com dados de 'pendencias' E 'despesas'
+        const faturaPaga = globalAlertData.pagamentosFatura.some(
+            p => p.descricao === `Pagamento Fatura ${cartao.nome}`
+        );
+
+        if (!faturaPaga) {
+            const vencimentoDate = new Date(currentYear, currentMonth - 1, cartao.diaVencimento);
+            const diff = getDaysDiff(vencimentoDate);
+            if (diff <= 3) {
+                allAlerts.push({
+                    diffDays: diff,
+                    nome: `Fatura ${cartao.nome}`,
+                    tipo: 'fatura'
+                });
+            }
+        }
+    });
+
+    renderAlerts(allAlerts);
+}
+
+function renderAlerts(allAlerts) {
+    if (!notificationButton) return; 
+
+    allAlerts.sort((a, b) => a.diffDays - b.diffDays);
+
+    if (allAlerts.length === 0) {
+        notificationCount.style.display = 'none';
+        notificationList.innerHTML = '';
+        notificationPlaceholder.style.display = 'block';
+        notificationButton.classList.remove('has-alerts');
+    } else {
+        notificationCount.style.display = 'flex';
+        notificationCount.textContent = allAlerts.length;
+        notificationList.innerHTML = ''; 
+        notificationPlaceholder.style.display = 'none';
+        notificationButton.classList.add('has-alerts'); 
+
+        allAlerts.forEach(alerta => {
+            let className = '';
+            let texto = '';
+            let icon = 'event_note';
+
+            if (alerta.tipo === 'fatura') icon = 'credit_card';
+            if (alerta.tipo === 'pendencia') icon = 'assignment_late';
+            
+            if (alerta.diffDays < 0) {
+                className = 'due-today'; 
+                texto = `Vencido há ${Math.abs(alerta.diffDays)} dia(s)`;
+            } else if (alerta.diffDays === 0) {
+                className = 'due-today'; 
+                texto = 'Vence HOJE';
+            } else {
+                className = 'due-soon'; 
+                texto = `Vence em ${alerta.diffDays} dia(s)`;
+            }
+
+            const itemEl = document.createElement('div');
+            itemEl.className = `notification-item ${className}`;
+            itemEl.innerHTML = `
+                <span class="material-icons-sharp">${icon}</span>
+                <div>
+                    <strong>${alerta.nome}</strong>
+                    <small>${texto}</small>
+                </div>
+            `;
+            notificationList.appendChild(itemEl);
+        });
+    }
+}
+
+function getDaysDiff(dateString) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const vencimentoDate = new Date(dateString + 'T12:00:00');
+    vencimentoDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = vencimentoDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+}
+
+// ===============================================================
+// 7. FUNÇÕES EXPORTÁVEIS (v4.1 - Caminhos 'usuarios/')
+// ===============================================================
+export function getUserId() {
+    return currentUserId;
+}
+
+export function formatCurrency(value) {
+    if (isNaN(value)) value = 0;
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+export function parseCurrency(value) {
+    if (typeof value !== 'string') return 0;
+    return parseFloat(value.replace(/R\$\s?/, '').replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+// v4.1: Caminho atualizado
+export async function verificarSaldoSuficiente(valorGasto) {
+    if (!currentUserId) {
+        console.error("ID do usuário não encontrado. Não é possível verificar o saldo.");
+        return false; 
+    }
+    
+    const saldoRef = ref(db, `usuarios/${currentUserId}/saldo/global`);
+    try {
+        const snapshot = await get(saldoRef);
+        const saldoAtual = snapshot.val()?.saldoAcumulado || 0;
+        return (saldoAtual >= valorGasto);
+    } catch (error) {
+        console.error("Erro ao ler saldo global:", error);
+        return false; 
+    }
+}
+
+// v4.1: Caminho atualizado
+export async function getCartoesHtmlOptions() {
+    if (!currentUserId) {
+        console.warn("User ID não disponível, não é possível carregar cartões.");
+        return ''; 
+    }
+
+    const path = `usuarios/${currentUserId}/cartoes/config`;
+    const configRef = ref(db, path);
+    let htmlOptions = '';
+
+    try {
+        const snapshot = await get(configRef);
+        if (snapshot.exists()) {
+            const cartoes = snapshot.val();
+            
+            const cartoesArray = Object.values(cartoes)
+                .filter(cartao => !cartao.bloqueado) 
+                .sort((a, b) => a.nome.localeCompare(b.nome));
+
+            cartoesArray.forEach(cartao => {
+                htmlOptions += `<option value="${cartao.nome}">${cartao.icone} ${cartao.nome}</option>`;
+            });
+        }
+        return htmlOptions;
+    } catch (error) {
+        console.error("Erro ao buscar configurações dos cartões:", error);
+        return ''; 
+    }
+}
+
+// ===============================================================
+// 8. OUVINTE DE SALDO GLOBAL (v4.1 - Caminho 'usuarios/')
+// ===============================================================
+// v4.1: Caminho atualizado
+function listenToGlobalBalance(userId) {
+    const balanceContainer = document.getElementById('global-balance-container');
+    const balanceEl = document.getElementById('global-balance-display');
+    
+    if (!balanceEl || !balanceContainer) {
+        return;
+    }
+
+    const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
+    onValue(saldoRef, (snapshot) => {
+        let saldoAcumulado = 0;
+        if (snapshot.exists()) {
+            saldoAcumulado = snapshot.val().saldoAcumulado || 0;
+        }
+        
+        balanceEl.textContent = formatCurrency(saldoAcumulado);
+        
+        if (saldoAcumulado < 0) {
+            balanceEl.style.color = 'var(--danger-color)'; 
+        } else {
+            balanceEl.style.color = 'var(--success-color)';
+        }
+        
+        balanceContainer.style.display = 'flex';
+    });
 }
