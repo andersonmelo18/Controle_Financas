@@ -357,13 +357,17 @@ function renderKPIs() {
     }
 }
 
+// ===============================================================
+// 2. RENDERIZAÇÃO DE METAS (DEFINITIVAMENTE CORRIGIDA)
+// ===============================================================
+
 function renderMetas() {
     // Meta de Entrada
     const percEntrada = (dashboardState.metaEntrada > 0) ? (dashboardState.totalEntradas / dashboardState.metaEntrada) * 100 : 0;
     const restanteEntrada = dashboardState.metaEntrada - dashboardState.totalEntradas;
     
-    // Verificação de metaEntradaProgress
-    if (metaEntradaProgress) {
+    // LINHA 364: A VERIFICAÇÃO "if" É OBRIGATÓRIA AQUI!
+    if (metaEntradaProgress) { // 👈 Este 'if' impede o erro 'null'
         metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
     }
     
@@ -376,7 +380,6 @@ function renderMetas() {
     const percGasto = (dashboardState.metaGasto > 0) ? (dashboardState.totalDespesas / dashboardState.metaGasto) * 100 : 0;
     const restanteGasto = dashboardState.metaGasto - dashboardState.totalDespesas;
     
-    // Verificação de metaGastoProgress
     if (metaGastoProgress) {
         metaGastoProgress.style.width = `${Math.min(percGasto, 100)}%`;
         metaGastoProgress.style.backgroundColor = (percGasto > 100) ? 'var(--danger-color)' : 'var(--success-color)';
