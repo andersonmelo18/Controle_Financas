@@ -362,8 +362,11 @@ function renderMetas() {
     const percEntrada = (dashboardState.metaEntrada > 0) ? (dashboardState.totalEntradas / dashboardState.metaEntrada) * 100 : 0;
     const restanteEntrada = dashboardState.metaEntrada - dashboardState.totalEntradas;
     
-    // 👈 ESTES IFS SÃO CRUCIAIS
-    if (metaEntradaProgress) metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
+    // Verificação de metaEntradaProgress
+    if (metaEntradaProgress) {
+        metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
+    }
+    
     if (metaEntradaPercent) metaEntradaPercent.textContent = `${percEntrada.toFixed(1)}%`;
     if (metaEntradaValor) metaEntradaValor.textContent = formatCurrency(dashboardState.metaEntrada);
     if (metaEntradaRestante) metaEntradaRestante.textContent = (restanteEntrada > 0) ? 
@@ -373,6 +376,7 @@ function renderMetas() {
     const percGasto = (dashboardState.metaGasto > 0) ? (dashboardState.totalDespesas / dashboardState.metaGasto) * 100 : 0;
     const restanteGasto = dashboardState.metaGasto - dashboardState.totalDespesas;
     
+    // Verificação de metaGastoProgress
     if (metaGastoProgress) {
         metaGastoProgress.style.width = `${Math.min(percGasto, 100)}%`;
         metaGastoProgress.style.backgroundColor = (percGasto > 100) ? 'var(--danger-color)' : 'var(--success-color)';
