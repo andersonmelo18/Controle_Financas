@@ -140,7 +140,7 @@ function limparListeners() {
     activeListeners = [];
 }
 
-// =sem-mudancas=============================================================
+// ===============================================================
 // 1. CARREGAMENTO GERAL DOS DADOS (v6.0 - Caminhos atualizados e Otimizado)
 // ===============================================================
 
@@ -738,10 +738,11 @@ function calcularTotaisFaturas(dataMap) {
         );
     });
 
+    // Agrega todas as fontes de gastos (v6.0 - usa os dados já carregados)
     const fontesGastos = [
-        ...Object.values(dataMap.despesas[mesAnteriorPath] || {}),
+        ...Object.values(dataMap.despesasAno[mesAnteriorPath] || {}),
         ...Object.values(dataMap.despesasMes || {}),
-        ...Object.values(dataMap.fixos[mesAnteriorPath] || {}),
+        ...Object.values(dataMap.fixosAno[mesAnteriorPath] || {}),
         ...Object.values(dataMap.fixosMes || {})
     ];
 
@@ -776,8 +777,9 @@ function calcularTotaisFaturas(dataMap) {
         }
     });
 
-    Object.values(dataMap.specs).forEach(compra => {
-        const cartaoConfig = dataMap.cartoesConfig[compra.cartaoId] || Object.values(dataMap.cartoesConfig).find(c => c.nome === compra.cartao);
+    Object.values(dataMap.cartoesSpecs).forEach(compra => {
+        // v6.0: Corrigido - Busca a config pelo nome, não pelo ID
+        const cartaoConfig = Object.values(dataMap.cartoesConfig).find(c => c.nome === compra.cartao);
         if (!cartaoConfig) return;
 
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
@@ -790,8 +792,9 @@ function calcularTotaisFaturas(dataMap) {
         
         while (true) {
             const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
-            const pendenciasDesseMes = dataMap.pendencias[path] || {};
-            const despesasDesseMes = dataMap.despesas[path] || {};
+            // v6.0: Usa os dados anuais já carregados
+            const pendenciasDesseMes = dataMap.pendenciasAno[path] || {};
+            const despesasDesseMes = dataMap.despesasAno[path] || {};
 
             const faturaPagaEmPendencias = Object.values(pendenciasDesseMes).some(p => 
                 p.descricao === `Pagamento Fatura ${cartaoConfig.nome}` && p.status === 'pago'
