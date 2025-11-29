@@ -318,23 +318,43 @@ function processarDadosDashboard(dataMap) {
 }
 
 // ===============================================================
-// 2. RENDERIZAÇÃO DOS COMPONENTES (v5.1 - Lógica mantida)
+// 2. RENDERIZAÇÃO DOS COMPONENTES (COM VERIFICAÇÃO DE NULL)
 // ===============================================================
 
 function renderKPIs() {
-    kpiEntradasEl.textContent = formatCurrency(dashboardState.totalEntradas);
-    kpiDespesasEl.textContent = formatCurrency(dashboardState.totalDespesas);
-    kpiLucroEl.textContent = formatCurrency(dashboardState.lucroLiquido);
-    kpiSaldoAcumuladoEl.textContent = formatCurrency(dashboardState.saldoAcumulado); 
+    // ⚠️ Blindagem: Verifica se o elemento existe antes de usá-lo
+    
+    if (kpiEntradasEl) {
+        kpiEntradasEl.textContent = formatCurrency(dashboardState.totalEntradas);
+    }
+    
+    if (kpiDespesasEl) {
+        kpiDespesasEl.textContent = formatCurrency(dashboardState.totalDespesas);
+    }
+    
+    if (kpiLucroEl) {
+        kpiLucroEl.textContent = formatCurrency(dashboardState.lucroLiquido);
+        kpiLucroEl.className = dashboardState.lucroLiquido < 0 ? 'text-danger' : 'text-success';
+    }
+    
+    if (kpiSaldoAcumuladoEl) {
+        kpiSaldoAcumuladoEl.textContent = formatCurrency(dashboardState.saldoAcumulado); 
+        kpiSaldoAcumuladoEl.className = dashboardState.saldoAcumulado < 0 ? 'text-danger' : 'text-success';
+    }
     
     dashboardState.saldoMesAnterior = dashboardState.saldoAcumulado - dashboardState.lucroLiquido;
-    kpiSaldoMesAnteriorEl.textContent = formatCurrency(dashboardState.saldoMesAnterior); 
+    
+    if (kpiSaldoMesAnteriorEl) {
+        kpiSaldoMesAnteriorEl.textContent = formatCurrency(dashboardState.saldoMesAnterior); 
+    }
 
-    kpiHorasEl.textContent = formatHoras(dashboardState.horasTotal);
-    kpiKmEl.textContent = `${dashboardState.kmTotal.toFixed(1)} km`;
-
-    kpiLucroEl.className = dashboardState.lucroLiquido < 0 ? 'text-danger' : 'text-success';
-    kpiSaldoAcumuladoEl.className = dashboardState.saldoAcumulado < 0 ? 'text-danger' : 'text-success';
+    if (kpiHorasEl) {
+        kpiHorasEl.textContent = formatHoras(dashboardState.horasTotal);
+    }
+    
+    if (kpiKmEl) {
+        kpiKmEl.textContent = `${dashboardState.kmTotal.toFixed(1)} km`;
+    }
 }
 
 function renderMetas() {
