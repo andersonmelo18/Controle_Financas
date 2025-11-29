@@ -729,13 +729,21 @@ function renderGraficoEntradasDespesas() {
 
 
 // ===============================================================
-// 4. LÓGICA DE CÁLCULO DE FATURAS (v5.1 - Lógica mantida)
+// 4. LÓGICA DE CÁLCULO DE FATURAS (CORRIGIDO PARA NÃO TRAVAR)
 // ===============================================================
 
 function calcularTotaisFaturas(dataMap) {
     let totalFaturas = 0;
     const dataFatura = new Date(currentYear, currentMonth - 1, 1);
     
+    // Preparação segura dos dados (Evita o erro "Cannot read properties of undefined")
+    const despesasAnoSafe = dataMap.despesasAno || {};
+    const pendenciasAnoSafe = dataMap.pendenciasAno || {};
+    const fixosAnoSafe = dataMap.fixosAno || {};
+    const despesasMesSafe = dataMap.despesasMes || {};
+    const fixosMesSafe = dataMap.fixosMes || {};
+    const pendenciasMesSafe = dataMap.pendenciasMes || {};
+
     const dataFaturaAnterior = new Date(dataFatura);
     dataFaturaAnterior.setMonth(dataFaturaAnterior.getMonth() - 1);
     const mesAtualPath = `${currentYear}-${currentMonth}`;
@@ -744,30 +752,34 @@ function calcularTotaisFaturas(dataMap) {
     const statusPagamentoAtual = {};
     const statusPagamentoAnterior = {}; 
 
+    // Verifica status de pagamento (fatura paga?)
     Object.values(dataMap.cartoesConfig).forEach(cartao => {
         const nomeFatura = `Pagamento Fatura ${cartao.nome}`;
         
-        const pagoEmDespesas = Object.values(dataMap.despesasMes || {}).some(p => 
+        const pagoEmDespesas = Object.values(despesasMesSafe).some(p => 
             p.descricao === nomeFatura && p.categoria === 'Fatura'
         );
-        const pagoEmPendencias = Object.values(dataMap.pendenciasMes || {}).some(p => 
+        const pagoEmPendencias = Object.values(pendenciasMesSafe).some(p => 
             p.descricao === nomeFatura && p.status === 'pago'
         );
         statusPagamentoAtual[cartao.id] = pagoEmDespesas || pagoEmPendencias;
         
-        statusPagamentoAnterior[cartao.id] = Object.values(dataMap.pendencias[mesAnteriorPath] || {}).some(p => 
+        // Verifica no mês anterior usando as variáveis seguras
+        const pendenciasAnterior = pendenciasAnoSafe[mesAnteriorPath] || {};
+        statusPagamentoAnterior[cartao.id] = Object.values(pendenciasAnterior).some(p => 
             p.descricao === nomeFatura && p.status === 'pago'
         );
     });
 
-    // Agrega todas as fontes de gastos (v6.0 - usa os dados já carregados)
+    // Agrega todas as fontes de gastos
     const fontesGastos = [
-        ...Object.values(dataMap.despesasAno[mesAnteriorPath] || {}),
-        ...Object.values(dataMap.despesasMes || {}),
-        ...Object.values(dataMap.fixosAno[mesAnteriorPath] || {}),
-        ...Object.values(dataMap.fixosMes || {})
+        ...Object.values(despesasAnoSafe[mesAnteriorPath] || {}),
+        ...Object.values(despesasMesSafe),
+        ...Object.values(fixosAnoSafe[mesAnteriorPath] || {}),
+        ...Object.values(fixosMesSafe)
     ];
 
+    // 1. Processa compras à vista e parceladas simples
     fontesGastos.forEach(gasto => {
         if (gasto.categoria === 'Fatura') return; 
 
@@ -799,24 +811,26 @@ function calcularTotaisFaturas(dataMap) {
         }
     });
 
+    // 2. Processa compras parceladas recorrentes (Specs)
     Object.values(dataMap.cartoesSpecs).forEach(compra => {
-        // v6.0: Corrigido - Busca a config pelo nome, não pelo ID
         const cartaoConfig = Object.values(dataMap.cartoesConfig).find(c => c.nome === compra.cartao);
         if (!cartaoConfig) return;
 
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-             console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
              return;
         }
 
         const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
         let dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
         
+        // Loop para ajustar o mês inicial baseado em pagamentos anteriores
         while (true) {
             const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
-            // v6.0: Usa os dados anuais já carregados
-            const pendenciasDesseMes = dataMap.pendenciasAno[path] || {};
-            const despesasDesseMes = dataMap.despesasAno[path] || {};
+            
+            // --- CORREÇÃO AQUI: Usa as variáveis seguras ---
+            const pendenciasDesseMes = pendenciasAnoSafe[path] || {};
+            const despesasDesseMes = despesasAnoSafe[path] || {};
+            // -----------------------------------------------
 
             const faturaPagaEmPendencias = Object.values(pendenciasDesseMes).some(p => 
                 p.descricao === `Pagamento Fatura ${cartaoConfig.nome}` && p.status === 'pago'
