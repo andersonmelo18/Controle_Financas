@@ -4,15 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
     <link rel="icon" type="image/png" href="logo.png">
-
-    <title>Gerenciador de Cartões</title>
-
+    
+    <!-- Título e H2 Corrigidos -->
+    <title>Gestão de Cartões - Controle Financeiro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
 </head>
-
 <body>
 
     <nav class="sidebar">
@@ -22,12 +21,11 @@
         <ul>
             <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
             <li><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
-            <li class="active"><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp.
-                    Variáveis</a></li>
+            <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
             <li><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
-            <li><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
-            <li><a href="cartoes_specs.html"><span class="material-icons-sharp">receipt_long</span>Compras
-                    Parceladas</a></li>
+            <!-- Link Ativo Corrigido -->
+            <li class="active"><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
+            <li><a href="cartoes_specs.html"><span class="material-icons-sharp">receipt_long</span>Compras Parceladas</a></li>
             <li><a href="pendencias.html"><span class="material-icons-sharp">assignment_late</span>Pendências</a></li>
             <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
         </ul>
@@ -37,247 +35,193 @@
     </nav>
 
     <main class="content">
-        <header class="main-header">
-    <button class="hamburger-menu">
-        <span class="material-icons-sharp">menu</span>
-    </button>
-    
-    <h2>Despesas do Dia a Dia</h2>
-
-    <div class="month-selector">
-        <button id="prev-month"><span class="material-icons-sharp">chevron_left</span></button>
-        <h3 id="current-month-display" data-year="2025" data-month="11">Carregando...</h3>
-        <button id="next-month"><span class="material-icons-sharp">chevron_right</span></button>
-    </div>
-
-    <div class="header-actions">
-    
-        <div class="global-balance" id="global-balance-container" style="display: none;">
-            <small>Saldo em Caixa</small>
-            <h3 id="global-balance-display">R$ 0,00</h3>
-        </div>
-
-        <div class="notification-bell">
-            <button id="notification-button" class="btn-icon">
-                <span class="material-icons-sharp">notifications</span>
-                <span id="notification-count" class="badge" style="display: none;">0</span>
-            </button>
-            <div id="notification-dropdown" class="dropdown-content">
-                <div id="notification-list">
-                    <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
-                        Nenhum alerta no momento.
-                    </p>
-                </div>
-            </div>
-        </div>
         
-        <button class="theme-toggler">
-            <span class="material-icons-sharp active">light_mode</span>
-            <span class="material-icons-sharp">dark_mode</span>
-        </button>
-    </div>
-</header>
+        <header class="main-header">
+            <button class="hamburger-menu">
+                <span class="material-icons-sharp">menu</span>
+            </button>
+            
+            <!-- H2 Corrigido -->
+            <h2>Gestão de Cartões de Crédito</h2>
 
-        <section class="card" style="margin: 2rem;">
-            <h3>Registrar Despesa</h3>
-            <form id="form-add-despesa" class="form-container" style="border-bottom: none; margin-bottom: 0;">
-                <div class="form-group">
-                    <label for="despesa-data">Data</label>
-                    <input type="date" id="despesa-data" required>
+            <div class="month-selector">
+                <button id="prev-month"><span class="material-icons-sharp">chevron_left</span></button>
+                <h3 id="current-month-display" data-year="2025" data-month="11">Carregando...</h3>
+                <button id="next-month"><span class="material-icons-sharp">chevron_right</span></button>
+            </div>
+
+            <div class="header-actions">
+            
+                <div class="global-balance" id="global-balance-container" style="display: none;">
+                    <small>Saldo em Caixa</small>
+                    <h3 id="global-balance-display">R$ 0,00</h3>
                 </div>
-                <div class="form-group">
-                    <label for="despesa-categoria">Categoria</label>
-                    <select id="despesa-categoria" required>
-                        <option value="Casa">🏠 Casa (Aluguel, Luz, Água)</option>
-                        <option value="Alimentação">🛒 Alimentação (Mercado)</option>
-                        <option value="Restaurante">🍽️ Restaurante & Delivery</option>
-                        <option value="Transporte">🚗 Transporte (Combustível, App)</option>
-                        <option value="Lazer">🍿 Lazer (Cinema, Passeios)</option>
-                        <option value="Saúde">🩺 Saúde (Farmácia, Médico)</option>
-                        <option value="Educação">🎓 Educação (Cursos, Livros)</option>
-                        <option value="Compras">🛍️ Compras (Roupas, Eletrônicos)</option>
-                        <option value="Serviços">⚙️ Serviços (Assinaturas, Salão)</option>
-                        <option value="Outros">📦 Outros</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="despesa-descricao">Descrição</label>
-                    <input type="text" id="despesa-descricao" required placeholder="Ex: Almoço, Uber, Remédio...">
-                </div>
-                <div class="form-group">
-                    <label for="despesa-forma-pagamento">Forma de Pagamento</label>
-                    <select id="despesa-forma-pagamento" required>
-                        <option value="Saldo em Caixa">🏦 Saldo em Caixa</option>
-                        <option value="Pix">📱 Pix</option>
-                        <option value="Dinheiro">💵 Dinheiro</option>
-                        <!-- Cartões são adicionados por JS -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="despesa-valor">Valor</label>
-                    <input type="text" id="despesa-valor" class="currency" required placeholder="R$ 0,00">
+
+                <div class="notification-bell">
+                    <button id="notification-button" class="btn-icon">
+                        <span class="material-icons-sharp">notifications</span>
+                        <span id="notification-count" class="badge" style="display: none;">0</span>
+                    </button>
+                    <div id="notification-dropdown" class="dropdown-content">
+                        <div id="notification-list">
+                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                                Nenhum alerta no momento.
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 
+                <button class="theme-toggler">
+                    <span class="material-icons-sharp active">light_mode</span>
+                    <span class="material-icons-sharp">dark_mode</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Conteúdo Específico de Cartões -->
+        <section class="card" style="margin: 2rem;">
+            <h3>Gerenciar Meus Cartões</h3>
+            <form id="form-add-cartao" class="form-container">
                 <div class="form-group">
-                    <label for="despesa-comprovante">Anexar Comprovante</label>
-                    <input type="file" id="despesa-comprovante" accept="image/*,.pdf">
+                    <label for="cartao-nome">Nome do Cartão</label>
+                    <input type="text" id="cartao-nome" placeholder="Ex: NuBank, Inter, Digio" required>
+                </div>
+                <div class="form-group">
+                    <label for="cartao-icone">Ícone (Cor)</label>
+                    <select id="cartao-icone" required>
+                        <option value="💳">💳 Padrão (Cinza)</option>
+                        <option value="🟣">🟣 Roxo</option>
+                        <option value="🟠">🟠 Laranja</option>
+                        <option value="🔵">🔵 Azul</option>
+                        <option value="🟢">🟢 Verde</option>
+                        <option value="⚫">⚫ Preto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cartao-fechamento">Dia do Fechamento (Virada)</label>
+                    <input type="number" id="cartao-fechamento" min="1" max="31" placeholder="Ex: 20" required>
+                </div>
+                <div class="form-group">
+                    <label for="cartao-vencimento">Dia do Vencimento</label>
+                    <input type="number" id="cartao-vencimento" min="1" max="31" placeholder="Ex: 28" required>
+                </div>
+                <div class="form-group">
+                    <label for="cartao-limite">Limite Total do Cartão</label>
+                    <input type="text" id="cartao-limite" class="currency" placeholder="R$ 1.000,00" required>
                 </div>
                 <div class="form-group" style="align-items: flex-end;">
-                    <button type="submit" class="btn-primary">Adicionar Despesa</button>
+                    <button type="submit" class="btn-primary">Adicionar Cartão</button>
                 </div>
             </form>
-        </section>
 
-        <section class="card" style="margin: 0 2rem 2rem 2rem;">
-            <h3>Histórico de Despesas Variáveis do Mês</h3>
-
-            <div id="filtro-bar" class="form-container"
-                style="padding-bottom: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                <div class="form-group">
-                    <label for="filtro-categoria">Filtrar por Categoria</label>
-                    <select id="filtro-categoria">
-                        <option value="todas">Todas as Categorias</option>
-                        <!-- Preenchido por JS -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="filtro-forma-pagamento">Filtrar por Pagamento</label>
-                    <select id="filtro-forma-pagamento">
-                        <option value="todos">Todas as Formas</option>
-                        <option value="Saldo em Caixa">🏦 Saldo em Caixa</option>
-                        <option value="Pix">📱 Pix</option>
-                        <option value="Dinheiro">💵 Dinheiro</option>
-                        <!-- Cartões são adicionados por JS -->
-                    </select>
-                </div>
-                <div class="form-group search-bar">
-                    <label for="filtro-busca">Buscar por Descrição</label>
-                    <span class="material-icons-sharp">search</span>
-                    <input type="text" id="filtro-busca" placeholder="Buscar...">
-                </div>
-                <div class="form-group" style="align-items: flex-end;">
-                    <button id="btn-limpar-filtros" class="btn-secondary">
-                        <span class="material-icons-sharp">close</span> Limpar
-                    </button>
-                </div>
-            </div>
-            
+            <h3 style="margin-top: 2rem;">Cartões Salvos</h3>
             <div class="table-container">
-                <table id="table-despesas-variaveis">
+                <table id="table-meus-cartoes">
                     <thead>
                         <tr>
-                            <th>Data</th>
-                            <th>Categoria</th>
-                            <th>Descrição</th>
-                            <th class="text-center">Comprovante</th> 
-                            <th>F. Pagamento</th>
-                            <th>Valor</th>
-                            <th style="width: 140px;">Ações</th>
-                        </tr>
+                            <th>Cartão</th>
+                            <th>Limite Total</th>
+                            <th>Limite Disponível</th> 
+                            <th>Status</th>
+                            <th>Vencimento</th>
+                            <th style="width: 140px;">Ações</th> </tr>
                     </thead>
-                    <tbody id="tbody-despesas-variaveis">
+                    <tbody id="tbody-meus-cartoes">
                         <!-- JS Preenche aqui -->
                     </tbody>
                 </table>
             </div>
+        </section>
 
-            <div class="table-footer">
-                <h3>Total Filtrado:
-                    <span id="total-filtrado" style="color: var(--text-color);">R$ 0,00</span>
-                </h3>
-                <h3 style="text-align: right;">
-                    Total do Mês:
-                    <span id="total-variavel" style="color: var(--danger-color);">R$ 0,00</span>
-                </h3>
+        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+            <h3>Faturas do Mês</h3>
+            <div class="tab-nav" id="faturas-tab-nav" style="justify-content: flex-start;">
+                <!-- JS Preenche aqui -->
             </div>
+            <div class="tab-content-container" id="faturas-tab-content">
+                <!-- JS Preenche aqui -->
+            </div>
+            <h3 style="margin-top: 1.5rem; text-align: right;">
+                Total em Faturas (Mês): 
+                <span id="total-gastos-cartoes-mes" style="color: var(--danger-color);">R$ 0,00</span>
+            </h3>
         </section>
     </main>
 
-    <!-- Modal de Confirmação (Excluir) -->
-    <div id="modal-confirm" class="modal-overlay" style="display: none;">
+    <!-- Modal de Confirmação (Padrão) -->
+    <div id="modal-confirm" class="modal-overlay">
         <div class="modal-content">
-            <h3>Confirmação</h3>
-            <p id="modal-message">Tem certeza que deseja realizar esta ação?</p>
-            <div class="modal-actions">
-                <button id="modal-btn-cancel" class="btn-secondary">Cancelar</button>
-                <button id="modal-btn-confirm" class="btn-danger">Confirmar</button>
+            <div class="modal-header">
+                <h3 id="modal-title">Confirmar Ação</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Tem certeza?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-btn-confirm">Confirmar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Edição -->
-    <div id="modal-edit-despesa" class="modal-overlay" style="display: none;">
+    <!-- Modal de Edição de Cartão -->
+    <div class="modal-container" id="modal-edit-cartao" style="display: none;">
         <div class="modal-content">
-            <h3>Editar Despesa</h3>
-            
-            <form id="form-edit-despesa">
+            <h2>Editar Cartão</h2>
+            <form id="form-edit-cartao" class="form-container">
+                <div class="form-group">
+                    <label for="edit-cartao-nome">Nome do Cartão</label>
+                    <input type="text" id="edit-cartao-nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-cartao-icone">Ícone (Cor)</label>
+                    <select id="edit-cartao-icone" required>
+                        <option value="💳">💳 Padrão (Cinza)</option>
+                        <option value="🟣">🟣 Roxo</option>
+                        <option value="🟠">🟠 Laranja</option>
+                        <option value="🔵">🔵 Azul</option>
+                        <option value="🟢">🟢 Verde</option>
+                        <option value="⚫">⚫ Preto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-cartao-fechamento">Dia do Fechamento</label>
+                    <input type="number" id="edit-cartao-fechamento" min="1" max="31" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-cartao-vencimento">Dia do Vencimento</label>
+                    <input type="number" id="edit-cartao-vencimento" min="1" max="31" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-cartao-limite">Limite Total</label>
+                    <input type="text" id="edit-cartao-limite" class="currency" placeholder="R$ 1.000,00" required>
+                </div>
                 
-                <div class="form-group">
-                    <label for="edit-despesa-data">Data</label>
-                    <input type="date" id="edit-despesa-data" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-despesa-categoria">Categoria</label>
-                    <select id="edit-despesa-categoria" required>
-                        <option value="Casa">🏠 Casa</option>
-                        <option value="Alimentação">🛒 Alimentação</option>
-                        <option value="Restaurante">🍽️ Restaurante</option>
-                        <option value="Transporte">🚗 Transporte</option>
-                        <option value="Lazer">🍿 Lazer</option>
-                        <option value="Saúde">🩺 Saúde</option>
-                        <option value="Educação">🎓 Educação</option>
-                        <option value="Compras">🛍️ Compras</option>
-                        <option value="Serviços">⚙️ Serviços</option>
-                        <option value="Outros">📦 Outros</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-despesa-descricao">Descrição</label>
-                    <input type="text" id="edit-despesa-descricao" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-despesa-forma-pagamento">Forma de Pagamento</label>
-                    <select id="edit-despesa-forma-pagamento" required>
-                        <option value="Saldo em Caixa">🏦 Saldo em Caixa</option>
-                        <option value="Pix">📱 Pix</option>
-                        <option value="Dinheiro">💵 Dinheiro</option>
-                        <!-- Cartões são adicionados por JS -->
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-despesa-valor">Valor</label>
-                    <input type="text" id="edit-despesa-valor" class="currency" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Comprovante</label>
-                    <p id="edit-comprovante-display" style="margin: 0.5rem 0; font-style: italic;"></p>
-                    <label for="edit-despesa-comprovante" style="font-weight: normal;">Trocar/Anexar Novo:</label>
-                    <input type="file" id="edit-despesa-comprovante" accept="image/*,.pdf">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="modal-edit-btn-cancel" class="btn-secondary">Cancelar</button>
-                    <button type="submit" class="btn-primary">Salvar Alterações</button>
+                <div class="modal-buttons" style="grid-column: 1 / -1;">
+                    <button type="button" class="btn btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Salvar Alterações</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Modal de Reverter Pagamento -->
+    <div id="modal-reverter-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-reverter-title">Reverter Pagamento</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-reverter-message">Tem certeza?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-reverter-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-reverter-btn-confirm">Reverter</button>
+            </div>
+        </div>
+    </div>
     
-    <!-- =============================================================== -->
-    <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
-    <!-- =============================================================== -->
-    
-    <!-- Scripts 'compat' ANTIGOS REMOVIDOS -->
-    
-    <script type="module" src="js/firebase-config.js"></script>
-    <script type="module" src="js/main.js"></script>
-    <script type="module" src="js/despesas.js"></script>
-    
-    <!-- Modal de Logout (Copiado) -->
+    <!-- Modal de Logout (Obrigatório em todas as páginas) -->
     <div id="modal-logout-confirm" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -292,6 +236,14 @@
             </div>
         </div>
     </div>
-</body>
 
+    <!-- =============================================================== -->
+    <!-- SCRIPTS (Corrigidos) -->
+    <!-- =============================================================== -->
+    
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/cartoes.js"></script>
+    
+</body>
 </html>
