@@ -16,7 +16,7 @@
 <body>
 
     <nav class="sidebar">
-        <!-- O seu sidebar (sem alterações) -->
+        <!-- Sidebar (sem alterações) -->
         <div class="sidebar-header">
             <h3>Finan<span>Control</span></h3>
         </div>
@@ -38,7 +38,7 @@
     </nav>
 
     <main class="content">
-        <!-- O seu header (sem alterações) -->
+        <!-- Header (sem alterações) -->
         <header class="main-header">
             <button class="hamburger-menu">
                 <span class="material-icons-sharp">menu</span>
@@ -58,7 +58,6 @@
                     <h3 id="global-balance-display">R$ 0,00</h3>
                 </div>
 
-                <!-- (Os seus botões de exportação, sino e tema - sem alterações) -->
                 <button class="btn-primary" id="btn-export-pdf">Exportar PDF</button>
                 <button class="btn-secondary" id="btn-export-csv">Exportar CSV</button>
 
@@ -83,32 +82,34 @@
             </div>
         </header>
 
-        <!-- O seu conteúdo principal (KPIs, Gráficos, Metas, etc.) - IDs MANTIDOS -->
+        <!-- =============================================================== -->
+        <!-- IDs DOS KPIs ATUALIZADOS PARA v6.0 -->
+        <!-- =============================================================== -->
         <section class="kpi-grid" id="kpi-grid-dashboard">
             <div class="card kpi-card">
                 <h4>Total Entradas</h4>
-                <h2 id="total-entradas">R$ 0,00</h2> <!-- ID Mantido -->
+                <h2 id="kpi-total-entradas">R$ 0,00</h2> <!-- ID ATUALIZADO -->
             </div>
             <div class="card kpi-card">
                 <h4>Despesas (do Saldo)</h4>
-                <h2 id="total-despesas">R$ 0,00</h2> <!-- ID Mantido -->
+                <h2 id="kpi-total-despesas">R$ 0,00</h2> <!-- ID ATUALIZADO -->
             </div>
             <div class="card kpi-card kpi-lucro">
                 <h4>Lucro Líquido (do Saldo)</h4>
-                <h2 id="lucro-liquido">R$ 0,00</h2> <!-- ID Mantido -->
+                <h2 id="kpi-lucro-liquido">R$ 0,00</h2> <!-- ID ATUALIZADO -->
             </div>
             <div class="card kpi-card">
                 <h4>Saldo em Caixa</h4>
-                <h2 id="saldo-caixa">R$ 0,00</h2> <!-- ID Mantido -->
-                <small>Saldo anterior: <span id="saldo-acumulado">R$ 0,00</span></small> <!-- ID Mantido -->
+                <h2 id="kpi-saldo-acumulado">R$ 0,00</h2> <!-- ID ATUALIZADO -->
+                <small>Saldo anterior: <span id="saldo-mes-anterior">R$ 0,00</span></small> <!-- ID ATUALIZADO -->
             </div>
             <div class="card kpi-card">
                 <h4>Horas Trabalhadas</h4>
-                <h2 id="horas-total">0h 00m</h2> <!-- ID Mantido -->
+                <h2 id="kpi-total-horas">0h 00m</h2> <!-- ID ATUALIZADO -->
             </div>
             <div class="card kpi-card">
                 <h4>KM Total</h4>
-                <h2 id="km-total">0 km</h2> <!-- ID Mantido -->
+                <h2 id="kpi-total-km">0 km</h2> <!-- ID ATUALIZADO -->
             </div>
         </section>
 
@@ -128,21 +129,23 @@
         </section>
 
 
+        <!-- =============================================================== -->
+        <!-- IDs DAS METAS ATUALIZADOS PARA v6.0 -->
+        <!-- =============================================================== -->
         <section class="main-grid two-cols">
             <div class="card">
                 <h3>Meta de Entradas</h3>
                 <div class="goal-container">
                     <div class="goal-header">
-                        <span>Meta: <strong id="meta-valor">R$ 0,00</strong></span> <!-- ID Mantido -->
-                        <button id="btn-edit-meta" class="btn-icon"><span <!-- ID Mantido -->
+                        <span>Meta: <strong id="meta-entrada-valor">R$ 0,00</strong></span> <!-- ID ATUALIZADO -->
+                        <button id="btn-definir-meta" class="btn-icon"><span <!-- ID ATUALIZADO -->
                                 class="material-icons-sharp">edit</span></button>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress" id="meta-progress" style="width: 0%;"></div> <!-- ID Mantido -->
+                        <div class="progress" id="meta-entrada-progress" style="width: 0%;"></div> <!-- ID ATUALIZADO -->
                     </div>
-                    <p>Faltam <strong id="meta-faltante">R$ 0,00</strong> (<span id="meta-percentual">0%</span>) para
-                        <!-- IDs Mantidos -->
-                        bater a meta.</p>
+                    <p>Faltam <strong id="meta-entrada-restante">R$ 0,00</strong> (<span id="meta-entrada-percent">0%</span>) <!-- IDs ATUALIZADOS -->
+                        para bater a meta.</p>
                 </div>
             </div>
             <div class="card">
@@ -150,7 +153,7 @@
                 <div class="goal-container">
                     <div class="goal-header">
                         <span>Limite: <strong id="meta-gasto-valor">R$ 0,00</strong></span>
-                        <button id="btn-edit-meta-gasto" class="btn-icon"><span
+                        <button id="btn-definir-meta-gasto" class="btn-icon"><span <!-- ID ATUALIZADO -->
                                 class="material-icons-sharp">edit</span></button>
                     </div>
                     <div class="progress-bar">
@@ -320,8 +323,6 @@
     <!-- =============================================================== -->
     <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
     <!-- =============================================================== -->
-
-    <!-- Scripts 'compat' ANTIGOS REMOVIDOS -->
 
     <!-- Scripts de Bibliotecas (Chart.js, jsPDF) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
