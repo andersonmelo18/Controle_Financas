@@ -157,7 +157,7 @@ function limparListeners() {
 }
 
 // ===============================================================
-// 1. CARREGAMENTO GERAL (CORREÇÃO ERRO 2)
+// 1. CARREGAMENTO GERAL (CORREÇÃO DE ESTRUTURA E ESTADO)
 // ===============================================================
 
 async function loadAllDashboardData(yearChanged = false) {
@@ -176,6 +176,7 @@ async function loadAllDashboardData(yearChanged = false) {
     };
 
     if (yearChanged) {
+        // Se mudou o ano, busca todos os dados anuais
         paths.despesasAno = `usuarios/${userId}/despesas`;
         paths.entradasAno = `usuarios/${userId}/entradas`;
         paths.fixosAno = `usuarios/${userId}/fixos`; 
@@ -189,24 +190,41 @@ async function loadAllDashboardData(yearChanged = false) {
         
         const dataMap = {};
         Object.keys(paths).forEach((key, index) => {
-            // Garante que é um objeto vazio se vier null
+            // Garante que é um objeto vazio se vier null do Firebase
             dataMap[key] = results[index].val() || {};
         });
 
-        // Lógica de Segurança para dados Anuais
+        // --- Lógica de Segurança Crítica para dados Anuais ---
+        
         if (!yearChanged) {
-            // Se não mudou o ano, pega do estado, MAS garante que não seja undefined
-            dataMap.despesasAno = dashboardState.dadosResumoAnual.despesasAno || {};
-            dataMap.entradasAno = dashboardState.dadosResumoAnual.entradasAno || {};
-            dataMap.fixosAno = dashboardState.dadosResumoAnual.fixosAno || {};
-            dataMap.pendenciasAno = dashboardState.dadosResumoAnual.pendenciasAno || {};
+            // Se NÃO mudou o ano, pega os dados anuais do estado.
+            
+            // CORREÇÃO: Garante que a estrutura pai exista (dashboardState.dadosResumoAnual)
+            const annualData = dashboardState.dadosResumoAnual || {}; 
+            
+            dataMap.despesasAno = annualData.despesasAno || {};
+            dataMap.entradasAno = annualData.entradasAno || {};
+            dataMap.fixosAno = annualData.fixosAno || {};
+            dataMap.pendenciasAno = annualData.pendenciasAno || {};
         } else {
-            // Se mudou o ano (buscou do banco), garante que não seja undefined
+            // Se MUDOU o ano (buscou do banco), garante que é um objeto vazio se o Firebase estiver vazio
             dataMap.despesasAno = dataMap.despesasAno || {};
             dataMap.entradasAno = dataMap.entradasAno || {};
             dataMap.fixosAno = dataMap.fixosAno || {};
             dataMap.pendenciasAno = dataMap.pendenciasAno || {};
+            
+            // CRÍTICO: Salva os novos dados anuais no estado para as próximas chamadas
+            dashboardState.dadosResumoAnual = {
+                despesasAno: dataMap.despesasAno,
+                entradasAno: dataMap.entradasAno,
+                fixosAno: dataMap.fixosAno,
+                pendenciasAno: dataMap.pendenciasAno,
+            };
         }
+        
+        // Garante que as variáveis de estado de cálculo existam
+        if (!dashboardState.dadosGraficoLinha) dashboardState.dadosGraficoLinha = {};
+
 
         processarDadosDashboard(dataMap);
 
@@ -214,6 +232,7 @@ async function loadAllDashboardData(yearChanged = false) {
         console.error("Erro ao carregar dados do dashboard:", error);
     }
 }
+
 
 function processarDadosDashboard(dataMap) {
     // Zera o estado para recálculo
