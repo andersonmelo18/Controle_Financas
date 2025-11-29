@@ -90,7 +90,7 @@ const inputMetaGasto = document.getElementById('input-meta-gasto');
 
 
 // ===============================================================
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO SEGURA (CORREÇÃO ERRO 1)
 // ===============================================================
 
 document.addEventListener('authReady', (e) => {
@@ -100,7 +100,6 @@ document.addEventListener('authReady', (e) => {
         currentYear = e.detail.year;
         currentMonth = e.detail.month;
         limparListeners();
-        // v6.0: Passa se o ano mudou (para recarregar dados anuais)
         loadAllDashboardData(e.yearChanged || false); 
     });
 
@@ -110,29 +109,46 @@ document.addEventListener('authReady', (e) => {
         currentMonth = initialMonthEl.dataset.month;
     }
 
-    loadAllDashboardData(true); // Carga inicial (considera 'yearChanged' true)
+    loadAllDashboardData(true); 
 
-    // Listeners dos Modais
-    document.getElementById('btn-definir-meta').addEventListener('click', () => {
-        inputMetaEntrada.value = formatCurrency(dashboardState.metaEntrada).replace('R$', '').trim();
-        modalMetaEntrada.style.display = 'flex';
-    });
-    document.getElementById('btn-definir-meta-gasto').addEventListener('click', () => {
-        inputMetaGasto.value = formatCurrency(dashboardState.metaGasto).replace('R$', '').trim();
-        modalMetaGasto.style.display = 'flex';
-    });
+    // --- CORREÇÃO: Verificação de segurança para os Modais ---
+    const btnDefinirMeta = document.getElementById('btn-definir-meta');
+    if (btnDefinirMeta) {
+        btnDefinirMeta.addEventListener('click', () => {
+            inputMetaEntrada.value = formatCurrency(dashboardState.metaEntrada).replace('R$', '').trim();
+            modalMetaEntrada.style.display = 'flex';
+        });
+    }
 
-    // Fechar modais
-    modalMetaEntrada.querySelector('.btn-cancel').addEventListener('click', () => modalMetaEntrada.style.display = 'none');
-    modalMetaGasto.querySelector('.btn-cancel').addEventListener('click', () => modalMetaGasto.style.display = 'none');
+    const btnDefinirMetaGasto = document.getElementById('btn-definir-meta-gasto');
+    if (btnDefinirMetaGasto) {
+        btnDefinirMetaGasto.addEventListener('click', () => {
+            inputMetaGasto.value = formatCurrency(dashboardState.metaGasto).replace('R$', '').trim();
+            modalMetaGasto.style.display = 'flex';
+        });
+    }
+
+    // Fechar modais (verifica se existem antes)
+    if (modalMetaEntrada) {
+        const btnCancel = modalMetaEntrada.querySelector('.btn-cancel');
+        if (btnCancel) btnCancel.addEventListener('click', () => modalMetaEntrada.style.display = 'none');
+    }
+    
+    if (modalMetaGasto) {
+        const btnCancel = modalMetaGasto.querySelector('.btn-cancel');
+        if (btnCancel) btnCancel.addEventListener('click', () => modalMetaGasto.style.display = 'none');
+    }
     
     // Salvar modais
-    formMetaEntrada.addEventListener('submit', handleSalvarMeta);
-    formMetaGasto.addEventListener('submit', handleSalvarMetaGasto);
+    if (formMetaEntrada) formMetaEntrada.addEventListener('submit', handleSalvarMeta);
+    if (formMetaGasto) formMetaGasto.addEventListener('submit', handleSalvarMetaGasto);
 
-    // Botões de Exportação (v5.1)
-    document.getElementById('btn-export-pdf')?.addEventListener('click', exportarPDF);
-    document.getElementById('btn-export-csv')?.addEventListener('click', exportarCSV);
+    // --- CORREÇÃO: Botões de Exportação ---
+    const btnExportPdf = document.getElementById('btn-export-pdf');
+    if (btnExportPdf) btnExportPdf.addEventListener('click', exportarPDF);
+
+    const btnExportCsv = document.getElementById('btn-export-csv');
+    if (btnExportCsv) btnExportCsv.addEventListener('click', exportarCSV);
 });
 
 function limparListeners() {
@@ -141,13 +157,12 @@ function limparListeners() {
 }
 
 // ===============================================================
-// 1. CARREGAMENTO GERAL DOS DADOS (v6.0 - Caminhos atualizados e Otimizado)
+// 1. CARREGAMENTO GERAL (CORREÇÃO ERRO 2)
 // ===============================================================
 
 async function loadAllDashboardData(yearChanged = false) {
     if (!userId) return;
 
-    // v6.0: Caminhos atualizados para 'usuarios/'
     const paths = {
         saldoGlobal: `usuarios/${userId}/saldo/global`,
         metas: `usuarios/${userId}/metas`,
@@ -160,7 +175,6 @@ async function loadAllDashboardData(yearChanged = false) {
         entradasMes: `usuarios/${userId}/entradas/${currentYear}-${currentMonth}`,
     };
 
-    // v6.0: Otimização: Só busca os dados anuais se o ano mudou ou na carga inicial
     if (yearChanged) {
         paths.despesasAno = `usuarios/${userId}/despesas`;
         paths.entradasAno = `usuarios/${userId}/entradas`;
@@ -175,15 +189,23 @@ async function loadAllDashboardData(yearChanged = false) {
         
         const dataMap = {};
         Object.keys(paths).forEach((key, index) => {
+            // Garante que é um objeto vazio se vier null
             dataMap[key] = results[index].val() || {};
         });
 
-        // v6.0: Otimização: Se os dados anuais não foram buscados, usa o que já está no 'state'
+        // Lógica de Segurança para dados Anuais
         if (!yearChanged) {
+            // Se não mudou o ano, pega do estado, MAS garante que não seja undefined
             dataMap.despesasAno = dashboardState.dadosResumoAnual.despesasAno || {};
             dataMap.entradasAno = dashboardState.dadosResumoAnual.entradasAno || {};
             dataMap.fixosAno = dashboardState.dadosResumoAnual.fixosAno || {};
             dataMap.pendenciasAno = dashboardState.dadosResumoAnual.pendenciasAno || {};
+        } else {
+            // Se mudou o ano (buscou do banco), garante que não seja undefined
+            dataMap.despesasAno = dataMap.despesasAno || {};
+            dataMap.entradasAno = dataMap.entradasAno || {};
+            dataMap.fixosAno = dataMap.fixosAno || {};
+            dataMap.pendenciasAno = dataMap.pendenciasAno || {};
         }
 
         processarDadosDashboard(dataMap);
