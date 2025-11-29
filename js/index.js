@@ -362,6 +362,7 @@ function renderMetas() {
     const percEntrada = (dashboardState.metaEntrada > 0) ? (dashboardState.totalEntradas / dashboardState.metaEntrada) * 100 : 0;
     const restanteEntrada = dashboardState.metaEntrada - dashboardState.totalEntradas;
     
+    // 👈 ESTES IFS SÃO CRUCIAIS
     if (metaEntradaProgress) metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
     if (metaEntradaPercent) metaEntradaPercent.textContent = `${percEntrada.toFixed(1)}%`;
     if (metaEntradaValor) metaEntradaValor.textContent = formatCurrency(dashboardState.metaEntrada);
