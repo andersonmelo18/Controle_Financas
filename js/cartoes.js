@@ -831,7 +831,13 @@ async function handleReverterPagamentoClick(cartao, valor) {
         return;
     }
     
-    btnConfirm.onclick = reverterFn;
+    // (v6.1) Garante que os listeners são sempre novos
+    const newBtnConfirm = btnConfirm.cloneNode(true);
+    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+    newBtnConfirm.onclick = reverterFn;
+
+    const newBtnCancel = btnCancel.cloneNode(true);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
     btnCancel.onclick = () => hideModal('modal-reverter-confirm');
     
     modalReverter.style.display = 'flex';
@@ -874,7 +880,7 @@ async function registrarPagamentoComoDespesa(cartao, valor) {
         await set(newRef, { ...despesaFatura, id: newRef.key });
     } catch (error) {
         console.error("Erro ao registrar pagamento como despesa:", error);
-        await updateSaldoGlobal(valor); // Devolve o dinheiro
+        await updateSaldoGlobal(valor); 
         throw error; 
     }
 }
@@ -892,8 +898,14 @@ function showModal(modalId, confirmFn) {
     const btnConfirm = document.getElementById('modal-btn-confirm');
     const btnCancel = document.getElementById('modal-btn-cancel');
 
-    btnConfirm.onclick = confirmFn;
-    btnCancel.onclick = () => hideModal(modalId);
+    // (v6.1) Clona para remover listeners antigos
+    const newBtnConfirm = btnConfirm.cloneNode(true);
+    btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+    newBtnConfirm.onclick = confirmFn;
+
+    const newBtnCancel = btnCancel.cloneNode(true);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    newBtnCancel.onclick = () => hideModal(modalId);
 }
 
 function hideModal(modalId) {
