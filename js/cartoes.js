@@ -458,36 +458,37 @@ function renderizarFaturas(estadoGastos) {
     const statusPagamentoAnterior = {};
 
     Object.values(meusCartoes).forEach(cartao => {
-    const nomeFatura = `Pagamento Fatura ${cartao.nome}`;
+        const nomeFatura = `Pagamento Fatura ${cartao.nome}`;
 
-    const despesasMesAtual = Object.values(estadoGastos.despesas[mesAtualPath] || {});
-    const pendenciasMesAtual = Object.values(estadoGastos.pendencias[mesAtualPath] || {});
-    const despesasMesAnt = Object.values(estadoGastos.despesas[mesAnteriorPath] || {});
-    const pendenciasMesAnt = Object.values(estadoGastos.pendencias[mesAnteriorPath] || {});
+        const despesasMesAtual = Object.values(estadoGastos.despesas[mesAtualPath] || {});
+        const pendenciasMesAtual = Object.values(estadoGastos.pendencias[mesAtualPath] || {});
+        const despesasMesAnt = Object.values(estadoGastos.despesas[mesAnteriorPath] || {});
+        const pendenciasMesAnt = Object.values(estadoGastos.pendencias[mesAnteriorPath] || {});
 
-    const faturasPagasAtual = (estadoGastos.faturasPagas && estadoGastos.faturasPagas[mesAtualPath]) ? Object.values(estadoGastos.faturasPagas[mesAtualPath]) : [];
-    const faturasPagasAnt = (estadoGastos.faturasPagas && estadoGastos.faturasPagas[mesAnteriorPath]) ? Object.values(estadoGastos.faturasPagas[mesAnteriorPath]) : [];
+        const faturasPagasAtual = (estadoGastos.faturasPagas && estadoGastos.faturasPagas[mesAtualPath]) ? Object.values(estadoGastos.faturasPagas[mesAtualPath]) : [];
+        const faturasPagasAnt = (estadoGastos.faturasPagas && estadoGastos.faturasPagas[mesAnteriorPath]) ? Object.values(estadoGastos.faturasPagas[mesAnteriorPath]) : [];
 
-    const pagoEmDespesas = despesasMesAtual.some(p => p.descricao === nomeFatura && p.categoria === 'Fatura');
-    const pagoEmPendencias = pendenciasMesAtual.some(p => p.descricao === nomeFatura && p.status === 'pago');
-    const pagoEmFaturasPagasAtual = faturasPagasAtual.some(fp => fp && fp.id === cartao.id);
+        const pagoEmDespesas = despesasMesAtual.some(p => p.descricao === nomeFatura && p.categoria === 'Fatura');
+        const pagoEmPendencias = pendenciasMesAtual.some(p => p.descricao === nomeFatura && p.status === 'pago');
+        const pagoEmFaturasPagasAtual = faturasPagasAtual.some(fp => fp && fp.id === cartao.id);
 
-    const pagoEmDespesasAnt = despesasMesAnt.some(p => p.descricao === nomeFatura && p.categoria === 'Fatura');
-    const pagoEmPendenciasAnt = pendenciasMesAnt.some(p => p.descricao === nomeFatura && p.status === 'pago');
-    const pagoEmFaturasPagasAnt = faturasPagasAnt.some(fp => fp && fp.id === cartao.id);
+        const pagoEmDespesasAnt = despesasMesAnt.some(p => p.descricao === nomeFatura && p.categoria === 'Fatura');
+        const pagoEmPendenciasAnt = pendenciasMesAnt.some(p => p.descricao === nomeFatura && p.status === 'pago');
+        const pagoEmFaturasPagasAnt = faturasPagasAnt.some(fp => fp && fp.id === cartao.id);
 
-    statusPagamentoAtual[cartao.id] = pagoEmDespesas || pagoEmPendencias || pagoEmFaturasPagasAtual;
-    statusPagamentoAnterior[cartao.id] = pagoEmDespesasAnt || pagoEmPendenciasAnt || pagoEmFaturasPagasAnt;
-});
+        statusPagamentoAtual[cartao.id] = pagoEmDespesas || pagoEmPendencias || pagoEmFaturasPagasAtual;
+        statusPagamentoAnterior[cartao.id] = pagoEmDespesasAnt || pagoEmPendenciasAnt || pagoEmFaturasPagasAnt;
+    });
 
 
     estadoFaturas = {};
+
     Object.values(meusCartoes).forEach(cartao => {
         estadoFaturas[cartao.id] = {
             nome: cartao.nome,
             total: 0,
             html: '',
-            pago: statusPagamentoAtual[cartao.id]
+            pago: statusPagamentoAtual[cartao.id] || false
         };
     });
 
