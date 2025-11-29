@@ -1,5 +1,5 @@
 // js/firebase-config.js
-// VERSÃO ATUALIZADA (com 'update' e 'Storage')
+// VERSÃO 2.0 (Alinhado com o Login Google)
 
 // Importa as funções do SDK v9 modular (usando URLs)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -20,8 +20,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
 import { 
     getAuth, 
-    signInAnonymously, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    // ATUALIZADO: Funções para o Login com Google
+    GoogleAuthProvider, 
+    signInWithPopup,    
+    signOut             
 } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 import { // Firebase Storage Functions
     getStorage,
@@ -31,7 +34,7 @@ import { // Firebase Storage Functions
     deleteObject
 } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
 
-// Sua configuração do Firebase
+// Sua configuração do Firebase (MANTIDA)
 const firebaseConfig = {
     apiKey: "AIzaSyBXCMMXEM-e_BNftJNcm6XeEGZ7KYPUiAY",
     authDomain: "controle-financeiro-b7880.firebaseapp.com",
@@ -68,8 +71,13 @@ export {
     orderByChild,
     limitToLast,
     update, 
-    signInAnonymously,
     onAuthStateChanged,
+    
+    // ATUALIZADO: Exporta as funções corretas do Auth
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    
     // Exportando funções do Storage
     storageRef, 
     uploadBytes, 
