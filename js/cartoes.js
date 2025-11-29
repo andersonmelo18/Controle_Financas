@@ -1,6 +1,5 @@
 // js/cartoes.js
-// VERSÃO 6.0 (Corrigido: Bug de lógica de parcelas, destino do pagamento e lógica de reversão)
-// ADICIONADO: Cálculo de Limite Disponível
+// VERSÃO 6.1 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
 import { 
     db, 
@@ -100,27 +99,23 @@ function limparListeners() {
 }
 
 // ===============================================================
-// FASE 2A: GERENCIADOR DE CARTÕES
+// FASE 2A: GERENCIADOR DE CARTÕES (v6.1 - Caminho atualizado)
 // ===============================================================
-
-// (v5.2) Carrega a config e DEPOIS carrega os gastos
 function loadGerenciadorCartoes() {
     limparListeners(); 
     
-    const configPath = `dados/${userId}/cartoes/config`;
+    // v6.1: Caminho atualizado
+    const configPath = `usuarios/${userId}/cartoes/config`;
     const configRef = ref(db, configPath);
 
     const configCallback = onValue(configRef, (snapshot) => {
         meusCartoes = snapshot.val() || {};
-        loadGastosAgregados(); // Dispara o recálculo de faturas
+        loadGastosAgregados();
     });
     
     activeListeners.push({ ref: configRef, callback: configCallback, eventType: 'value' });
 }
 
-/**
- * v6.0: Atualiza a tabela de gestão, agora incluindo o limite disponível
- */
 function atualizarTabelaCartoesSalvos() {
     tbodyMeusCartoes.innerHTML = '';
     const cartoes = Object.values(meusCartoes);
@@ -141,9 +136,7 @@ function atualizarTabelaCartoesSalvos() {
         const toggleText = isBloqueado ? 'Desbloquear' : 'Bloquear';
         const toggleIcon = isBloqueado ? 'lock_open' : 'lock';
 
-        // v6.0: Calcula Limite Disponível (simplificado)
         const limiteTotal = cartao.limiteTotal || 0;
-        // Pega o total da fatura atual que foi calculado em 'renderizarFaturas'
         const faturaTotal = estadoFaturas[cartao.id]?.total || 0;
         const limiteDisponivel = limiteTotal - faturaTotal;
         const limiteDisponivelCor = limiteDisponivel < 0 ? 'var(--danger-color)' : 'var(--text-color)';
@@ -174,7 +167,7 @@ function atualizarTabelaCartoesSalvos() {
     });
 }
 
-// (v5.0 - Sem mudanças)
+// v6.1: Caminho atualizado
 async function handleSalvarCartao(e) {
     e.preventDefault();
     const nome = cartaoNomeInput.value;
@@ -185,7 +178,7 @@ async function handleSalvarCartao(e) {
         return;
     }
 
-    const newRef = push(ref(db, `dados/${userId}/cartoes/config`));
+    const newRef = push(ref(db, `usuarios/${userId}/cartoes/config`));
     const cartaoData = {
         id: newRef.key,
         nome: nome,
@@ -205,7 +198,6 @@ async function handleSalvarCartao(e) {
     }
 }
 
-// (v5.0 - Sem mudanças)
 function handleEditCartaoClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return; 
@@ -224,11 +216,11 @@ function handleEditCartaoClick(e) {
     modalEdit.style.display = 'flex';
 }
 
-// (v5.0 - Sem mudanças)
+// v6.1: Caminho atualizado
 async function handleSalvarEditCartao(e) {
     e.preventDefault();
     const id = formEdit.dataset.id;
-    const path = `dados/${userId}/cartoes/config/${id}`;
+    const path = `usuarios/${userId}/cartoes/config/${id}`;
 
     const nomeEditado = editCartaoNomeInput.value;
     const idDoNome = Object.keys(meusCartoes).find(key => meusCartoes[key].nome.toLowerCase() === nomeEditado.toLowerCase());
@@ -259,7 +251,7 @@ async function handleSalvarEditCartao(e) {
     }
 }
 
-// (v5.0 - Sem mudanças)
+// v6.1: Caminho atualizado
 function handleDeleteCartaoClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -272,7 +264,7 @@ function handleDeleteCartaoClick(e) {
     
     const deleteFn = async () => {
         try {
-            await remove(ref(db, `dados/${userId}/cartoes/config/${id}`));
+            await remove(ref(db, `usuarios/${userId}/cartoes/config/${id}`));
             hideModal('modal-confirm');
         } catch (error) {
             console.error("Erro ao excluir cartão:", error);
@@ -283,7 +275,7 @@ function handleDeleteCartaoClick(e) {
     showModal('modal-confirm', deleteFn);
 }
 
-// (v5.0 - Sem mudanças)
+// v6.1: Caminho atualizado
 async function handleBlockToggleClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -293,7 +285,7 @@ async function handleBlockToggleClick(e) {
     if (!cartao) return;
 
     const novoStatus = !(cartao.bloqueado || false); 
-    const path = `dados/${userId}/cartoes/config/${id}/bloqueado`;
+    const path = `usuarios/${userId}/cartoes/config/${id}/bloqueado`;
 
     try {
         await set(ref(db, path), novoStatus);
@@ -304,10 +296,10 @@ async function handleBlockToggleClick(e) {
 }
 
 // ===============================================================
-// FASE 3A: LÓGICA DE FATURAS (v5.2)
+// FASE 3A: LÓGICA DE FATURAS (v6.1 - Caminhos atualizados)
 // ===============================================================
 
-// (v5.2) Busca (get) todos os dados de uma vez.
+// v6.1: Caminhos atualizados
 async function loadGastosAgregados() {
     estadoFaturas = {}; 
 
@@ -319,12 +311,12 @@ async function loadGastosAgregados() {
     const mesAnteriorPath = `${dataAnterior.getFullYear()}-${(dataAnterior.getMonth() + 1).toString().padStart(2, '0')}`;
 
     const paths = {
-        despesasAtual: `dados/${userId}/despesas/${mesAtualPath}`,
-        despesasAnt: `dados/${userId}/despesas/${mesAnteriorPath}`,
-        fixosAtual: `dados/${userId}/fixos/${mesAtualPath}`,
-        fixosAnt: `dados/${userId}/fixos/${mesAnteriorPath}`,
-        specs: `dados/${userId}/cartoes_specs`,
-        pendencias: `dados/${userId}/pendencias`
+        despesasAtual: `usuarios/${userId}/despesas/${mesAtualPath}`,
+        despesasAnt: `usuarios/${userId}/despesas/${mesAnteriorPath}`,
+        fixosAtual: `usuarios/${userId}/fixos/${mesAtualPath}`,
+        fixosAnt: `usuarios/${userId}/fixos/${mesAnteriorPath}`,
+        specs: `usuarios/${userId}/cartoes_specs`,
+        pendencias: `usuarios/${userId}/pendencias`
     };
 
     const promises = Object.keys(paths).map(key => get(ref(db, paths[key])));
@@ -345,10 +337,9 @@ async function loadGastosAgregados() {
             pendencias: results[5].val() || {}
         };
         
-        // (v5.2) ORDEM CORRIGIDA:
         atualizarAbasFatura(); 
         renderizarFaturas(estadoGastos); 
-        atualizarTabelaCartoesSalvos(); // v6.0: Agora depende de 'renderizarFaturas'
+        atualizarTabelaCartoesSalvos(); 
         ativarPrimeiraAba(); 
         renderTotalGastosCartoes();
 
@@ -358,9 +349,6 @@ async function loadGastosAgregados() {
     }
 }
 
-/**
- * (UI) Cria as abas e os containers (v5.2)
- */
 function atualizarAbasFatura() {
     faturasTabNav.innerHTML = '';
     faturasTabContent.innerHTML = '';
@@ -380,7 +368,7 @@ function atualizarAbasFatura() {
         let melhorDia = (cartao.diaFechamento || 0) + 1;
         if (melhorDia > 31) melhorDia = 1; 
         
-        const faturaAtual = 0; // Placeholder, 'renderizarFaturas' preenche
+        const faturaAtual = 0; 
         
         tabBtn.innerHTML = `
             <div>${cartao.icone} ${cartao.nome}</div>
@@ -397,7 +385,6 @@ function atualizarAbasFatura() {
         tabContent.dataset.cartaoId = cartao.id;
         tabContent.style.display = 'none'; 
         
-        // v6.0: Adicionado Limite Disponível no header
         tabContent.innerHTML = `
             <div class="fatura-header">
                 <div>
@@ -424,7 +411,6 @@ function atualizarAbasFatura() {
             </div>
         `;
         
-        // (v5.3) Usa e.currentTarget
         tabContent.querySelector(`#btn-pagar-${cartao.id}`).addEventListener('click', (e) => {
             const total = parseFloat(e.currentTarget.dataset.totalValor || 0);
             handlePagarFaturaClick(cartao, total); 
@@ -453,7 +439,7 @@ function ativarPrimeiraAba() {
 }
 
 /**
- * Função MESTRA de cálculo (v6.0)
+ * Função MESTRA de cálculo (v6.0 - Lógica mantida)
  */
 function renderizarFaturas(estadoGastos) {
     if (Object.keys(meusCartoes).length === 0) return; 
@@ -471,7 +457,6 @@ function renderizarFaturas(estadoGastos) {
     Object.values(meusCartoes).forEach(cartao => {
         const nomeFatura = `Pagamento Fatura ${cartao.nome}`;
         
-        // v6.0: Verifica 'despesas' E 'pendencias' para pagamento
         const pagoEmDespesas = Object.values(estadoGastos.despesas[mesAtualPath] || {}).some(p => 
             p.descricao === nomeFatura && p.categoria === 'Fatura'
         );
@@ -503,7 +488,6 @@ function renderizarFaturas(estadoGastos) {
     ];
     
     fontesGastos.forEach(gasto => {
-        // v6.0: Ignora o próprio pagamento da fatura
         if (gasto.categoria === 'Fatura') return; 
 
         if (!gasto.data && !gasto.vencimento) return;
@@ -541,15 +525,8 @@ function renderizarFaturas(estadoGastos) {
              console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
              return;
         }
-
-        // ===============================================================
-        // CORREÇÃO (v6.0): Lógica de cálculo de parcela
-        // ===============================================================
-
-        // 1. Get ORIGINAL start date (para o label)
-        const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
         
-        // 2. Find VIRTUAL start date (para a lógica de "virada")
+        const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
         let dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
         
         while (true) {
@@ -571,15 +548,12 @@ function renderizarFaturas(estadoGastos) {
             }
         }
         
-        // 3. Check if this fatura (dataFatura) é a próxima a ser paga
         const isFaturaAtual = (dataInicioVirtual.getFullYear() === dataFatura.getFullYear() &&
                                dataInicioVirtual.getMonth() === dataFatura.getMonth());
 
-        // 4. Calculate the LABEL using the ORIGINAL date
         let mesesDiffLabel = (dataFatura.getFullYear() - anoInicioOriginal) * 12 + (dataFatura.getMonth() + 1 - mesInicioOriginal);
         let parcelaAtualLabel = mesesDiffLabel + 1;
 
-        // 5. Se for a fatura atual E o label estiver correto...
         if (isFaturaAtual && parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
             
             if (statusPagamentoAtual[cartaoConfig.id]) { 
@@ -591,7 +565,7 @@ function renderizarFaturas(estadoGastos) {
             
             let valorParaTotal = 0;
             let isStrikethrough = false;
-            let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`; // Usa o label corrigido
+            let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`; 
 
             if (status === 'estornado') {
                 isStrikethrough = true;
@@ -620,10 +594,8 @@ function renderizarFaturas(estadoGastos) {
                 isStrikethrough: isStrikethrough 
             });
         }
-        // --- FIM DA CORREÇÃO (v6.0) ---
     });
 
-    // 5. Atualizar a UI (v6.0: Adiciona Limite Disponível)
     Object.values(meusCartoes).forEach(cartao => {
         const fatura = estadoFaturas[cartao.id];
         const totalAbaEl = document.getElementById(`total-aba-${cartao.id}`); 
@@ -631,11 +603,10 @@ function renderizarFaturas(estadoGastos) {
         const tbodyEl = document.getElementById(`tbody-fatura-${cartao.id}`);
         const btnPagarEl = document.getElementById(`btn-pagar-${cartao.id}`);
         const btnReverterEl = document.getElementById(`btn-reverter-pagamento-${cartao.id}`); 
-        const limiteDisponivelEl = document.getElementById(`limite-disponivel-${cartao.id}`); // NOVO
+        const limiteDisponivelEl = document.getElementById(`limite-disponivel-${cartao.id}`); 
 
         if (!totalEl || !tbodyEl || !btnPagarEl || !btnReverterEl || !totalAbaEl || !limiteDisponivelEl) return;
 
-        // v6.0: Calcula Limite Disponível
         const limiteTotal = cartao.limiteTotal || 0;
         const limiteDisponivel = limiteTotal - fatura.total;
         const limiteCor = limiteDisponivel < 0 ? 'var(--danger-color)' : 'var(--text-color)';
@@ -737,7 +708,7 @@ function calcularMesFatura(dataGasto, diaFechamento) {
 }
 
 // ===============================================================
-// FASE 3B: LÓGICA DE PAGAMENTO (v5.4 - Mudança de Destino)
+// FASE 3B: LÓGICA DE PAGAMENTO (v6.1 - Caminhos atualizados)
 // ===============================================================
 async function handlePagarFaturaClick(cartao, valor) {
     if (valor <= 0) {
@@ -745,6 +716,7 @@ async function handlePagarFaturaClick(cartao, valor) {
         return;
     }
 
+    // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
     const temSaldo = await verificarSaldoSuficiente(valor);
     if (!temSaldo) {
         alert("❌ Saldo em Caixa insuficiente para pagar esta fatura!");
@@ -766,10 +738,6 @@ async function handlePagarFaturaClick(cartao, valor) {
 
         try {
             await updateSaldoGlobal(-valor);
-            
-            // ===============================================================
-            // MUDANÇA (v5.4): Chama a nova função 'registrarPagamentoComoDespesa'
-            // ===============================================================
             await registrarPagamentoComoDespesa(cartao, valor);
             
             hideModal('modal-confirm');
@@ -785,23 +753,20 @@ async function handlePagarFaturaClick(cartao, valor) {
     showModal('modal-confirm', pagarFn);
 }
 
-// ===============================================================
-// ATUALIZADO (v5.4): Lógica de Reversão
-// ===============================================================
+// v6.1: Caminhos atualizados
 async function handleReverterPagamentoClick(cartao, valor) {
     if (valor <= 0) {
         console.warn("Tentativa de reverter fatura com valor zero. Buscando valor no DB...");
-        // O valor será buscado dentro da função 'reverterFn'
     }
     
     modalReverterMessage.textContent = `Tem certeza que quer reverter o pagamento da fatura ${cartao.nome} (${formatCurrency(valor)})? O valor será devolvido ao seu Saldo em Caixa.`;
 
     const reverterFn = async () => {
-        // v5.4: Procura o pagamento em 'despesas' PRIMEIRO
-        const despesasPath = `dados/${userId}/despesas/${currentYear}-${currentMonth}`;
-        const pendenciasPath = `dados/${userId}/pendencias/${currentYear}-${currentMonth}`;
+        // v6.1: Caminhos atualizados
+        const despesasPath = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
+        const pendenciasPath = `usuarios/${userId}/pendencias/${currentYear}-${currentMonth}`;
         
-        let valorAReverter = valor; // Usa o valor do botão como fallback
+        let valorAReverter = valor; 
 
         try {
             let pagamentoId = null;
@@ -814,7 +779,7 @@ async function handleReverterPagamentoClick(cartao, valor) {
                     const despesa = child.val();
                     if (despesa.descricao === `Pagamento Fatura ${cartao.nome}` && despesa.categoria === 'Fatura') {
                         pagamentoId = despesa.id;
-                        valorAReverter = despesa.valor; // Pega o valor real
+                        valorAReverter = despesa.valor; 
                         localPagamento = 'despesas';
                     }
                 });
@@ -828,7 +793,7 @@ async function handleReverterPagamentoClick(cartao, valor) {
                         const pendencia = child.val();
                         if (pendencia.descricao === `Pagamento Fatura ${cartao.nome}` && pendencia.status === 'pago') {
                             pagamentoId = pendencia.id;
-                            valorAReverter = pendencia.valor; // Pega o valor real
+                            valorAReverter = pendencia.valor; 
                             localPagamento = 'pendencias';
                         }
                     });
@@ -843,11 +808,9 @@ async function handleReverterPagamentoClick(cartao, valor) {
                 throw new Error("Valor do pagamento é zero. Não é possível reverter.");
             }
 
-            // 3. Remove o registo de pagamento do local correto
             const pathToRemover = (localPagamento === 'despesas') ? despesasPath : pendenciasPath;
             await remove(ref(db, `${pathToRemover}/${pagamentoId}`));
             
-            // 4. Devolve o dinheiro ao saldo
             await updateSaldoGlobal(valorAReverter);
             
             hideModal('modal-reverter-confirm');
@@ -860,7 +823,6 @@ async function handleReverterPagamentoClick(cartao, valor) {
         }
     };
 
-    // --- CORREÇÃO (v5.4): Busca os botões do DOM pelo ID e só atribui o click ---
     const btnConfirm = document.getElementById('modal-reverter-btn-confirm');
     const btnCancel = document.getElementById('modal-reverter-btn-cancel');
 
@@ -875,9 +837,10 @@ async function handleReverterPagamentoClick(cartao, valor) {
     modalReverter.style.display = 'flex';
 }
 
+// v6.1: Caminho atualizado
 async function updateSaldoGlobal(ajuste) {
     if (ajuste === 0) return; 
-    const saldoRef = ref(db, `dados/${userId}/saldo/global`);
+    const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
     try {
         const snapshot = await get(saldoRef);
         let saldoAcumulado = snapshot.val()?.saldoAcumulado || 0;
@@ -889,15 +852,9 @@ async function updateSaldoGlobal(ajuste) {
     }
 }
 
-// ===============================================================
-// NOVA FUNÇÃO (v5.4): Registra o pagamento em 'despesas'
-// ===============================================================
-/**
- * Salva o pagamento da fatura como um item em 'despesas'
- * em vez de 'pendencias', para que apareça nos gráficos do dashboard.
- */
+// v6.1: Caminho atualizado
 async function registrarPagamentoComoDespesa(cartao, valor) {
-    const path = `dados/${userId}/despesas/${currentYear}-${currentMonth}`;
+    const path = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
     
     const dataPagamentoObj = new Date();
     dataPagamentoObj.setMinutes(dataPagamentoObj.getMinutes() - dataPagamentoObj.getTimezoneOffset());
@@ -905,11 +862,11 @@ async function registrarPagamentoComoDespesa(cartao, valor) {
     
     const despesaFatura = {
         data: dataPagamento,
-        categoria: "Fatura", // Categoria especial
+        categoria: "Fatura", 
         descricao: `Pagamento Fatura ${cartao.nome}`, 
-        formaPagamento: 'Saldo em Caixa', // Sempre sai do saldo
+        formaPagamento: 'Saldo em Caixa', 
         valor: valor,
-        comprovante: null // Pagamento de fatura não tem comprovante
+        comprovante: null 
     };
     
     try {
@@ -917,9 +874,8 @@ async function registrarPagamentoComoDespesa(cartao, valor) {
         await set(newRef, { ...despesaFatura, id: newRef.key });
     } catch (error) {
         console.error("Erro ao registrar pagamento como despesa:", error);
-        // Tenta reverter o saldo se o registro falhar
         await updateSaldoGlobal(valor); // Devolve o dinheiro
-        throw error; // Propaga o erro para o 'handlePagarFaturaClick'
+        throw error; 
     }
 }
 
@@ -936,7 +892,6 @@ function showModal(modalId, confirmFn) {
     const btnConfirm = document.getElementById('modal-btn-confirm');
     const btnCancel = document.getElementById('modal-btn-cancel');
 
-    // (v5.4) Apenas atribui, não clona (mais seguro)
     btnConfirm.onclick = confirmFn;
     btnCancel.onclick = () => hideModal(modalId);
 }

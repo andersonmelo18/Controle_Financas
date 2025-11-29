@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <link rel="icon" type="image/png" href="logo.png">
-    
+
     <title>Painel Principal - Controle Financeiro</title>
 
     <link rel="stylesheet" href="style.css">
@@ -52,7 +52,7 @@
             </div>
 
             <div class="header-actions">
-            
+
                 <div class="global-balance" id="global-balance-container" style="display: none;">
                     <small>Saldo em Caixa</small>
                     <h3 id="global-balance-display">R$ 0,00</h3>
@@ -69,7 +69,8 @@
                     </button>
                     <div id="notification-dropdown" class="dropdown-content">
                         <div id="notification-list">
-                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                            <p id="notification-placeholder"
+                                style="padding: 1rem; text-align: center; color: var(--text-light);">
                                 Nenhum alerta no momento.
                             </p>
                         </div>
@@ -84,34 +85,34 @@
 
         <!-- O seu conteúdo principal (KPIs, Gráficos, Metas, etc.) - IDs MANTIDOS -->
         <section class="kpi-grid" id="kpi-grid-dashboard">
-             <div class="card kpi-card">
-                 <h4>Total Entradas</h4>
-                 <h2 id="total-entradas">R$ 0,00</h2> <!-- ID Mantido -->
-             </div>
-             <div class="card kpi-card">
-                 <h4>Despesas (do Saldo)</h4>
-                 <h2 id="total-despesas">R$ 0,00</h2> <!-- ID Mantido -->
-             </div>
-             <div class="card kpi-card kpi-lucro">
-                 <h4>Lucro Líquido (do Saldo)</h4>
-                 <h2 id="lucro-liquido">R$ 0,00</h2> <!-- ID Mantido -->
-             </div>
-             <div class="card kpi-card">
-                 <h4>Saldo em Caixa</h4>
-                 <h2 id="saldo-caixa">R$ 0,00</h2> <!-- ID Mantido -->
-                 <small>Saldo anterior: <span id="saldo-acumulado">R$ 0,00</span></small> <!-- ID Mantido -->
-             </div>
-             <div class="card kpi-card">
-                 <h4>Horas Trabalhadas</h4>
-                 <h2 id="horas-total">0h 00m</h2> <!-- ID Mantido -->
-             </div>
-             <div class="card kpi-card">
-                 <h4>KM Total</h4>
-                 <h2 id="km-total">0 km</h2> <!-- ID Mantido -->
-             </div>
+            <div class="card kpi-card">
+                <h4>Total Entradas</h4>
+                <h2 id="total-entradas">R$ 0,00</h2> <!-- ID Mantido -->
+            </div>
+            <div class="card kpi-card">
+                <h4>Despesas (do Saldo)</h4>
+                <h2 id="total-despesas">R$ 0,00</h2> <!-- ID Mantido -->
+            </div>
+            <div class="card kpi-card kpi-lucro">
+                <h4>Lucro Líquido (do Saldo)</h4>
+                <h2 id="lucro-liquido">R$ 0,00</h2> <!-- ID Mantido -->
+            </div>
+            <div class="card kpi-card">
+                <h4>Saldo em Caixa</h4>
+                <h2 id="saldo-caixa">R$ 0,00</h2> <!-- ID Mantido -->
+                <small>Saldo anterior: <span id="saldo-acumulado">R$ 0,00</span></small> <!-- ID Mantido -->
+            </div>
+            <div class="card kpi-card">
+                <h4>Horas Trabalhadas</h4>
+                <h2 id="horas-total">0h 00m</h2> <!-- ID Mantido -->
+            </div>
+            <div class="card kpi-card">
+                <h4>KM Total</h4>
+                <h2 id="km-total">0 km</h2> <!-- ID Mantido -->
+            </div>
         </section>
 
-        
+
         <section class="main-grid two-cols">
             <div class="card chart-container">
                 <h3>Entradas vs Despesas (Mês)</h3>
@@ -126,7 +127,7 @@
             </div>
         </section>
 
-        
+
         <section class="main-grid two-cols">
             <div class="card">
                 <h3>Meta de Entradas</h3>
@@ -139,7 +140,8 @@
                     <div class="progress-bar">
                         <div class="progress" id="meta-progress" style="width: 0%;"></div> <!-- ID Mantido -->
                     </div>
-                    <p>Faltam <strong id="meta-faltante">R$ 0,00</strong> (<span id="meta-percentual">0%</span>) para <!-- IDs Mantidos -->
+                    <p>Faltam <strong id="meta-faltante">R$ 0,00</strong> (<span id="meta-percentual">0%</span>) para
+                        <!-- IDs Mantidos -->
                         bater a meta.</p>
                 </div>
             </div>
@@ -162,7 +164,7 @@
             </div>
         </section>
 
-        
+
         <section class="main-grid two-cols">
             <div class="card">
                 <h3>Gastos por Categoria (Tabela)</h3>
@@ -176,7 +178,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbody-gastos-categoria">
-                             <!-- Preenchido por JS -->
+                            <!-- Preenchido por JS -->
                         </tbody>
                     </table>
                 </div>
@@ -188,7 +190,7 @@
                 </ul>
             </div>
         </section>
-        
+
         <section class="main-grid two-cols">
             <div class="card">
                 <h3>Contas a Pagar (Mês)</h3>
@@ -199,11 +201,11 @@
             <div class="card">
                 <h3>Resumo de Cartões</h3>
                 <div class="limite-cartao-container" id="tbody-resumo-cartoes">
-                     <!-- Preenchido por JS -->
+                    <!-- Preenchido por JS -->
                 </div>
             </div>
         </section>
-        
+
         <section class="card chart-container">
             <h3>Evolução do Saldo em Caixa (Diário)</h3>
             <p id="chart-evolucao-placeholder" class="chart-placeholder" style="display: none;">
@@ -211,8 +213,8 @@
             </p>
             <canvas id="chart-evolucao-saldo"></canvas>
         </section>
-        
-        
+
+
         <section class="card">
             <h3>Resumo Anual (Ganhos vs Despesas do Saldo)</h3>
             <div class="table-container">
@@ -230,7 +232,7 @@
                 </table>
             </div>
         </section>
-        
+
     </main>
 
     <!-- =============================================================== -->
@@ -252,7 +254,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Modal: Editar Meta de Entrada -->
     <div id="modal-meta-entrada" class="modal-overlay">
         <div class="modal-content">
@@ -318,9 +320,9 @@
     <!-- =============================================================== -->
     <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
     <!-- =============================================================== -->
-    
+
     <!-- Scripts 'compat' ANTIGOS REMOVIDOS -->
-    
+
     <!-- Scripts de Bibliotecas (Chart.js, jsPDF) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -332,4 +334,5 @@
     <script type="module" src="js/index.js"></script>
 
 </body>
+
 </html>
