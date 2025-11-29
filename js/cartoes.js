@@ -609,68 +609,90 @@ function renderizarFaturas(estadoGastos) {
     });
 
     Object.values(meusCartoes).forEach(cartao => {
-        const fatura = estadoFaturas[cartao.id];
-        const totalAbaEl = document.getElementById(`total-aba-${cartao.id}`);
-        const totalEl = document.getElementById(`total-fatura-${cartao.id}`);
-        const tbodyEl = document.getElementById(`tbody-fatura-${cartao.id}`);
-        const btnPagarEl = document.getElementById(`btn-pagar-${cartao.id}`);
-        const btnReverterEl = document.getElementById(`btn-reverter-pagamento-${cartao.id}`);
-        const limiteDisponivelEl = document.getElementById(`limite-disponivel-${cartao.id}`);
+    const fatura = estadoFaturas[cartao.id];
 
-        if (!totalEl || !tbodyEl || !btnPagarEl || !btnReverterEl || !totalAbaEl || !limiteDisponivelEl) return;
+    const totalAbaEl = document.getElementById(`total-aba-${cartao.id}`);
+    const totalEl = document.getElementById(`total-fatura-${cartao.id}`);
+    const tbodyEl = document.getElementById(`tbody-fatura-${cartao.id}`);
+    const btnPagarEl = document.getElementById(`btn-pagar-${cartao.id}`);
+    const btnReverterEl = document.getElementById(`btn-reverter-pagamento-${cartao.id}`);
+    const limiteDisponivelEl = document.getElementById(`limite-disponivel-${cartao.id}`);
 
-        const limiteTotal = cartao.limiteTotal || 0;
-        const limiteDisponivel = limiteTotal - fatura.total;
-        const limiteCor = limiteDisponivel < 0 ? 'var(--danger-color)' : 'var(--text-color)';
+    if (!totalEl || !tbodyEl || !btnPagarEl || !btnReverterEl || !totalAbaEl || !limiteDisponivelEl) return;
 
-        limiteDisponivelEl.textContent = `Limite Disponível: ${formatCurrency(limiteDisponivel)}`;
-        limiteDisponivelEl.style.color = limiteCor;
+    const limiteTotal = cartao.limiteTotal || 0;
+    const limiteDisponivel = limiteTotal - fatura.total;
+    const limiteCor = limiteDisponivel < 0 ? 'var(--danger-color)' : 'var(--text-color)';
 
-        totalEl.textContent = formatCurrency(fatura.total);
-        totalAbaEl.textContent = formatCurrency(fatura.total);
-        tbodyEl.innerHTML = fatura.html || '<tr><td colspan="3">Nenhum gasto este mês.</td></tr>';
+    // Limite disponível
+    limiteDisponivelEl.textContent = `Limite Disponível: ${formatCurrency(limiteDisponivel)}`;
+    limiteDisponivelEl.style.color = limiteCor;
 
-        btnPagarEl.dataset.totalValor = fatura.total;
-        btnReverterEl.dataset.totalValor = fatura.total;
+    // Totais
+    totalEl.textContent = formatCurrency(fatura.total);
+    totalAbaEl.textContent = formatCurrency(fatura.total);
 
-        btnPagarEl.className = 'btn-primary';
-        btnReverterEl.className = 'btn-secondary danger';
-        btnReverterEl.innerHTML = '<span class="material-icons-sharp">undo</span> Reverter Pagamento';
+    // Itens da fatura
+    tbodyEl.innerHTML = fatura.html || '<tr><td colspan="3">Nenhum gasto este mês.</td></tr>';
 
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const vencimentoDate = new Date(currentYear, currentMonth - 1, cartao.diaVencimento);
-        vencimentoDate.setHours(0, 0, 0, 0);
-        const isVencida = vencimentoDate < today;
+    // Atribui valores ao botão
+    btnPagarEl.dataset.totalValor = fatura.total;
+    btnReverterEl.dataset.totalValor = fatura.total;
 
-        if (fatura.pago) {
-            btnPagarEl.style.display = 'none';
-            btnReverterEl.style.display = 'flex';
-            btnReverterEl.classList.add('success');
-            btnReverterEl.innerHTML = '<span class="material-icons-sharp">check_circle</span> Fatura Paga';
-            totalEl.style.color = 'var(--success-color)';
-            totalAbaEl.style.color = 'var(--success-color)';
-        } else if (fatura.total > 0) {
-            btnPagarEl.style.display = 'flex';
-            btnReverterEl.style.display = 'none';
-            btnPagarEl.disabled = false;
-            totalEl.style.color = 'var(--danger-color)';
-            totalAbaEl.style.color = 'var(--danger-color)';
+    btnPagarEl.className = 'btn-primary';
+    btnReverterEl.className = 'btn-secondary danger';
+    btnReverterEl.innerHTML = '<span class="material-icons-sharp">undo</span> Reverter Pagamento';
 
-            if (isVencida) {
-                btnPagarEl.classList.add('danger');
-                btnPagarEl.textContent = 'Pagar (Vencida)';
-            } else {
-                btnPagarEl.textContent = 'Pagar Fatura';
-            }
+    // Verificar vencimento
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const vencimentoDate = new Date(currentYear, currentMonth - 1, cartao.diaVencimento);
+    vencimentoDate.setHours(0, 0, 0, 0);
+
+    const isVencida = vencimentoDate < today;
+
+    // ---- Lógica de estado ----
+    if (fatura.pago) {
+        // Fatura paga
+        btnPagarEl.style.display = 'none';
+        btnReverterEl.style.display = 'flex';
+
+        btnReverterEl.classList.add('success');
+        btnReverterEl.innerHTML = '<span class="material-icons-sharp">check_circle</span> Fatura Paga';
+
+        totalEl.style.color = 'var(--success-color)';
+        totalAbaEl.style.color = 'var(--success-color)';
+
+    } else if (fatura.total > 0) {
+        // Fatura pendente
+        btnPagarEl.style.display = 'flex';
+        btnReverterEl.style.display = 'none';
+
+        btnPagarEl.disabled = false;
+        totalEl.style.color = 'var(--danger-color)';
+        totalAbaEl.style.color = 'var(--danger-color)';
+
+        if (isVencida) {
+            btnPagarEl.classList.add('danger');
+            btnPagarEl.textContent = 'Pagar (Vencida)';
         } else {
-            btnPagarEl.style.display = 'flex';
-            btnPagarEl.textContent = 'Sem Fatura';
-            btnPagarEl.disabled = true;
-            btnReverterEl.style.display = 'none';
-            totalEl.style.color = 'var(--success-color)';
-            totalAbaEl.style.color = 'var(--success-color)';
+            btnPagarEl.textContent = 'Pagar Fatura';
         }
-    });
+
+    } else {
+        // Sem fatura (zerada)
+        btnPagarEl.style.display = 'flex';
+        btnPagarEl.textContent = 'Sem Fatura';
+        btnPagarEl.disabled = true;
+
+        btnReverterEl.style.display = 'none';
+
+        totalEl.style.color = 'var(--success-color)';
+        totalAbaEl.style.color = 'var(--success-color)';
+    }
+});
+
 }
 
 function renderTotalGastosCartoes() {
