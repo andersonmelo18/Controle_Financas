@@ -361,21 +361,26 @@ function renderMetas() {
     // Meta de Entrada
     const percEntrada = (dashboardState.metaEntrada > 0) ? (dashboardState.totalEntradas / dashboardState.metaEntrada) * 100 : 0;
     const restanteEntrada = dashboardState.metaEntrada - dashboardState.totalEntradas;
-    metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
-    metaEntradaPercent.textContent = `${percEntrada.toFixed(1)}%`;
-    metaEntradaValor.textContent = formatCurrency(dashboardState.metaEntrada);
-    metaEntradaRestante.textContent = (restanteEntrada > 0) ? `${formatCurrency(restanteEntrada)} restantes` : `${formatCurrency(Math.abs(restanteEntrada))} acima`;
+    
+    if (metaEntradaProgress) metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
+    if (metaEntradaPercent) metaEntradaPercent.textContent = `${percEntrada.toFixed(1)}%`;
+    if (metaEntradaValor) metaEntradaValor.textContent = formatCurrency(dashboardState.metaEntrada);
+    if (metaEntradaRestante) metaEntradaRestante.textContent = (restanteEntrada > 0) ? 
+        `${formatCurrency(restanteEntrada)} restantes` : `${formatCurrency(Math.abs(restanteEntrada))} acima`;
     
     // Meta de Gasto
     const percGasto = (dashboardState.metaGasto > 0) ? (dashboardState.totalDespesas / dashboardState.metaGasto) * 100 : 0;
     const restanteGasto = dashboardState.metaGasto - dashboardState.totalDespesas;
-    metaGastoProgress.style.width = `${Math.min(percGasto, 100)}%`;
-    metaGastoPercent.textContent = `${percGasto.toFixed(1)}%`;
-    metaGastoValor.textContent = formatCurrency(dashboardState.metaGasto);
-    metaGastoRestante.textContent = formatCurrency(restanteGasto);
-    if(metaGastoGastoEl) metaGastoGastoEl.textContent = formatCurrency(dashboardState.totalDespesas);
     
-    metaGastoProgress.style.backgroundColor = (percGasto > 100) ? 'var(--danger-color)' : 'var(--success-color)';
+    if (metaGastoProgress) {
+        metaGastoProgress.style.width = `${Math.min(percGasto, 100)}%`;
+        metaGastoProgress.style.backgroundColor = (percGasto > 100) ? 'var(--danger-color)' : 'var(--success-color)';
+    }
+
+    if (metaGastoPercent) metaGastoPercent.textContent = `${percGasto.toFixed(1)}%`;
+    if (metaGastoValor) metaGastoValor.textContent = formatCurrency(dashboardState.metaGasto);
+    if (metaGastoRestante) metaGastoRestante.textContent = formatCurrency(restanteGasto);
+    if(metaGastoGastoEl) metaGastoGastoEl.textContent = formatCurrency(dashboardState.totalDespesas);
 }
 
 // v6.0: Caminhos atualizados
@@ -489,6 +494,8 @@ function renderGraficoCategorias() {
 }
 
 function renderGastosCategoriaTabela() {
+    if (!tbodyGastosCategoria) return; // 👈 BLINDAGEM PRINCIPAL
+    
     const data = dashboardState.dadosGraficoCat;
     tbodyGastosCategoria.innerHTML = ''; 
     
@@ -515,6 +522,8 @@ function renderGastosCategoriaTabela() {
 
 
 function renderResumoDespesas(fixosMes, pendenciasMes) {
+    if (!tbodyResumoDespesas || !listaContasPagar) return; // 👈 BLINDAGEM PRINCIPAL
+    
     let fixasPendente = 0;
     Object.values(fixosMes).forEach(d => {
         if (d.status === 'pendente') fixasPendente += d.valor;
@@ -568,6 +577,8 @@ function renderResumoDespesas(fixosMes, pendenciasMes) {
 }
 
 function renderResumoCartoes(cartoesConfig) {
+    if (!tbodyResumoCartoes) return; // 👈 BLINDAGEM PRINCIPAL
+    
     const totalFaturas = dashboardState.totalFaturasMes;
     const totalLimites = dashboardState.totalLimites;
 
