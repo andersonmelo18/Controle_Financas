@@ -1,5 +1,5 @@
 // js/index.js
-// VERSÃO 6.0 (Atualizado para 'usuarios/' e Otimizado o Carregamento Anual)
+// VERSÃO 6.0 (Corrigido: Caminhos 'usuarios/' e Lógica de Carregamento de Faturas)
 
 import { 
     db, 
@@ -39,19 +39,19 @@ let dashboardState = {
     totalLimites: 0,
     dadosGraficoCat: {},
     dadosGraficoLinha: {},
-    // v6.0: Otimizado - Guarda os dados anuais aqui
-    dadosResumoAnual: {
-        entradasAno: {},
-        despesasAno: {},
-        fixosAno: {},
-        pendenciasAno: {}
+    // v6.0: Guarda os dados anuais para o CSV e Resumo Anual
+    dadosAnuais: {
+        entradas: {},
+        despesas: {},
+        fixos: {},
+        pendencias: {}
     } 
 };
 
 // Instâncias dos Gráficos
 let graficoCategorias = null;
 let graficoEvolucao = null;
-let graficoEntradasDespesas = null; // (v5.1)
+let graficoEntradasDespesas = null; 
 
 // ===============================================================
 // DOM (IDs do v5.1)
@@ -72,7 +72,7 @@ const metaGastoProgress = document.getElementById('meta-gasto-progress');
 const metaGastoPercent = document.getElementById('meta-gasto-percent');
 const metaGastoValor = document.getElementById('meta-gasto-valor');
 const metaGastoRestante = document.getElementById('meta-gasto-restante');
-const metaGastoGastoEl = document.getElementById('meta-gasto-gasto'); // (Faltava no v5.1)
+const metaGastoGastoEl = document.getElementById('meta-gasto-gasto'); 
 
 const tbodyResumoDespesas = document.getElementById('tbody-resumo-despesas');
 const tbodyGastosCategoria = document.getElementById('tbody-gastos-categoria');
@@ -90,7 +90,7 @@ const inputMetaGasto = document.getElementById('input-meta-gasto');
 
 
 // ===============================================================
-// INICIALIZAÇÃO SEGURA (CORREÇÃO ERRO 1)
+// INICIALIZAÇÃO
 // ===============================================================
 
 document.addEventListener('authReady', (e) => {
@@ -100,7 +100,8 @@ document.addEventListener('authReady', (e) => {
         currentYear = e.detail.year;
         currentMonth = e.detail.month;
         limparListeners();
-        loadAllDashboardData(e.yearChanged || false); 
+        // v6.0: Recarrega todos os dados, pois o mês mudou
+        loadAllDashboardData(); 
     });
 
     const initialMonthEl = document.getElementById('current-month-display');
@@ -109,46 +110,29 @@ document.addEventListener('authReady', (e) => {
         currentMonth = initialMonthEl.dataset.month;
     }
 
-    loadAllDashboardData(true); 
+    loadAllDashboardData(); // Carga inicial
 
-    // --- CORREÇÃO: Verificação de segurança para os Modais ---
-    const btnDefinirMeta = document.getElementById('btn-definir-meta');
-    if (btnDefinirMeta) {
-        btnDefinirMeta.addEventListener('click', () => {
-            inputMetaEntrada.value = formatCurrency(dashboardState.metaEntrada).replace('R$', '').trim();
-            modalMetaEntrada.style.display = 'flex';
-        });
-    }
+    // Listeners dos Modais
+    document.getElementById('btn-definir-meta').addEventListener('click', () => {
+        inputMetaEntrada.value = formatCurrency(dashboardState.metaEntrada).replace('R$', '').trim();
+        modalMetaEntrada.style.display = 'flex';
+    });
+    document.getElementById('btn-definir-meta-gasto').addEventListener('click', () => {
+        inputMetaGasto.value = formatCurrency(dashboardState.metaGasto).replace('R$', '').trim();
+        modalMetaGasto.style.display = 'flex';
+    });
 
-    const btnDefinirMetaGasto = document.getElementById('btn-definir-meta-gasto');
-    if (btnDefinirMetaGasto) {
-        btnDefinirMetaGasto.addEventListener('click', () => {
-            inputMetaGasto.value = formatCurrency(dashboardState.metaGasto).replace('R$', '').trim();
-            modalMetaGasto.style.display = 'flex';
-        });
-    }
-
-    // Fechar modais (verifica se existem antes)
-    if (modalMetaEntrada) {
-        const btnCancel = modalMetaEntrada.querySelector('.btn-cancel');
-        if (btnCancel) btnCancel.addEventListener('click', () => modalMetaEntrada.style.display = 'none');
-    }
-    
-    if (modalMetaGasto) {
-        const btnCancel = modalMetaGasto.querySelector('.btn-cancel');
-        if (btnCancel) btnCancel.addEventListener('click', () => modalMetaGasto.style.display = 'none');
-    }
+    // Fechar modais
+    modalMetaEntrada.querySelector('.btn-cancel').addEventListener('click', () => modalMetaEntrada.style.display = 'none');
+    modalMetaGasto.querySelector('.btn-cancel').addEventListener('click', () => modalMetaGasto.style.display = 'none');
     
     // Salvar modais
-    if (formMetaEntrada) formMetaEntrada.addEventListener('submit', handleSalvarMeta);
-    if (formMetaGasto) formMetaGasto.addEventListener('submit', handleSalvarMetaGasto);
+    formMetaEntrada.addEventListener('submit', handleSalvarMeta);
+    formMetaGasto.addEventListener('submit', handleSalvarMetaGasto);
 
-    // --- CORREÇÃO: Botões de Exportação ---
-    const btnExportPdf = document.getElementById('btn-export-pdf');
-    if (btnExportPdf) btnExportPdf.addEventListener('click', exportarPDF);
-
-    const btnExportCsv = document.getElementById('btn-export-csv');
-    if (btnExportCsv) btnExportCsv.addEventListener('click', exportarCSV);
+    // Botões de Exportação (v5.1)
+    document.getElementById('btn-export-pdf')?.addEventListener('click', exportarPDF);
+    document.getElementById('btn-export-csv')?.addEventListener('click', exportarCSV);
 });
 
 function limparListeners() {
@@ -157,31 +141,26 @@ function limparListeners() {
 }
 
 // ===============================================================
-// 1. CARREGAMENTO GERAL (CORREÇÃO DE ESTRUTURA E ESTADO)
+// 1. CARREGAMENTO GERAL DOS DADOS (v6.0 - CORRIGIDO E OTIMIZADO)
 // ===============================================================
 
-async function loadAllDashboardData(yearChanged = false) {
+async function loadAllDashboardData() {
     if (!userId) return;
 
+    // v6.0: Caminhos atualizados para 'usuarios/'
+    // Carrega TUDO (não apenas o mês) para garantir que os cálculos
+    // de fatura e resumo anual estejam corretos.
     const paths = {
         saldoGlobal: `usuarios/${userId}/saldo/global`,
         metas: `usuarios/${userId}/metas`,
         metasGasto: `usuarios/${userId}/metas_gasto`,
         cartoesConfig: `usuarios/${userId}/cartoes/config`,
         cartoesSpecs: `usuarios/${userId}/cartoes_specs`,
-        despesasMes: `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`,
-        fixosMes: `usuarios/${userId}/fixos/${currentYear}-${currentMonth}`,
-        pendenciasMes: `usuarios/${userId}/pendencias/${currentYear}-${currentMonth}`,
-        entradasMes: `usuarios/${userId}/entradas/${currentYear}-${currentMonth}`,
+        despesas: `usuarios/${userId}/despesas`, // Traz todas as despesas
+        fixos: `usuarios/${userId}/fixos`,       // Traz todos os fixos
+        pendencias: `usuarios/${userId}/pendencias`, // Traz todas as pendências
+        entradas: `usuarios/${userId}/entradas`,   // Traz todas as entradas
     };
-
-    if (yearChanged) {
-        // Se mudou o ano, busca todos os dados anuais
-        paths.despesasAno = `usuarios/${userId}/despesas`;
-        paths.entradasAno = `usuarios/${userId}/entradas`;
-        paths.fixosAno = `usuarios/${userId}/fixos`; 
-        paths.pendenciasAno = `usuarios/${userId}/pendencias`;
-    }
 
     const dataPromises = Object.keys(paths).map(key => get(ref(db, paths[key])));
 
@@ -190,41 +169,8 @@ async function loadAllDashboardData(yearChanged = false) {
         
         const dataMap = {};
         Object.keys(paths).forEach((key, index) => {
-            // Garante que é um objeto vazio se vier null do Firebase
             dataMap[key] = results[index].val() || {};
         });
-
-        // --- Lógica de Segurança Crítica para dados Anuais ---
-        
-        if (!yearChanged) {
-            // Se NÃO mudou o ano, pega os dados anuais do estado.
-            
-            // CORREÇÃO: Garante que a estrutura pai exista (dashboardState.dadosResumoAnual)
-            const annualData = dashboardState.dadosResumoAnual || {}; 
-            
-            dataMap.despesasAno = annualData.despesasAno || {};
-            dataMap.entradasAno = annualData.entradasAno || {};
-            dataMap.fixosAno = annualData.fixosAno || {};
-            dataMap.pendenciasAno = annualData.pendenciasAno || {};
-        } else {
-            // Se MUDOU o ano (buscou do banco), garante que é um objeto vazio se o Firebase estiver vazio
-            dataMap.despesasAno = dataMap.despesasAno || {};
-            dataMap.entradasAno = dataMap.entradasAno || {};
-            dataMap.fixosAno = dataMap.fixosAno || {};
-            dataMap.pendenciasAno = dataMap.pendenciasAno || {};
-            
-            // CRÍTICO: Salva os novos dados anuais no estado para as próximas chamadas
-            dashboardState.dadosResumoAnual = {
-                despesasAno: dataMap.despesasAno,
-                entradasAno: dataMap.entradasAno,
-                fixosAno: dataMap.fixosAno,
-                pendenciasAno: dataMap.pendenciasAno,
-            };
-        }
-        
-        // Garante que as variáveis de estado de cálculo existam
-        if (!dashboardState.dadosGraficoLinha) dashboardState.dadosGraficoLinha = {};
-
 
         processarDadosDashboard(dataMap);
 
@@ -233,8 +179,14 @@ async function loadAllDashboardData(yearChanged = false) {
     }
 }
 
-
 function processarDadosDashboard(dataMap) {
+    // Extrai os dados do MÊS ATUAL dos dados anuais
+    const mesAtualPath = `${currentYear}-${currentMonth}`;
+    const entradasMes = dataMap.entradas[mesAtualPath] || {};
+    const despesasMes = dataMap.despesas[mesAtualPath] || {};
+    const fixosMes = dataMap.fixos[mesAtualPath] || {};
+    const pendenciasMes = dataMap.pendencias[mesAtualPath] || {};
+    
     // Zera o estado para recálculo
     dashboardState = {
         ...dashboardState,
@@ -243,12 +195,12 @@ function processarDadosDashboard(dataMap) {
         detalheVariaveis: 0, detalheFixas: 0, detalheDividas: 0,
         totalFaturasMes: 0, totalLimites: 0,
         dadosGraficoCat: {}, dadosGraficoLinha: {},
-        // v6.0: Atualiza o 'state' com os dados anuais (novos ou os antigos)
-        dadosResumoAnual: {
-            despesasAno: dataMap.despesasAno,
-            entradasAno: dataMap.entradasAno,
-            fixosAno: dataMap.fixosAno,
-            pendenciasAno: dataMap.pendenciasAno
+        // v6.0: Guarda os dados ANUAIS (completos)
+        dadosAnuais: {
+            entradas: dataMap.entradas,
+            despesas: dataMap.despesas,
+            fixos: dataMap.fixos,
+            pendencias: dataMap.pendencias
         }
     };
 
@@ -258,7 +210,7 @@ function processarDadosDashboard(dataMap) {
     dashboardState.metaGasto = dataMap.metasGasto.valor || 0;
     
     // 2. Processa Entradas do Mês
-    const entradasArray = Object.values(dataMap.entradasMes);
+    const entradasArray = Object.values(entradasMes);
     dashboardState.totalEntradas = entradasArray.reduce((sum, e) => sum + e.valor, 0);
     dashboardState.kmTotal = entradasArray.reduce((sum, e) => sum + (e.km || 0), 0);
     dashboardState.horasTotal = entradasArray.reduce((sum, e) => sum + (e.horas || 0), 0);
@@ -267,7 +219,7 @@ function processarDadosDashboard(dataMap) {
     const pagamentosQueAfetamSaldo = ['Saldo em Caixa', 'Pix', 'Dinheiro', 'Débito Automático'];
     
     // 3a. Despesas Variáveis
-    Object.values(dataMap.despesasMes).forEach(d => {
+    Object.values(despesasMes).forEach(d => {
         if (d.categoria === 'Fatura') return; 
         if (pagamentosQueAfetamSaldo.includes(d.formaPagamento)) {
             dashboardState.detalheVariaveis += d.valor;
@@ -275,14 +227,14 @@ function processarDadosDashboard(dataMap) {
     });
 
     // 3b. Despesas Fixas (Apenas pagas)
-    Object.values(dataMap.fixosMes).forEach(d => {
+    Object.values(fixosMes).forEach(d => {
         if (d.status === 'pago' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)) {
             dashboardState.detalheFixas += d.valor;
         }
     });
 
     // 3c. Pendências (Apenas 'euDevo' pagas)
-    Object.values(dataMap.pendenciasMes).forEach(d => {
+    Object.values(pendenciasMes).forEach(d => {
         if (d.tipo === 'euDevo' && d.status === 'pago' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)) {
             dashboardState.detalheDividas += d.valor;
         }
@@ -293,102 +245,76 @@ function processarDadosDashboard(dataMap) {
 
     // 4. Processa Cartões (Lógica de 'cartoes.js' v6.0 replicada)
     dashboardState.totalLimites = Object.values(dataMap.cartoesConfig).reduce((sum, c) => sum + (c.limiteTotal || 0), 0);
-    const { totalFaturas } = calcularTotaisFaturas(dataMap);
+    // v6.0: Passa TODOS os dados necessários para o cálculo
+    const { totalFaturas } = calcularTotaisFaturas(
+        dataMap.cartoesConfig,
+        dataMap.cartoesSpecs,
+        dataMap.despesas, // TUDO
+        dataMap.fixos,    // TUDO
+        dataMap.pendencias // TUDO
+    );
     dashboardState.totalFaturasMes = totalFaturas;
     
     // 5. Prepara dados para os gráficos e resumos
     const dadosGeraisDespesas = {
-        ...dataMap.despesasMes,
-        ...dataMap.fixosMes,
-        ...dataMap.pendenciasMes
+        ...despesasMes,
+        ...fixosMes,
+        ...pendenciasMes
     };
     dashboardState.dadosGraficoCat = prepararDadosGraficoCategorias(dadosGeraisDespesas);
-    dashboardState.dadosGraficoLinha = prepararDadosGraficoLinha(dataMap.entradasMes, dataMap.despesasMes, dataMap.fixosMes, dataMap.pendenciasMes);
+    dashboardState.dadosGraficoLinha = prepararDadosGraficoLinha(entradasMes, despesasMes, fixosMes, pendenciasMes);
     
     // 6. Renderiza todos os componentes
     renderKPIs();
     renderMetas();
-    renderResumoDespesas(dataMap.fixosMes, dataMap.pendenciasMes); 
+    renderResumoDespesas(fixosMes, pendenciasMes); 
     renderResumoCartoes(dataMap.cartoesConfig);
     renderGastosCategoriaTabela();
     renderGraficoCategorias();
     renderGraficoEvolucao();
     renderGraficoEntradasDespesas();
-    renderResumoAnual(); // v6.0: Agora é síncrono
+    renderResumoAnual(); // v6.0: Agora usa os dados do 'state'
 }
 
 // ===============================================================
-// 2. RENDERIZAÇÃO DOS COMPONENTES (COM VERIFICAÇÃO DE NULL)
+// 2. RENDERIZAÇÃO DOS COMPONENTES (v5.1 - Lógica mantida)
 // ===============================================================
 
 function renderKPIs() {
-    // ⚠️ Blindagem: Verifica se o elemento existe antes de usá-lo
-    
-    if (kpiEntradasEl) {
-        kpiEntradasEl.textContent = formatCurrency(dashboardState.totalEntradas);
-    }
-    
-    if (kpiDespesasEl) {
-        kpiDespesasEl.textContent = formatCurrency(dashboardState.totalDespesas);
-    }
-    
-    if (kpiLucroEl) {
-        kpiLucroEl.textContent = formatCurrency(dashboardState.lucroLiquido);
-        kpiLucroEl.className = dashboardState.lucroLiquido < 0 ? 'text-danger' : 'text-success';
-    }
-    
-    if (kpiSaldoAcumuladoEl) {
-        kpiSaldoAcumuladoEl.textContent = formatCurrency(dashboardState.saldoAcumulado); 
-        kpiSaldoAcumuladoEl.className = dashboardState.saldoAcumulado < 0 ? 'text-danger' : 'text-success';
-    }
+    kpiEntradasEl.textContent = formatCurrency(dashboardState.totalEntradas);
+    kpiDespesasEl.textContent = formatCurrency(dashboardState.totalDespesas);
+    kpiLucroEl.textContent = formatCurrency(dashboardState.lucroLiquido);
+    kpiSaldoAcumuladoEl.textContent = formatCurrency(dashboardState.saldoAcumulado); 
     
     dashboardState.saldoMesAnterior = dashboardState.saldoAcumulado - dashboardState.lucroLiquido;
-    
-    if (kpiSaldoMesAnteriorEl) {
-        kpiSaldoMesAnteriorEl.textContent = formatCurrency(dashboardState.saldoMesAnterior); 
-    }
+    kpiSaldoMesAnteriorEl.textContent = formatCurrency(dashboardState.saldoMesAnterior); 
 
-    if (kpiHorasEl) {
-        kpiHorasEl.textContent = formatHoras(dashboardState.horasTotal);
-    }
-    
-    if (kpiKmEl) {
-        kpiKmEl.textContent = `${dashboardState.kmTotal.toFixed(1)} km`;
-    }
+    kpiHorasEl.textContent = formatHoras(dashboardState.horasTotal);
+    kpiKmEl.textContent = `${dashboardState.kmTotal.toFixed(1)} km`;
+
+    kpiLucroEl.className = dashboardState.lucroLiquido < 0 ? 'text-danger' : 'text-success';
+    kpiSaldoAcumuladoEl.className = dashboardState.saldoAcumulado < 0 ? 'text-danger' : 'text-success';
 }
-
-// ===============================================================
-// 2. RENDERIZAÇÃO DE METAS (DEFINITIVAMENTE CORRIGIDA)
-// ===============================================================
 
 function renderMetas() {
     // Meta de Entrada
     const percEntrada = (dashboardState.metaEntrada > 0) ? (dashboardState.totalEntradas / dashboardState.metaEntrada) * 100 : 0;
     const restanteEntrada = dashboardState.metaEntrada - dashboardState.totalEntradas;
-    
-    // LINHA 364: A VERIFICAÇÃO "if" É OBRIGATÓRIA AQUI!
-    if (metaEntradaProgress) { // 👈 Este 'if' impede o erro 'null'
-        metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
-    }
-    
-    if (metaEntradaPercent) metaEntradaPercent.textContent = `${percEntrada.toFixed(1)}%`;
-    if (metaEntradaValor) metaEntradaValor.textContent = formatCurrency(dashboardState.metaEntrada);
-    if (metaEntradaRestante) metaEntradaRestante.textContent = (restanteEntrada > 0) ? 
-        `${formatCurrency(restanteEntrada)} restantes` : `${formatCurrency(Math.abs(restanteEntrada))} acima`;
+    metaEntradaProgress.style.width = `${Math.min(percEntrada, 100)}%`;
+    metaEntradaPercent.textContent = `${percEntrada.toFixed(1)}%`;
+    metaEntradaValor.textContent = formatCurrency(dashboardState.metaEntrada);
+    metaEntradaRestante.textContent = (restanteEntrada > 0) ? `${formatCurrency(restanteEntrada)} restantes` : `${formatCurrency(Math.abs(restanteEntrada))} acima`;
     
     // Meta de Gasto
     const percGasto = (dashboardState.metaGasto > 0) ? (dashboardState.totalDespesas / dashboardState.metaGasto) * 100 : 0;
     const restanteGasto = dashboardState.metaGasto - dashboardState.totalDespesas;
-    
-    if (metaGastoProgress) {
-        metaGastoProgress.style.width = `${Math.min(percGasto, 100)}%`;
-        metaGastoProgress.style.backgroundColor = (percGasto > 100) ? 'var(--danger-color)' : 'var(--success-color)';
-    }
-
-    if (metaGastoPercent) metaGastoPercent.textContent = `${percGasto.toFixed(1)}%`;
-    if (metaGastoValor) metaGastoValor.textContent = formatCurrency(dashboardState.metaGasto);
-    if (metaGastoRestante) metaGastoRestante.textContent = formatCurrency(restanteGasto);
+    metaGastoProgress.style.width = `${Math.min(percGasto, 100)}%`;
+    metaGastoPercent.textContent = `${percGasto.toFixed(1)}%`;
+    metaGastoValor.textContent = formatCurrency(dashboardState.metaGasto);
+    metaGastoRestante.textContent = formatCurrency(restanteGasto);
     if(metaGastoGastoEl) metaGastoGastoEl.textContent = formatCurrency(dashboardState.totalDespesas);
+    
+    metaGastoProgress.style.backgroundColor = (percGasto > 100) ? 'var(--danger-color)' : 'var(--success-color)';
 }
 
 // v6.0: Caminhos atualizados
@@ -502,8 +428,6 @@ function renderGraficoCategorias() {
 }
 
 function renderGastosCategoriaTabela() {
-    if (!tbodyGastosCategoria) return; // 👈 BLINDAGEM PRINCIPAL
-    
     const data = dashboardState.dadosGraficoCat;
     tbodyGastosCategoria.innerHTML = ''; 
     
@@ -530,8 +454,6 @@ function renderGastosCategoriaTabela() {
 
 
 function renderResumoDespesas(fixosMes, pendenciasMes) {
-    if (!tbodyResumoDespesas || !listaContasPagar) return; // 👈 BLINDAGEM PRINCIPAL
-    
     let fixasPendente = 0;
     Object.values(fixosMes).forEach(d => {
         if (d.status === 'pendente') fixasPendente += d.valor;
@@ -585,8 +507,6 @@ function renderResumoDespesas(fixosMes, pendenciasMes) {
 }
 
 function renderResumoCartoes(cartoesConfig) {
-    if (!tbodyResumoCartoes) return; // 👈 BLINDAGEM PRINCIPAL
-    
     const totalFaturas = dashboardState.totalFaturasMes;
     const totalLimites = dashboardState.totalLimites;
 
@@ -787,62 +707,59 @@ function renderGraficoEntradasDespesas() {
 
 
 // ===============================================================
-// 4. LÓGICA DE CÁLCULO DE FATURAS (CORRIGIDO PARA NÃO TRAVAR)
+// 4. LÓGICA DE CÁLCULO DE FATURAS (v6.0 - CORRIGIDA)
 // ===============================================================
 
-function calcularTotaisFaturas(dataMap) {
+// v6.0: Lógica de cálculo de fatura movida para cá, usando os dados GLOBAIS
+function calcularTotaisFaturas(cartoesConfig, cartoesSpecs, allDespesas, allFixos, allPendencias) {
     let totalFaturas = 0;
     const dataFatura = new Date(currentYear, currentMonth - 1, 1);
     
-    // Preparação segura dos dados (Evita o erro "Cannot read properties of undefined")
-    const despesasAnoSafe = dataMap.despesasAno || {};
-    const pendenciasAnoSafe = dataMap.pendenciasAno || {};
-    const fixosAnoSafe = dataMap.fixosAno || {};
-    const despesasMesSafe = dataMap.despesasMes || {};
-    const fixosMesSafe = dataMap.fixosMes || {};
-    const pendenciasMesSafe = dataMap.pendenciasMes || {};
-
     const dataFaturaAnterior = new Date(dataFatura);
     dataFaturaAnterior.setMonth(dataFaturaAnterior.getMonth() - 1);
     const mesAtualPath = `${currentYear}-${currentMonth}`;
     const mesAnteriorPath = `${dataFaturaAnterior.getFullYear()}-${(dataFaturaAnterior.getMonth() + 1).toString().padStart(2, '0')}`;
 
+    // Extrai os dados dos meses relevantes
+    const despesasMesAtual = allDespesas[mesAtualPath] || {};
+    const despesasMesAnt = allDespesas[mesAnteriorPath] || {};
+    const fixosMesAtual = allFixos[mesAtualPath] || {};
+    const fixosMesAnt = allFixos[mesAnteriorPath] || {};
+    const pendenciasMesAtual = allPendencias[mesAtualPath] || {};
+    const pendenciasMesAnt = allPendencias[mesAnteriorPath] || {};
+
     const statusPagamentoAtual = {};
     const statusPagamentoAnterior = {}; 
 
-    // Verifica status de pagamento (fatura paga?)
-    Object.values(dataMap.cartoesConfig).forEach(cartao => {
+    Object.values(cartoesConfig).forEach(cartao => {
         const nomeFatura = `Pagamento Fatura ${cartao.nome}`;
         
-        const pagoEmDespesas = Object.values(despesasMesSafe).some(p => 
+        const pagoEmDespesas = Object.values(despesasMesAtual).some(p => 
             p.descricao === nomeFatura && p.categoria === 'Fatura'
         );
-        const pagoEmPendencias = Object.values(pendenciasMesSafe).some(p => 
+        const pagoEmPendencias = Object.values(pendenciasMesAtual).some(p => 
             p.descricao === nomeFatura && p.status === 'pago'
         );
         statusPagamentoAtual[cartao.id] = pagoEmDespesas || pagoEmPendencias;
         
-        // Verifica no mês anterior usando as variáveis seguras
-        const pendenciasAnterior = pendenciasAnoSafe[mesAnteriorPath] || {};
-        statusPagamentoAnterior[cartao.id] = Object.values(pendenciasAnterior).some(p => 
+        // Verifica o pagamento no mês anterior (APENAS PENDÊNCIAS, como no cartoes.js v6.0)
+        statusPagamentoAnterior[cartao.id] = Object.values(pendenciasMesAnt).some(p => 
             p.descricao === nomeFatura && p.status === 'pago'
         );
     });
 
-    // Agrega todas as fontes de gastos
     const fontesGastos = [
-        ...Object.values(despesasAnoSafe[mesAnteriorPath] || {}),
-        ...Object.values(despesasMesSafe),
-        ...Object.values(fixosAnoSafe[mesAnteriorPath] || {}),
-        ...Object.values(fixosMesSafe)
+        ...Object.values(despesasMesAnt),
+        ...Object.values(despesasMesAtual),
+        ...Object.values(fixosMesAnt),
+        ...Object.values(fixosMesAtual)
     ];
 
-    // 1. Processa compras à vista e parceladas simples
     fontesGastos.forEach(gasto => {
         if (gasto.categoria === 'Fatura') return; 
 
         if (!gasto.data && !gasto.vencimento) return;
-        const cartaoConfig = Object.values(dataMap.cartoesConfig).find(c => c.nome === gasto.formaPagamento);
+        const cartaoConfig = Object.values(cartoesConfig).find(c => c.nome === gasto.formaPagamento);
         if (!cartaoConfig) return; 
 
         const dataGasto = new Date((gasto.data || gasto.vencimento) + 'T12:00:00');
@@ -869,26 +786,24 @@ function calcularTotaisFaturas(dataMap) {
         }
     });
 
-    // 2. Processa compras parceladas recorrentes (Specs)
-    Object.values(dataMap.cartoesSpecs).forEach(compra => {
-        const cartaoConfig = Object.values(dataMap.cartoesConfig).find(c => c.nome === compra.cartao);
+    Object.values(cartoesSpecs).forEach(compra => {
+        const cartaoConfig = Object.values(cartoesConfig).find(c => c.nome === compra.cartao);
         if (!cartaoConfig) return;
 
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
+             console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
              return;
         }
 
         const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
         let dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
         
-        // Loop para ajustar o mês inicial baseado em pagamentos anteriores
+        // A lógica de avanço de fatura paga (de cartoes.js)
         while (true) {
             const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            // --- CORREÇÃO AQUI: Usa as variáveis seguras ---
-            const pendenciasDesseMes = pendenciasAnoSafe[path] || {};
-            const despesasDesseMes = despesasAnoSafe[path] || {};
-            // -----------------------------------------------
+            // v6.0: Usa os dados GLOBAIS
+            const pendenciasDesseMes = allPendencias[path] || {};
+            const despesasDesseMes = allDespesas[path] || {};
 
             const faturaPagaEmPendencias = Object.values(pendenciasDesseMes).some(p => 
                 p.descricao === `Pagamento Fatura ${cartaoConfig.nome}` && p.status === 'pago'
@@ -942,17 +857,14 @@ function calcularMesFatura(dataGasto, diaFechamento) {
 
 
 // ===============================================================
-// 5. RESUMO ANUAL (v6.0 - Otimizado e Corrigido)
+// 5. RESUMO ANUAL (v6.0 - Corrigido)
 // ===============================================================
-/**
- * v6.0: Esta função agora é SÍNCRONA. Ela usa os dados já carregados
- * no 'dashboardState' em vez de buscar no Firebase novamente.
- */
 function renderResumoAnual() {
-    const dataEntradas = dashboardState.dadosResumoAnual.entradasAno;
-    const dataDespesas = dashboardState.dadosResumoAnual.despesasAno;
-    const dataFixos = dashboardState.dadosResumoAnual.fixosAno;
-    const dataPendencias = dashboardState.dadosResumoAnual.pendenciasAno;
+    // v6.0: Usa os dados anuais completos do 'state'
+    const dataEntradas = dashboardState.dadosAnuais.entradas;
+    const dataDespesas = dashboardState.dadosAnuais.despesas;
+    const dataFixos = dashboardState.dadosAnuais.fixos;
+    const dataPendencias = dashboardState.dadosAnuais.pendencias;
     
     tbodyResumoAnual.innerHTML = '';
     
@@ -1002,11 +914,12 @@ function renderResumoAnual() {
     trTotal.className = 'total-row'; 
     const lucroTotal = totalEntradas - totalDespesas;
     const lucroTotalClass = lucroTotal < 0 ? 'text-danger' : 'text-success';
+    // v6.0: Corrigido o 'strong' que estava mal formatado
     trTotal.innerHTML = `
         <td><strong>Total Ano</strong></td>
         <td><strong>${formatCurrency(totalEntradas)}</strong></td>
         <td><strong>${formatCurrency(totalDespesas)}</strong></td>
-        <td class="<strong>${lucroTotalClass}</strong>"><strong>${formatCurrency(lucroTotal)}</strong></td>
+        <td class="${lucroTotalClass}"><strong>${formatCurrency(lucroTotal)}</strong></td>
     `;
     tbodyResumoAnual.appendChild(trTotal);
 }
@@ -1047,16 +960,14 @@ function hideModal(modalId) {
 
 
 // ===============================================================
-// 6. EXPORTAÇÃO (v5.1 - Lógica mantida)
+// 6. EXPORTAÇÃO (v6.0 - Corrigido)
 // ===============================================================
 function exportarPDF() {
-    // Implementação da exportação PDF (mantida do seu v5.1)
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
     doc.text(`Relatório Financeiro - ${currentMonth}/${currentYear}`, 14, 16);
     
-    // AutoTable
     doc.autoTable({
         startY: 25,
         head: [['Resumo do Mês', 'Valor']],
@@ -1075,7 +986,6 @@ function exportarPDF() {
 }
 
 function exportarCSV() {
-    // Implementação da exportação CSV (mantida do seu v5.1)
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Relatório Financeiro\r\n";
     csvContent += `Mês/Ano;,${currentMonth}/${currentYear}\r\n\r\n`;
@@ -1092,7 +1002,8 @@ function exportarCSV() {
     csvContent += "\r\nResumo Anual (Despesas do Saldo)\r\n";
     csvContent += "Mês;Entradas;Despesas;Lucro/Prejuízo\r\n";
     
-    const dataAnual = dashboardState.dadosResumoAnual;
+    // v6.0: Usa os dados anuais completos do 'state'
+    const dataAnual = dashboardState.dadosAnuais;
     const meses = Array.from({length: 12}, (_, i) => `${currentYear}-${(i + 1).toString().padStart(2, '0')}`);
     const pagamentosQueAfetamSaldo = ['Saldo em Caixa', 'Pix', 'Dinheiro', 'Débito Automático'];
 
@@ -1100,13 +1011,14 @@ function exportarCSV() {
         const [ano, mes] = mesKey.split('-');
         const mesNome = new Date(ano, mes - 1, 1).toLocaleString('pt-BR', { month: 'short' });
         
-        const entradasMes = Object.values(dataAnual.entradasAno[mesKey] || {}).reduce((sum, e) => sum + e.valor, 0);
-        const despesasVarMes = Object.values(dataAnual.despesasAno[mesKey] || {}).filter(d => d.categoria !== 'Fatura' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)).reduce((sum, d) => sum + d.valor, 0);
-        const despesasFixasMes = Object.values(dataAnual.fixosAno[mesKey] || {}).filter(d => d.status === 'pago' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)).reduce((sum, d) => sum + d.valor, 0);
-        const despesasPendenciasMes = Object.values(dataAnual.pendenciasAno[mesKey] || {}).filter(d => d.tipo === 'euDevo' && d.status === 'pago' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)).reduce((sum, d) => sum + d.valor, 0);
+        const entradasMes = Object.values(dataAnual.entradas[mesKey] || {}).reduce((sum, e) => sum + e.valor, 0);
+        const despesasVarMes = Object.values(dataAnual.despesas[mesKey] || {}).filter(d => d.categoria !== 'Fatura' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)).reduce((sum, d) => sum + d.valor, 0);
+        const despesasFixasMes = Object.values(dataAnual.fixos[mesKey] || {}).filter(d => d.status === 'pago' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)).reduce((sum, d) => sum + d.valor, 0);
+        const despesasPendenciasMes = Object.values(dataAnual.pendencias[mesKey] || {}).filter(d => d.tipo === 'euDevo' && d.status === 'pago' && pagamentosQueAfetamSaldo.includes(d.formaPagamento)).reduce((sum, d) => sum + d.valor, 0);
         const despesasMesTotal = despesasVarMes + despesasFixasMes + despesasPendenciasMes;
         const lucro = entradasMes - despesasMesTotal;
 
+        // v6.0: Corrigido o bug do '\\r\\n'
         csvContent += `${mesNome.toUpperCase()}./${ano};${formatCurrency(entradasMes)};${formatCurrency(despesasMesTotal)};${formatCurrency(lucro)}\r\n`;
     });
 
