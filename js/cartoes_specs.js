@@ -1,23 +1,23 @@
 // js/cartoes_specs.js
 // VERSÃO 4.2 (Atualizado para Autenticação Google e caminho 'usuarios/')
 
-import { 
-    db, 
-    ref, 
-    set, 
-    get, 
-    push, 
-    remove, 
-    onValue, 
+import {
+    db,
+    ref,
+    set,
+    get,
+    push,
+    remove,
+    onValue,
     child,
     update,
     off
 } from './firebase-config.js';
-import { 
-    getUserId, 
-    formatCurrency, 
+import {
+    getUserId,
+    formatCurrency,
     parseCurrency,
-    getCartoesHtmlOptions 
+    getCartoesHtmlOptions
 } from './main.js';
 
 // ---- Variáveis Globais ----
@@ -25,7 +25,7 @@ let userId = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
 
-let cartaoConfigMap = {}; 
+let cartaoConfigMap = {};
 let cartaoIcones = {};
 let allSpecs = {};
 let allPendencias = {};
@@ -33,8 +33,8 @@ let activeListeners = [];
 
 // ---- Elementos DOM (Formulário Principal) ----
 const form = document.getElementById('form-add-parcela');
-const dataCompraInput = document.getElementById('cartao-data-compra'); 
-const cartaoSelect = document.getElementById('cartao-utilizado'); 
+const dataCompraInput = document.getElementById('cartao-data-compra');
+const cartaoSelect = document.getElementById('cartao-utilizado');
 const descricaoInput = document.getElementById('cartao-descricao');
 const valorTotalInput = document.getElementById('cartao-valor-total');
 const numParcelasInput = document.getElementById('cartao-num-parcelas');
@@ -47,12 +47,12 @@ const tbodyMasterList = document.getElementById('tbody-master-list');
 
 // ---- Modais (Padrão) ----
 const modalConfirm = document.getElementById('modal-confirm');
-const modalMessage = document.getElementById('modal-message'); 
+const modalMessage = document.getElementById('modal-message');
 
 // ---- Modais (Edição) ----
 const modalEdit = document.getElementById('modal-edit-parcela');
 const formEdit = document.getElementById('form-edit-parcela');
-const editCartaoSelect = document.getElementById('edit-cartao-utilizado'); 
+const editCartaoSelect = document.getElementById('edit-cartao-utilizado');
 const editDescricaoInput = document.getElementById('edit-cartao-descricao');
 const editValorTotalInput = document.getElementById('edit-cartao-valor-total');
 const editNumParcelasInput = document.getElementById('edit-cartao-num-parcelas');
@@ -80,7 +80,7 @@ document.addEventListener('authReady', async (e) => {
     document.addEventListener('monthChanged', (e) => {
         currentYear = e.detail.year;
         currentMonth = e.detail.month;
-        updateDataInput(); 
+        updateDataInput();
         renderUI();
     });
 
@@ -90,7 +90,7 @@ document.addEventListener('authReady', async (e) => {
         currentMonth = initialMonthEl.dataset.month;
     }
 
-    updateDataInput(); 
+    updateDataInput();
     await loadDynamicCardData(); // Espera os cartões carregarem
     loadAllData(); // Começa a ouvir os dados
 
@@ -134,25 +134,25 @@ function loadAllData() {
 // v4.2: Caminho atualizado
 async function loadDynamicCardData() {
     if (!userId) return;
-    
-    // getCartoesHtmlOptions() já busca de 'usuarios/' (via main.js v4.1)
-    const cartoesHtml = await getCartoesHtmlOptions(); 
 
-    if (cartaoSelect) cartaoSelect.innerHTML = cartoesHtml; 
-    if (editCartaoSelect) editCartaoSelect.innerHTML = cartoesHtml; 
+    // getCartoesHtmlOptions() já busca de 'usuarios/' (via main.js v4.1)
+    const cartoesHtml = await getCartoesHtmlOptions();
+
+    if (cartaoSelect) cartaoSelect.innerHTML = cartoesHtml;
+    if (editCartaoSelect) editCartaoSelect.innerHTML = cartoesHtml;
 
     // v4.2: Caminho atualizado
     const configRef = ref(db, `usuarios/${userId}/cartoes/config`);
     try {
         const snapshot = await get(configRef);
-        cartaoConfigMap = {}; 
+        cartaoConfigMap = {};
         cartaoIcones = {};
         if (snapshot.exists()) {
             snapshot.forEach(child => {
                 const cartao = child.val();
                 if (cartao.nome && cartao.icone) {
                     cartaoIcones[cartao.nome] = cartao.icone;
-                    cartaoConfigMap[cartao.nome] = cartao; 
+                    cartaoConfigMap[cartao.nome] = cartao;
                 }
             });
         }
@@ -166,7 +166,7 @@ async function loadDynamicCardData() {
 // ===============================================================
 function renderUI() {
     if (!userId) return;
-    
+
     const displayEl = document.getElementById('current-month-display');
     if (mesDisplayFaturaEl && displayEl) {
         mesDisplayFaturaEl.textContent = displayEl.textContent;
@@ -179,49 +179,59 @@ function renderUI() {
 function renderParcelasDoMes() {
     tbodyParcelasDoMes.innerHTML = '';
     let totalMes = 0;
-    
+
     const dataFaturaAtual = new Date(currentYear, currentMonth - 1, 1);
 
     Object.values(allSpecs).forEach(compra => {
-        if (compra.status === 'quitado' || compra.status === 'estornado') {
-            return;
-        }
-        
+
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-             console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
-             return;
+            console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
+            return;
         }
 
         const dataInicioVirtual = calcularDataInicioVirtual(compra);
-        const [startYear, startMonth] = [dataInicioVirtual.getFullYear(), dataInicioVirtual.getMonth() + 1];
+        const startYear = dataInicioVirtual.getFullYear();
+        const startMonth = dataInicioVirtual.getMonth() + 1;
 
-        let mesesDiff = (dataFaturaAtual.getFullYear() - startYear) * 12 + (dataFaturaAtual.getMonth() + 1 - startMonth);
-        let parcelaAtual = mesesDiff + 1;
+        // cálculo da parcela correspondente ao mês atual
+        const mesesDiffParaFatura =
+            (dataFaturaAtual.getFullYear() - startYear) * 12 +
+            ((dataFaturaAtual.getMonth() + 1) - startMonth);
 
-        if (parcelaAtual >= 1 && parcelaAtual <= compra.parcelas) {
-            const valorParcela = compra.valorTotal / compra.parcelas;
-            totalMes += valorParcela;
-            
+        const parcelaDoMes = mesesDiffParaFatura + 1;
+
+        const valorParcela = compra.valorTotal / compra.parcelas;
+
+        // 🔥 Loop: mostrar TODAS as parcelas, independente do mês
+        for (let i = 1; i <= compra.parcelas; i++) {
+
             const tr = document.createElement('tr');
             const icone = cartaoIcones[compra.cartao] || "💳";
             const [y, m, d] = (compra.dataCompra || "---").split('-');
-            
+
             tr.innerHTML = `
                 <td>${icone} ${compra.cartao}</td>
                 <td>${compra.descricao}</td>
                 <td>${(compra.dataCompra) ? `${d}/${m}/${y}` : 'N/A'}</td>
-                <td>${parcelaAtual} / ${compra.parcelas}</td>
+                <td>${i} / ${compra.parcelas}</td>
                 <td>${formatCurrency(valorParcela)}</td>
             `;
+
             tbodyParcelasDoMes.appendChild(tr);
+
+            // Somar AO TOTAL apenas a parcela do mês atual
+            if (i === parcelaDoMes && parcelaDoMes >= 1 && parcelaDoMes <= compra.parcelas) {
+                totalMes += valorParcela;
+            }
         }
     });
 
     totalParcelasMesEl.textContent = formatCurrency(totalMes);
 }
 
+
 function renderMasterList() {
-    tbodyMasterList.innerHTML = ''; 
+    tbodyMasterList.innerHTML = '';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -229,10 +239,10 @@ function renderMasterList() {
 
     compras.forEach(compra => {
         if (compra.status === 'quitado_pagamento') return;
-        
+
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-             console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
-             return;
+            console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
+            return;
         }
 
         const tr = document.createElement('tr');
@@ -241,14 +251,14 @@ function renderMasterList() {
         tr.dataset.descricao = compra.descricao;
         tr.dataset.valorTotal = compra.valorTotal;
         tr.dataset.numParcelas = compra.parcelas;
-        tr.dataset.dataInicio = compra.dataInicio; 
-        tr.dataset.dataCompra = compra.dataCompra || ''; 
+        tr.dataset.dataInicio = compra.dataInicio;
+        tr.dataset.dataCompra = compra.dataCompra || '';
 
         const dataInicioVirtual = calcularDataInicioVirtual(compra);
         const [startYear, startMonth] = [dataInicioVirtual.getFullYear(), dataInicioVirtual.getMonth() + 1];
 
         const currentYearGlobal = today.getFullYear();
-        const currentMonthGlobal = today.getMonth() + 1; 
+        const currentMonthGlobal = today.getMonth() + 1;
 
         let mesesDiff = (currentYearGlobal - startYear) * 12 + (currentMonthGlobal - startMonth);
         let parcelaAtual = mesesDiff + 1;
@@ -270,14 +280,14 @@ function renderMasterList() {
             progressoLabel = `${parcelaAtual}/${compra.parcelas}`;
             statusLabel = `<span class="tag warning">Ativa</span>`;
         }
-        
+
         const [yC, mC, dC] = (compra.dataCompra || "---").split('-');
         const dataCompraFmt = (compra.dataCompra) ? `${dC}/${mC}/${yC}` : 'N/A';
         const [yI, mI] = compra.dataInicio.split('-');
         const dataInicioFmt = `${mI}/${yI}`;
-        
+
         const icone = cartaoIcones[compra.cartao] || "💳";
-        
+
         const isAtiva = (compra.status !== 'quitado' && compra.status !== 'estornado' && parcelaAtual <= compra.parcelas);
 
         tr.innerHTML = `
@@ -303,12 +313,12 @@ function renderMasterList() {
                 </button>
             </td>
         `;
-        
+
         tr.querySelector('.btn-delete-parcela').addEventListener('click', handleDeleteClick);
         tr.querySelector('.btn-edit').addEventListener('click', handleEditClick);
         tr.querySelector('.btn-quitar').addEventListener('click', handleQuitarClick);
         tr.querySelector('.btn-estornar').addEventListener('click', handleEstornoClick);
-        
+
         tbodyMasterList.appendChild(tr);
     });
 }
@@ -321,12 +331,12 @@ async function handleFormSubmit(e) {
     e.preventDefault();
     if (!userId) return;
 
-    const dataCompra = dataCompraInput.value; 
-    const cartaoNome = cartaoSelect.value; 
+    const dataCompra = dataCompraInput.value;
+    const cartaoNome = cartaoSelect.value;
     const descricao = descricaoInput.value;
     const valorTotal = parseCurrency(valorTotalInput.value);
     const numParcelas = parseInt(numParcelasInput.value);
-    
+
     if (valorTotal <= 0 || numParcelas <= 0) {
         alert("Valor total e número de parcelas devem ser maiores que zero.");
         return;
@@ -335,7 +345,7 @@ async function handleFormSubmit(e) {
         alert("Por favor, selecione um cartão.");
         return;
     }
-    if (!dataCompra) { 
+    if (!dataCompra) {
         alert("Por favor, selecione a data da compra.");
         return;
     }
@@ -348,25 +358,25 @@ async function handleFormSubmit(e) {
 
     const diaFechamento = cartaoConfig.diaFechamento;
     const dataCompraObj = new Date(dataCompra + 'T12:00:00'); // Evita fuso
-    
+
     const mesPrimeiraParcela = calcularMesFatura(dataCompraObj, diaFechamento);
     const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
 
     // v4.2: Caminho atualizado
     const path = `usuarios/${userId}/cartoes_specs`;
     const newCompraRef = push(ref(db, path));
-    
+
     await set(newCompraRef, {
         id: newCompraRef.key,
-        cartao: cartaoNome, 
+        cartao: cartaoNome,
         descricao: descricao,
         valorTotal: valorTotal,
-        parcelas: numParcelas, 
-        dataCompra: dataCompra, 
+        parcelas: numParcelas,
+        dataCompra: dataCompra,
         dataInicio: dataInicioString,
         status: 'ativo'
     });
-    
+
     alert("Compra parcelada registrada com sucesso!");
     form.reset();
     updateDataInput(); // Reseta a data
@@ -388,22 +398,22 @@ function calcularMesFatura(dataGasto, diaFechamento) {
 }
 
 function calcularDataInicioVirtual(compra) {
-    if (!compra || !compra.dataInicio) return new Date(); 
+    if (!compra || !compra.dataInicio) return new Date();
 
     const [anoCompra, mesCompra] = compra.dataInicio.split('-');
     if (!anoCompra || !mesCompra) return new Date();
 
     let dataInicioVirtual = new Date(anoCompra, mesCompra - 1, 1);
-    
+
     const cartaoConfig = cartaoConfigMap[compra.cartao];
-    if (!cartaoConfig) return dataInicioVirtual; 
-    
+    if (!cartaoConfig) return dataInicioVirtual;
+
     const nomeFatura = `Pagamento Fatura ${compra.cartao}`;
 
     while (true) {
         const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
         const pendenciasDesseMes = allPendencias[path] || {};
-        const faturaPaga = Object.values(pendenciasDesseMes).some(p => 
+        const faturaPaga = Object.values(pendenciasDesseMes).some(p =>
             p.descricao === nomeFatura && p.status === 'pago'
         );
 
@@ -424,17 +434,17 @@ function calcularValorRestante(compra) {
     const [startYear, startMonth] = [dataInicioVirtual.getFullYear(), dataInicioVirtual.getMonth() + 1];
 
     const currentYearGlobal = today.getFullYear();
-    const currentMonthGlobal = today.getMonth() + 1; 
+    const currentMonthGlobal = today.getMonth() + 1;
 
     let mesesDiff = (currentYearGlobal - startYear) * 12 + (currentMonthGlobal - startMonth);
     let parcelaAtual = mesesDiff + 1;
 
-    if (parcelaAtual < 1) parcelaAtual = 1; 
-    if (parcelaAtual > compra.parcelas) return 0; 
+    if (parcelaAtual < 1) parcelaAtual = 1;
+    if (parcelaAtual > compra.parcelas) return 0;
 
     const parcelasRestantes = (compra.parcelas - parcelaAtual) + 1;
     const valorParcela = compra.valorTotal / compra.parcelas;
-    
+
     return valorParcela * parcelasRestantes;
 }
 
@@ -445,7 +455,7 @@ function calcularValorRestante(compra) {
 // v4.2: Caminho atualizado
 function handleDeleteClick(e) {
     const tr = e.target.closest('tr');
-    const masterId = tr.dataset.id; 
+    const masterId = tr.dataset.id;
 
     const deleteFn = async () => {
         // v4.2: Caminho atualizado
@@ -454,13 +464,13 @@ function handleDeleteClick(e) {
     };
 
     modalMessage.textContent = "Excluir esta compra? Todas as parcelas (pagas e futuras) serão removidas das faturas.";
-    showModal('modal-confirm', deleteFn); 
+    showModal('modal-confirm', deleteFn);
 }
 
 // v4.2: Caminho atualizado
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
-    
+
     const id = tr.dataset.id;
     const cartao = tr.dataset.cartao;
     const descricao = tr.dataset.descricao;
@@ -471,13 +481,13 @@ function handleEditClick(e) {
     formEdit.dataset.id = id;
     // v4.2: Caminho atualizado
     formEdit.dataset.path = `usuarios/${userId}/cartoes_specs/${id}`;
-    
-    editCartaoSelect.value = cartao; 
+
+    editCartaoSelect.value = cartao;
     editDescricaoInput.value = descricao;
     editValorTotalInput.value = formatCurrency(valorTotal);
     editNumParcelasInput.value = numParcelas;
-    editDataInicioInput.value = dataInicio; 
-    
+    editDataInicioInput.value = dataInicio;
+
     modalEdit.style.display = 'flex';
 }
 
@@ -487,9 +497,9 @@ async function handleSaveEdit(e) {
 
     const id = formEdit.dataset.id;
     const path = formEdit.dataset.path; // Já contém 'usuarios/'
-    
+
     const novosDados = {
-        cartao: editCartaoSelect.value, 
+        cartao: editCartaoSelect.value,
         descricao: editDescricaoInput.value,
         valorTotal: parseCurrency(editValorTotalInput.value),
     };
@@ -498,9 +508,9 @@ async function handleSaveEdit(e) {
         alert("O valor deve ser maior que zero.");
         return;
     }
-    
+
     try {
-        await update(ref(db, path), novosDados); 
+        await update(ref(db, path), novosDados);
         modalEdit.style.display = 'none';
     } catch (error) {
         console.error("Erro ao salvar edição:", error);
@@ -514,17 +524,17 @@ function handleQuitarClick(e) {
     if (!compra) return;
 
     const valorRestante = calcularValorRestante(compra);
-    
+
     modalQuitarMessage.innerHTML = `Quitar <strong>${compra.descricao}</strong>? <br>
         O valor restante de <strong>${formatCurrency(valorRestante)}</strong> 
         será lançado na sua fatura do mês atual.`;
 
     const newBtnConfirm = btnQuitarConfirm.cloneNode(true);
     btnQuitarConfirm.parentNode.replaceChild(newBtnConfirm, btnQuitarConfirm);
-    
+
     newBtnConfirm.onclick = () => executarQuitacao(compra, valorRestante);
     btnQuitarCancel.onclick = () => hideModal('modal-quitar-confirm');
-    
+
     modalQuitar.style.display = 'flex';
 }
 
@@ -542,21 +552,21 @@ async function executarQuitacao(compra, valorRestante) {
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
     const dataCompra = today.toISOString().split('T')[0];
-    
+
     const mesPrimeiraParcela = calcularMesFatura(today, cartaoConfig.diaFechamento);
     const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
 
     // v4.2: Caminho atualizado
     const path = `usuarios/${userId}/cartoes_specs`;
     const newCompraRef = push(ref(db, path));
-    
+
     await set(newCompraRef, {
         id: newCompraRef.key,
-        cartao: compra.cartao, 
+        cartao: compra.cartao,
         descricao: `(Quitação) ${compra.descricao}`,
         valorTotal: valorRestante,
-        parcelas: 1, 
-        dataCompra: dataCompra, 
+        parcelas: 1,
+        dataCompra: dataCompra,
         dataInicio: dataInicioString,
         status: 'quitado_pagamento'
     });
@@ -571,7 +581,7 @@ function handleEstornoClick(e) {
 
     modalEstornoMessage.innerHTML = `Estornar <strong>${compra.descricao}</strong>? <br>
         Todas as parcelas futuras serão zeradas e não aparecerão nas faturas.`;
-    
+
     const newBtnConfirm = btnEstornoConfirm.cloneNode(true);
     btnEstornoConfirm.parentNode.replaceChild(newBtnConfirm, btnEstornoConfirm);
 
@@ -591,18 +601,18 @@ async function executarEstorno(compra) {
 // ===============================================================
 // 7. Funções Utilitárias de Data e Modal (v4.0 - Lógica mantida)
 // ===============================================================
-function updateDataInput() { 
+function updateDataInput() {
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
     const todayISO = today.toISOString().split('T')[0];
-    
+
     const dataReferencia = new Date(currentYear, currentMonth - 1, 1);
     dataReferencia.setMinutes(dataReferencia.getMinutes() - dataReferencia.getTimezoneOffset());
     const inicioMesISO = dataReferencia.toISOString().split('T')[0];
 
     const todayYear = today.getFullYear();
     const todayMonth = (today.getMonth() + 1).toString().padStart(2, '0');
-    
+
     if (todayYear == currentYear && todayMonth == currentMonth) {
         dataCompraInput.value = todayISO;
     } else {
@@ -613,7 +623,7 @@ function updateDataInput() {
 function showModal(modalId, confirmFn) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
-    
+
     modal.style.display = 'flex';
 
     const btnConfirm = document.getElementById('modal-btn-confirm');
@@ -621,7 +631,7 @@ function showModal(modalId, confirmFn) {
 
     const newBtnConfirm = btnConfirm.cloneNode(true);
     const newBtnCancel = btnCancel.cloneNode(true);
-    
+
     newBtnConfirm.onclick = confirmFn;
     newBtnCancel.onclick = () => hideModal(modalId);
 
@@ -631,7 +641,7 @@ function showModal(modalId, confirmFn) {
 
 function hideModal(modalId) {
     const modal = document.getElementById(modalId);
-    if(modal) {
+    if (modal) {
         modal.style.display = 'none';
     }
 }
