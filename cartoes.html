@@ -4,47 +4,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
     <link rel="icon" type="image/png" href="logo.png">
-
+    
+    <!-- Título e H2 Corrigidos -->
     <title>Gestão de Cartões - Controle Financeiro</title>
-
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
 </head>
-
 <body>
 
     <nav class="sidebar">
         <div class="sidebar-header">
             <h3>Finan<span>Control</span></h3>
         </div>
-
         <ul>
             <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
             <li><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
             <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
             <li><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
-
+            <!-- Link Ativo Corrigido -->
             <li class="active"><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
-
             <li><a href="cartoes_specs.html"><span class="material-icons-sharp">receipt_long</span>Compras Parceladas</a></li>
             <li><a href="pendencias.html"><span class="material-icons-sharp">assignment_late</span>Pendências</a></li>
             <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
         </ul>
-
         <div class="sidebar-footer">
             <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
         </div>
     </nav>
 
     <main class="content">
-
+        
         <header class="main-header">
             <button class="hamburger-menu">
                 <span class="material-icons-sharp">menu</span>
             </button>
-
+            
+            <!-- H2 Corrigido -->
             <h2>Gestão de Cartões de Crédito</h2>
 
             <div class="month-selector">
@@ -54,7 +51,7 @@
             </div>
 
             <div class="header-actions">
-
+            
                 <div class="global-balance" id="global-balance-container" style="display: none;">
                     <small>Saldo em Caixa</small>
                     <h3 id="global-balance-display">R$ 0,00</h3>
@@ -65,17 +62,15 @@
                         <span class="material-icons-sharp">notifications</span>
                         <span id="notification-count" class="badge" style="display: none;">0</span>
                     </button>
-
                     <div id="notification-dropdown" class="dropdown-content">
                         <div id="notification-list">
-                            <p id="notification-placeholder"
-                                style="padding: 1rem; text-align: center; color: var(--text-light);">
+                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
                                 Nenhum alerta no momento.
                             </p>
                         </div>
                     </div>
                 </div>
-
+                
                 <button class="theme-toggler">
                     <span class="material-icons-sharp active">light_mode</span>
                     <span class="material-icons-sharp">dark_mode</span>
@@ -83,18 +78,14 @@
             </div>
         </header>
 
-        <!-- ===================================================================== -->
-        <!-- GESTÃO DE CARTÕES -->
-        <!-- ===================================================================== -->
+        <!-- Conteúdo Específico de Cartões -->
         <section class="card" style="margin: 2rem;">
             <h3>Gerenciar Meus Cartões</h3>
-
             <form id="form-add-cartao" class="form-container">
                 <div class="form-group">
                     <label for="cartao-nome">Nome do Cartão</label>
-                    <input type="text" id="cartao-nome" placeholder="Ex: Nubank, Inter, Digio" required>
+                    <input type="text" id="cartao-nome" placeholder="Ex: NuBank, Inter, Digio" required>
                 </div>
-
                 <div class="form-group">
                     <label for="cartao-icone">Ícone (Cor)</label>
                     <select id="cartao-icone" required>
@@ -106,80 +97,66 @@
                         <option value="⚫">⚫ Preto</option>
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label for="cartao-fechamento">Dia do Fechamento</label>
-                    <input type="number" id="cartao-fechamento" min="1" max="31" placeholder="20" required>
+                    <label for="cartao-fechamento">Dia do Fechamento (Virada)</label>
+                    <input type="number" id="cartao-fechamento" min="1" max="31" placeholder="Ex: 20" required>
                 </div>
-
                 <div class="form-group">
                     <label for="cartao-vencimento">Dia do Vencimento</label>
-                    <input type="number" id="cartao-vencimento" min="1" max="31" placeholder="28" required>
+                    <input type="number" id="cartao-vencimento" min="1" max="31" placeholder="Ex: 28" required>
                 </div>
-
                 <div class="form-group">
-                    <label for="cartao-limite">Limite Total</label>
+                    <label for="cartao-limite">Limite Total do Cartão</label>
                     <input type="text" id="cartao-limite" class="currency" placeholder="R$ 1.000,00" required>
                 </div>
-
-                <div class="form-group" style="align-items:flex-end;">
+                <div class="form-group" style="align-items: flex-end;">
                     <button type="submit" class="btn-primary">Adicionar Cartão</button>
                 </div>
             </form>
 
-            <h3 style="margin-top:2rem;">Cartões Salvos</h3>
-
+            <h3 style="margin-top: 2rem;">Cartões Salvos</h3>
             <div class="table-container">
                 <table id="table-meus-cartoes">
                     <thead>
                         <tr>
                             <th>Cartão</th>
                             <th>Limite Total</th>
-                            <th>Limite Disponível</th>
+                            <th>Limite Disponível</th> 
                             <th>Status</th>
                             <th>Vencimento</th>
-                            <th style="width:140px;">Ações</th>
-                        </tr>
+                            <th style="width: 140px;">Ações</th> </tr>
                     </thead>
-                    <tbody id="tbody-meus-cartoes"></tbody>
+                    <tbody id="tbody-meus-cartoes">
+                        <!-- JS Preenche aqui -->
+                    </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- ===================================================================== -->
-        <!-- Faturas -->
-        <!-- ===================================================================== -->
         <section class="card" style="margin: 0 2rem 2rem 2rem;">
             <h3>Faturas do Mês</h3>
-
-            <!-- PAGAR AGORA -->
-            <div class="pagar-agora-container" id="pagar-agora-container" style="display:none;margin-bottom:1rem;">
-                <button id="btn-pagar-agora" class="btn-primary">
-                    <span class="material-icons-sharp" style="vertical-align:middle;">bolt</span> Pagar Fatura Agora
-                </button>
+            <div class="tab-nav" id="faturas-tab-nav" style="justify-content: flex-start;">
+                <!-- JS Preenche aqui -->
             </div>
-
-            <div class="tab-nav" id="faturas-tab-nav"></div>
-            <div class="tab-content-container" id="faturas-tab-content"></div>
-
-            <h3 style="text-align:right;margin-top:1.5rem;">
-                Total em Faturas (Mês):
-                <span id="total-gastos-cartoes-mes" style="color:var(--danger-color);">R$ 0,00</span>
+            <div class="tab-content-container" id="faturas-tab-content">
+                <!-- JS Preenche aqui -->
+            </div>
+            <h3 style="margin-top: 1.5rem; text-align: right;">
+                Total em Faturas (Mês): 
+                <span id="total-gastos-cartoes-mes" style="color: var(--danger-color);">R$ 0,00</span>
             </h3>
         </section>
-
     </main>
 
-
-    <!-- ===================================================================== -->
-    <!-- MODAIS -->
-    <!-- ===================================================================== -->
-
-    <!-- Modal Confirmar Ação -->
+    <!-- Modal de Confirmação (Padrão) -->
     <div id="modal-confirm" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header"><h3 id="modal-title">Confirmar</h3></div>
-            <div class="modal-body"><p id="modal-message">Tem certeza?</p></div>
+            <div class="modal-header">
+                <h3 id="modal-title">Confirmar Ação</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Tem certeza?</p>
+            </div>
             <div class="modal-footer">
                 <button class="btn-secondary" id="modal-btn-cancel">Cancelar</button>
                 <button class="btn-danger" id="modal-btn-confirm">Confirmar</button>
@@ -187,124 +164,86 @@
         </div>
     </div>
 
-    <!-- Modal Editar Cartão -->
-    <div id="modal-edit-cartao" class="modal-overlay" style="display:none;">
+    <!-- Modal de Edição de Cartão -->
+    <div class="modal-container" id="modal-edit-cartao" style="display: none;">
         <div class="modal-content">
             <h2>Editar Cartão</h2>
-
             <form id="form-edit-cartao" class="form-container">
-
                 <div class="form-group">
-                    <label>Nome</label>
+                    <label for="edit-cartao-nome">Nome do Cartão</label>
                     <input type="text" id="edit-cartao-nome" required>
                 </div>
-
                 <div class="form-group">
-                    <label>Ícone</label>
-                    <select id="edit-cartao-icone">
-                        <option value="💳">💳</option>
-                        <option value="🟣">🟣</option>
-                        <option value="🟠">🟠</option>
-                        <option value="🔵">🔵</option>
-                        <option value="🟢">🟢</option>
-                        <option value="⚫">⚫</option>
+                    <label for="edit-cartao-icone">Ícone (Cor)</label>
+                    <select id="edit-cartao-icone" required>
+                        <option value="💳">💳 Padrão (Cinza)</option>
+                        <option value="🟣">🟣 Roxo</option>
+                        <option value="🟠">🟠 Laranja</option>
+                        <option value="🔵">🔵 Azul</option>
+                        <option value="🟢">🟢 Verde</option>
+                        <option value="⚫">⚫ Preto</option>
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label>Fechamento</label>
-                    <input id="edit-cartao-fechamento" type="number" min="1" max="31" required>
+                    <label for="edit-cartao-fechamento">Dia do Fechamento</label>
+                    <input type="number" id="edit-cartao-fechamento" min="1" max="31" required>
                 </div>
-
                 <div class="form-group">
-                    <label>Vencimento</label>
-                    <input id="edit-cartao-vencimento" type="number" min="1" max="31" required>
+                    <label for="edit-cartao-vencimento">Dia do Vencimento</label>
+                    <input type="number" id="edit-cartao-vencimento" min="1" max="31" required>
                 </div>
-
                 <div class="form-group">
-                    <label>Limite</label>
-                    <input id="edit-cartao-limite" type="text" class="currency" required>
+                    <label for="edit-cartao-limite">Limite Total</label>
+                    <input type="text" id="edit-cartao-limite" class="currency" placeholder="R$ 1.000,00" required>
                 </div>
-
-                <div class="modal-buttons">
-                    <button type="button" id="modal-edit-btn-cancel" class="btn-secondary">Cancelar</button>
-                    <button type="submit" class="btn-primary">Salvar</button>
+                
+                <div class="modal-buttons" style="grid-column: 1 / -1;">
+                    <button type="button" class="btn btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-save">Salvar Alterações</button>
                 </div>
-
             </form>
         </div>
     </div>
 
-    <!-- Modal Reverter Pagamento -->
+    <!-- Modal de Reverter Pagamento -->
     <div id="modal-reverter-confirm" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header"><h3>Reverter Pagamento</h3></div>
-            <div class="modal-body"><p id="modal-reverter-message">Tem certeza?</p></div>
+            <div class="modal-header">
+                <h3 id="modal-reverter-title">Reverter Pagamento</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-reverter-message">Tem certeza?</p>
+            </div>
             <div class="modal-footer">
                 <button class="btn-secondary" id="modal-reverter-btn-cancel">Cancelar</button>
                 <button class="btn-danger" id="modal-reverter-btn-confirm">Reverter</button>
             </div>
         </div>
     </div>
-
-    <!-- Modal Pagamento Individual -->
-    <div id="modal-pagar-individual" class="modal-overlay">
+    
+    <!-- Modal de Logout (Obrigatório em todas as páginas) -->
+    <div id="modal-logout-confirm" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header"><h3>Pagar Compra Individual</h3></div>
+            <div class="modal-header">
+                <h3>Confirmar Saída</h3>
+            </div>
             <div class="modal-body">
-                <p id="pagar-individual-descricao"></p>
-                <label>Valor:</label>
-                <p id="pagar-individual-valor"></p>
+                <p>Tem certeza que deseja sair da sua conta?</p>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" id="pagar-individual-cancel">Cancelar</button>
-                <button class="btn-danger" id="pagar-individual-confirm">Pagar</button>
+                <button class="btn-secondary" id="modal-logout-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-logout-btn-confirm">Sair</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Pagamento Parcial -->
-    <div id="modal-pagamento-parcial" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Pagamento Parcial</h3></div>
-            <div class="modal-body">
-                <p id="pag-parcial-descricao"></p>
-                <label>Digite o valor:</label>
-                <input type="text" id="pag-parcial-input" class="currency">
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="pag-parcial-cancel">Cancelar</button>
-                <button class="btn-danger" id="pag-parcial-confirm">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Pagar Agora -->
-    <div id="modal-pagar-agora" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Pagar Fatura Agora</h3></div>
-            <div class="modal-body">
-                <p id="pagar-agora-descricao"></p>
-                <label>Total:</label>
-                <p id="pagar-agora-total"></p>
-
-                <p style="margin-top:1rem;color:var(--text-light);">
-                    Esse pagamento quita somente a fatura atual.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="pagar-agora-cancel">Cancelar</button>
-                <button class="btn-danger" id="pagar-agora-confirm">Pagar Agora</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- Scripts -->
-    <!-- ===================================================================== -->
+    <!-- =============================================================== -->
+    <!-- SCRIPTS (Corrigidos) -->
+    <!-- =============================================================== -->
+    
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/cartoes.js"></script>
-
+    
 </body>
 </html>
