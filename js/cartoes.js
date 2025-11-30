@@ -521,91 +521,70 @@ function renderizarFaturas(estadoGastos) {
     // v6.2: Agora esta lógica funciona, pois 'estadoGastos.pendencias' e 'estadoGastos.despesas'
     // contêm TODOS os meses, permitindo que o 'while (true)' funcione corretamente.
     Object.values(estadoGastos.specs).forEach(compra => {
-        const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === compra.cartao);
-        if (!cartaoConfig) return;
+    const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === compra.cartao);
+    if (!cartaoConfig) return;
 
-        if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-            console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
-            return;
+    if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
+        console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
+        return;
+    }
+
+    // início REAL da compra (não avança mais nada!)
+    const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
+    const dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
+
+    // cálculo correto da parcela do mês
+    const startYear = dataInicioVirtual.getFullYear();
+    const startMonth = dataInicioVirtual.getMonth() + 1;
+
+    const mesesDiff =
+        (dataFatura.getFullYear() - startYear) * 12 +
+        ((dataFatura.getMonth() + 1) - startMonth);
+
+    const parcelaAtualLabel = mesesDiff + 1;
+
+    // Exibe a parcela correspondente ao mês atual
+    if (parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
+
+        const status = compra.status || 'ativo';
+        const valorParcelaOriginal = compra.valorTotal / compra.parcelas;
+
+        let valorParaTotal = 0;
+        let isStrikethrough = false;
+        let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`;
+
+        if (status === 'estornado') {
+            isStrikethrough = true;
+            valorParaTotal = 0;
+            parcelaLabel = `(Estornado)`;
+
+        } else if (status === 'quitado') {
+            isStrikethrough = true;
+            valorParaTotal = 0;
+            parcelaLabel = `(Quitado)`;
+
+        } else if (status === 'quitado_pagamento') {
+            isStrikethrough = false;
+            valorParaTotal = valorParcelaOriginal;
+            parcelaLabel = `(Pagamento Quitação)`;
+
+        } else {
+            isStrikethrough = false;
+            valorParaTotal = valorParcelaOriginal;
         }
 
-        const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
-        let dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
+        estadoFaturas[cartaoConfig.id].total += valorParaTotal;
+        estadoFaturas[cartaoConfig.id].html += renderLinhaGasto({
+            data: `${currentYear}-${currentMonth}-01`,
+            descricao: `${compra.descricao} ${parcelaLabel}`,
+            valor: valorParcelaOriginal,
+            categoria: 'Parcela',
+            tipo: 'spec',
+            isStrikethrough: isStrikethrough
+        });
+    }
+});
 
-        // avanço virtual
-        while (true) {
-            const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1)
-                .toString()
-                .padStart(2, '0')}`;
-
-            const pendenciasDesseMes = estadoGastos.pendencias[path] || {};
-            const despesasDesseMes = estadoGastos.despesas[path] || {};
-
-            const faturaPagaEmPendencias = Object.values(pendenciasDesseMes).some(p =>
-                p.descricao === `Pagamento Fatura ${cartaoConfig.nome}` && p.status === 'pago'
-            );
-
-            const faturaPagaEmDespesas = Object.values(despesasDesseMes).some(p =>
-                p.descricao === `Pagamento Fatura ${cartaoConfig.nome}` && p.categoria === 'Fatura'
-            );
-
-            if (faturaPagaEmPendencias || faturaPagaEmDespesas) {
-                dataInicioVirtual.setMonth(dataInicioVirtual.getMonth() + 1);
-            } else {
-                break;
-            }
-        }
-
-        // cálculo correto da parcela do mês
-        const startYear = dataInicioVirtual.getFullYear();
-        const startMonth = dataInicioVirtual.getMonth() + 1;
-
-        const mesesDiff = (dataFatura.getFullYear() - startYear) * 12 +
-            ((dataFatura.getMonth() + 1) - startMonth);
-
-        const parcelaAtualLabel = mesesDiff + 1;
-
-        // Exibe SOMENTE a parcela correspondente ao mês atual
-        if (parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
-
-            const status = compra.status || 'ativo';
-            const valorParcelaOriginal = compra.valorTotal / compra.parcelas;
-
-            let valorParaTotal = 0;
-            let isStrikethrough = false;
-            let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`;
-
-            if (status === 'estornado') {
-                isStrikethrough = true;
-                valorParaTotal = 0;
-                parcelaLabel = `(Estornado)`;
-
-            } else if (status === 'quitado') {
-                isStrikethrough = true;
-                valorParaTotal = 0;
-                parcelaLabel = `(Quitado)`;
-
-            } else if (status === 'quitado_pagamento') {
-                isStrikethrough = false;
-                valorParaTotal = valorParcelaOriginal;
-                parcelaLabel = `(Pagamento Quitação)`;
-
-            } else {
-                isStrikethrough = false;
-                valorParaTotal = valorParcelaOriginal;
-            }
-
-            estadoFaturas[cartaoConfig.id].total += valorParaTotal;
-            estadoFaturas[cartaoConfig.id].html += renderLinhaGasto({
-                data: `${currentYear}-${currentMonth}-01`,
-                descricao: `${compra.descricao} ${parcelaLabel}`,
-                valor: valorParcelaOriginal,
-                categoria: 'Parcela',
-                tipo: 'spec',
-                isStrikethrough: isStrikethrough
-            });
-        }
-    });
 
 
     Object.values(meusCartoes).forEach(cartao => {
