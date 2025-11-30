@@ -185,58 +185,46 @@ function renderParcelasDoMes() {
     Object.values(allSpecs).forEach(compra => {
 
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-            console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
+            console.warn("Compra ignorada (data início inválida): ", compra.descricao);
             return;
         }
 
+        // DATA INÍCIO VIRTUAL (considera fechamento)
         const dataInicioVirtual = calcularDataInicioVirtual(compra);
-        const startYear = dataInicioVirtual.getFullYear();
-        const startMonth = dataInicioVirtual.getMonth() + 1;
+        const [startYear, startMonth] = [
+            dataInicioVirtual.getFullYear(),
+            dataInicioVirtual.getMonth() + 1
+        ];
 
-        // cálculo da parcela correspondente ao mês atual
-        const mesesDiffParaFatura =
-            (dataFaturaAtual.getFullYear() - startYear) * 12 +
-            ((dataFaturaAtual.getMonth() + 1) - startMonth);
+        // Cálculo correto da parcela deste mês
+        let mesesDiff = (dataFaturaAtual.getFullYear() - startYear) * 12 +
+                        ((dataFaturaAtual.getMonth() + 1) - startMonth);
 
-        const parcelaDoMes = mesesDiffParaFatura + 1;
+        const parcelaAtual = mesesDiff + 1;
 
-        const valorParcela = compra.valorTotal / compra.parcelas;
+        // Somente exibe se a parcela pertence ao mês selecionado!
+        if (parcelaAtual >= 1 && parcelaAtual <= compra.parcelas) {
 
-        // Loop: mostrar TODAS as parcelas, independente do mês
-        for (let i = 1; i <= compra.parcelas; i++) {
+            const valorParcela = compra.valorTotal / compra.parcelas;
 
             const tr = document.createElement('tr');
             const icone = cartaoIcones[compra.cartao] || "💳";
             const [y, m, d] = (compra.dataCompra || "---").split('-');
 
-            // status visual opcional (mostra se a compra foi estornada/quitada)
-            let statusTag = '';
-            if (compra.status === 'quitado') {
-                statusTag = '<span class="tag success">Quitada</span>';
-            } else if (compra.status === 'estornado') {
-                statusTag = '<span class="tag danger">Estornada</span>';
-            } else if (compra.status === 'quitado_pagamento') {
-                statusTag = '<span class="tag info">Quitado (lançamento)</span>';
-            } else {
-                statusTag = '<span class="tag neutral">Pendente</span>';
-            }
-
             tr.innerHTML = `
                 <td>${icone} ${compra.cartao}</td>
                 <td>${compra.descricao}</td>
                 <td>${(compra.dataCompra) ? `${d}/${m}/${y}` : 'N/A'}</td>
-                <td>${i} / ${compra.parcelas}</td>
+                <td>${parcelaAtual} / ${compra.parcelas}</td>
                 <td>${formatCurrency(valorParcela)}</td>
-                <td>${statusTag}</td>
             `;
 
             tbodyParcelasDoMes.appendChild(tr);
 
-            // Somar AO TOTAL apenas a parcela que pertence ao mês selecionado
-            if (i === parcelaDoMes && parcelaDoMes >= 1 && parcelaDoMes <= compra.parcelas) {
-                totalMes += valorParcela;
-            }
+            // Soma corretamente apenas a parcela deste mês
+            totalMes += valorParcela;
         }
+
     });
 
     totalParcelasMesEl.textContent = formatCurrency(totalMes);
