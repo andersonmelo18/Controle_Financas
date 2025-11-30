@@ -357,12 +357,12 @@ async function handleFormSubmit(e) {
     }
 
     const diaFechamento = cartaoConfig.diaFechamento;
-    const dataCompraObj = new Date(dataCompra + 'T12:00:00'); // Evita fuso
+    const dataCompraObj = new Date(dataCompra + 'T12:00:00');
 
     const mesPrimeiraParcela = calcularMesFatura(dataCompraObj, diaFechamento);
     const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
 
-    // v4.2: Caminho atualizado
+    // ----- Registro principal -----
     const path = `usuarios/${userId}/cartoes_specs`;
     const newCompraRef = push(ref(db, path));
 
@@ -377,10 +377,40 @@ async function handleFormSubmit(e) {
         status: 'ativo'
     });
 
+    // -----------------------------------------------------------
+    //  CRIA AS PARCELAS DE CADA MÊS
+    // -----------------------------------------------------------
+    let dataParcela = new Date(mesPrimeiraParcela);
+
+    for (let i = 1; i <= numParcelas; i++) {
+
+        const ano = dataParcela.getFullYear();
+        const mes = (dataParcela.getMonth() + 1).toString().padStart(2, "0");
+
+        const parcelaRef = ref(db,
+            `usuarios/${userId}/cartoes_specs/${ano}/${mes}/${newCompraRef.key}_${i}`
+        );
+
+        await set(parcelaRef, {
+            compraId: newCompraRef.key,
+            cartao: cartaoNome,
+            descricao: `${descricao} (${i}/${numParcelas})`,
+            parcelaNumero: i,
+            parcelasTotal: numParcelas,
+            valor: valorTotal / numParcelas,
+            dataCompra: dataCompra,
+            status: "pendente"
+        });
+
+        // Avançar para o próximo mês
+        dataParcela.setMonth(dataParcela.getMonth() + 1);
+    }
+
     alert("Compra parcelada registrada com sucesso!");
     form.reset();
-    updateDataInput(); // Reseta a data
+    updateDataInput();
 }
+
 
 // ===============================================================
 // 5. HELPER (Funções de Cálculo) (v4.0 - Lógica mantida)
@@ -543,10 +573,7 @@ function handleQuitarClick(e) {
 
 // v4.2: Caminhos atualizados
 async function executarQuitacao(compra, valorRestante) {
-    // NÃO marcamos a compra original como 'quitado' automaticamente,
-    // para que ela continue visível no histórico. Em vez disso registramos
-    // o lançamento (lançamento de pagamento) como um novo registro,
-    // preservando o histórico original.
+    if (!userId) return;
 
     const cartaoConfig = cartaoConfigMap[compra.cartao];
     if (!cartaoConfig) {
@@ -554,16 +581,19 @@ async function executarQuitacao(compra, valorRestante) {
         return;
     }
 
+    // Data de hoje (corrigida de fuso)
     const today = new Date();
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-    const dataCompra = today.toISOString().split('T')[0];
+    const dataHoje = today.toISOString().split('T')[0];
 
+    // Mês da fatura conforme fechamento do cartão
     const mesPrimeiraParcela = calcularMesFatura(today, cartaoConfig.diaFechamento);
-    const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
+    const anoParcela = mesPrimeiraParcela.getFullYear();
+    const mesParcela = (mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, "0");
 
-    // v4.2: Caminho atualizado - cria o registro de quitação (lançamento)
-    const path = `usuarios/${userId}/cartoes_specs`;
-    const newCompraRef = push(ref(db, path));
+    // --- 1) Registrar "compra" de quitação principal ---
+    const mainPath = `usuarios/${userId}/cartoes_specs`;
+    const newCompraRef = push(ref(db, mainPath));
 
     await set(newCompraRef, {
         id: newCompraRef.key,
@@ -571,27 +601,48 @@ async function executarQuitacao(compra, valorRestante) {
         descricao: `(Quitação) ${compra.descricao}`,
         valorTotal: valorRestante,
         parcelas: 1,
-        dataCompra: dataCompra,
-        dataInicio: dataInicioString,
-        status: 'quitado_pagamento'
+        dataCompra: dataHoje,
+        dataInicio: `${anoParcela}-${mesParcela}`,
+        status: "quitado_pagamento"
     });
 
-    // Para que o sistema trate essa quitação como pagamento da fatura e avance
-    // a "dataInicioVirtual" quando apropriado, podemos também criar uma pendência
-    // de pagamento com a descrição que o calcularDataInicioVirtual busca:
-    const pendPath = `usuarios/${userId}/pendencias`;
+    // --- 2) Criar a parcela mensal dessa quitação ---
+    const parcelaRef = ref(
+        db,
+        `usuarios/${userId}/cartoes_specs/${anoParcela}/${mesParcela}/${newCompraRef.key}_1`
+    );
+
+    await set(parcelaRef, {
+        compraId: newCompraRef.key,
+        cartao: compra.cartao,
+        descricao: `(Quitação) ${compra.descricao} (1/1)`,
+        parcelaNumero: 1,
+        parcelasTotal: 1,
+        valor: valorRestante,
+        dataCompra: dataHoje,
+        status: "pago"
+    });
+
+    // --- 3) Registrar pagamento da fatura para avançar "dataInicioVirtual" ---
+    const pendAno = anoParcela;
+    const pendMes = mesParcela;
+
+    const pendPath = `usuarios/${userId}/pendencias/${pendAno}/${pendMes}`;
     const pendRef = push(ref(db, pendPath));
+
     const nomeFatura = `Pagamento Fatura ${compra.cartao}`;
+
     await set(pendRef, {
         id: pendRef.key,
         descricao: nomeFatura,
         valor: valorRestante,
-        status: 'pago',
-        data: dataCompra
+        status: "pago",
+        data: dataHoje
     });
 
     hideModal('modal-quitar-confirm');
 }
+
 
 function handleEstornoClick(e) {
     const id = e.target.closest('tr').dataset.id;
