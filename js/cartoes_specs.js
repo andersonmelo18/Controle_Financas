@@ -29,6 +29,7 @@ let cartaoConfigMap = {};
 let cartaoIcones = {};
 let allSpecs = {};
 let allPendencias = {};
+let allDespesas = {};        // <-- ADICIONADO
 let activeListeners = [];
 
 // ---- Elementos DOM (Formulário Principal) ----
@@ -129,6 +130,12 @@ function loadAllData() {
         allPendencias = snapshot.val() || {};
         renderUI();
     });
+
+    // ADICIONADO: escuta DESPESAS (usado para detectar pagamentos que foram salvos como despesa)
+    listenToPath(`usuarios/${userId}/despesas`, (snapshot) => {
+        allDespesas = snapshot.val() || {};
+        renderUI();
+    });
 }
 
 // v4.2: Caminho atualizado
@@ -141,12 +148,12 @@ async function loadDynamicCardData() {
     if (cartaoSelect) cartaoSelect.innerHTML = cartoesHtml;
     if (editCartaoSelect) editCartaoSelect.innerHTML = cartoesHtml;
 
-    // v4.2: Caminho atualizado
     const configRef = ref(db, `usuarios/${userId}/cartoes/config`);
     try {
         const snapshot = await get(configRef);
         cartaoConfigMap = {};
         cartaoIcones = {};
+
         if (snapshot.exists()) {
             snapshot.forEach(child => {
                 const cartao = child.val();
@@ -156,10 +163,19 @@ async function loadDynamicCardData() {
                 }
             });
         }
+
+        // 🔧 NORMALIZAÇÃO: garante diaFechamento válido mesmo se o BD tiver 'fechamento'
+        Object.values(cartaoConfigMap).forEach(c => {
+            if (!('diaFechamento' in c) && ('fechamento' in c)) {
+                c.diaFechamento = c.fechamento;
+            }
+        });
+
     } catch (error) {
         console.error("Erro ao carregar ícones/config dos cartões:", error);
     }
 }
+
 
 // ===============================================================
 // 3. RENDERIZAÇÃO DA UI (v4.0 - Lógica atualizada)
@@ -182,50 +198,54 @@ function renderParcelasDoMes() {
 
     const dataFaturaAtual = new Date(currentYear, currentMonth - 1, 1);
 
-    Object.values(allSpecs).forEach(compra => {
+    // Usar apenas registros mestre
+const masterSpecs = flattenMasterSpecs(allSpecs);
 
-        if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-            console.warn("Compra ignorada (data início inválida): ", compra.descricao);
-            return;
-        }
+masterSpecs.forEach(compra => {
 
-        // DATA INÍCIO VIRTUAL (considera fechamento)
-        const dataInicioVirtual = calcularDataInicioVirtual(compra);
-        const [startYear, startMonth] = [
-            dataInicioVirtual.getFullYear(),
-            dataInicioVirtual.getMonth() + 1
-        ];
+    if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
+        console.warn("Compra ignorada (data início inválida): ", compra.descricao);
+        return;
+    }
 
-        // Cálculo correto da parcela deste mês
-        let mesesDiff = (dataFaturaAtual.getFullYear() - startYear) * 12 +
-                        ((dataFaturaAtual.getMonth() + 1) - startMonth);
+    // DATA INÍCIO VIRTUAL (considera fechamento + faturas pagas)
+    const dataInicioVirtual = calcularDataInicioVirtual(compra);
+    const [startYear, startMonth] = [
+        dataInicioVirtual.getFullYear(),
+        dataInicioVirtual.getMonth() + 1
+    ];
 
-        const parcelaAtual = mesesDiff + 1;
+    // Cálculo correto da parcela deste mês
+    let mesesDiff = (dataFaturaAtual.getFullYear() - startYear) * 12 +
+                    ((dataFaturaAtual.getMonth() + 1) - startMonth);
 
-        // Somente exibe se a parcela pertence ao mês selecionado!
-        if (parcelaAtual >= 1 && parcelaAtual <= compra.parcelas) {
+    const parcelaAtual = mesesDiff + 1;
 
-            const valorParcela = compra.valorTotal / compra.parcelas;
+    // Somente exibe se a parcela pertence ao mês selecionado!
+    if (parcelaAtual >= 1 && parcelaAtual <= compra.parcelas) {
 
-            const tr = document.createElement('tr');
-            const icone = cartaoIcones[compra.cartao] || "💳";
-            const [y, m, d] = (compra.dataCompra || "---").split('-');
+        const valorParcela = compra.valorTotal / compra.parcelas;
 
-            tr.innerHTML = `
-                <td>${icone} ${compra.cartao}</td>
-                <td>${compra.descricao}</td>
-                <td>${(compra.dataCompra) ? `${d}/${m}/${y}` : 'N/A'}</td>
-                <td>${parcelaAtual} / ${compra.parcelas}</td>
-                <td>${formatCurrency(valorParcela)}</td>
-            `;
+        const tr = document.createElement('tr');
+        const icone = cartaoIcones[compra.cartao] || "💳";
+        const [y, m, d] = (compra.dataCompra || "---").split('-');
 
-            tbodyParcelasDoMes.appendChild(tr);
+        tr.innerHTML = `
+            <td>${icone} ${compra.cartao}</td>
+            <td>${compra.descricao}</td>
+            <td>${(compra.dataCompra) ? `${d}/${m}/${y}` : 'N/A'}</td>
+            <td>${parcelaAtual} / ${compra.parcelas}</td>
+            <td>${formatCurrency(valorParcela)}</td>
+        `;
 
-            // Soma corretamente apenas a parcela deste mês
-            totalMes += valorParcela;
-        }
+        tbodyParcelasDoMes.appendChild(tr);
 
-    });
+        // Soma corretamente apenas a parcela deste mês
+        totalMes += valorParcela;
+    }
+
+});
+
 
     totalParcelasMesEl.textContent = formatCurrency(totalMes);
 }
@@ -236,7 +256,7 @@ function renderMasterList() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const compras = Object.values(allSpecs).sort((a, b) => (b.dataCompra || '').localeCompare(a.dataCompra || ''));
+    const compras = flattenMasterSpecs(allSpecs).sort((a, b) => (b.dataCompra || '').localeCompare(a.dataCompra || ''));
 
     compras.forEach(compra => {
         // Não pular 'quitado_pagamento' — mostrar histórico completo
@@ -291,28 +311,28 @@ function renderMasterList() {
         const isAtiva = (compra.status !== 'estornado' && parcelaAtual <= compra.parcelas);
 
         tr.innerHTML = `
-            <td>${dataCompraFmt}</td>
-            <td>${dataInicioFmt}</td>
-            <td>${icone} ${compra.cartao}</td>
-            <td>${compra.descricao}</td>
-            <td>${formatCurrency(compra.valorTotal)}</td>
-            <td>${progressoLabel}</td>
-            <td>${statusLabel}</td>
-            <td class="actions">
-                <button class="btn-icon success btn-quitar" title="Quitar Antecipadamente" ${!isAtiva ? 'disabled' : ''}>
-                    <span class="material-icons-sharp">done_all</span>
-                </button>
-                <button class="btn-icon danger btn-estornar" title="Estornar Compra" ${!isAtiva ? 'disabled' : ''}>
-                    <span class="material-icons-sharp">remove_shopping_cart</span>
-                </button>
-                <button class="btn-icon warning btn-edit" title="Editar">
-                    <span class="material-icons-sharp">edit</span>
-                </button>
-                <button class="btn-icon danger btn-delete-parcela" title="Excluir Registro">
-                    <span class="material-icons-sharp">delete</span>
-                </button>
-            </td>
-        `;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>${dataCompraFmt}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${dataInicioFmt}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>${icone} ${compra.cartao}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td>${compra.descricao}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>${formatCurrency(compra.valorTotal)}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${progressoLabel}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>${statusLabel}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <td class="actions">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <button class="btn-icon success btn-quitar" title="Quitar Antecipadamente" ${!isAtiva ? 'disabled' : ''}>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <span class="material-icons-sharp">done_all</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <button class="btn-icon danger btn-estornar" title="Estornar Compra" ${!isAtiva ? 'disabled' : ''}>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <span class="material-icons-sharp">remove_shopping_cart</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <button class="btn-icon warning btn-edit" title="Editar">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <span class="material-icons-sharp">edit</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn-icon danger btn-delete-parcela" title="Excluir Registro">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <span class="material-icons-sharp">delete</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            `;
 
         tr.querySelector('.btn-delete-parcela').addEventListener('click', handleDeleteClick);
         tr.querySelector('.btn-edit').addEventListener('click', handleEditClick);
@@ -427,35 +447,75 @@ function calcularMesFatura(dataGasto, diaFechamento) {
     }
 }
 
-function calcularDataInicioVirtual(compra) {
-    if (!compra || !compra.dataCompra) return new Date();
+// Retorna somente os registros 'mestre' de specs (ignora parcelas mensais que têm compraId)
+function flattenMasterSpecs(specsObj) {
+    const arr = [];
+    Object.values(specsObj || {}).forEach(level1 => {
+        if (!level1) return;
+        // Se parece uma compra mestre (tem id e parcelas)
+        if (level1.id && (level1.parcelas || level1.valorTotal)) {
+            arr.push(level1);
+        } else {
+            // É um nó de mês -> percorre filhos (cada filho pode ser master ou parcela)
+            Object.values(level1).forEach(child => {
+                if (!child) return;
+                // ignorar itens que são parcelas mensais (têm compraId)
+                if (!child.compraId && child.id) {
+                    arr.push(child);
+                }
+            });
+        }
+    });
+    return arr;
+}
 
-    const cartaoConfig = cartaoConfigMap[compra.cartao];
-    if (!cartaoConfig || !cartaoConfig.fechamento) {
-        console.warn("Cartão sem configuração de fechamento:", compra.cartao);
+
+function calcularDataInicioVirtual(compra) {
+    // Se não houver dataInicio, tente montar a partir de dataCompra
+    if (!compra) return new Date();
+
+    // Preferir dataInicio (ano-mes) — isto indica o mês da 1ª parcela
+    let anoCompra, mesCompra;
+    if (compra.dataInicio && compra.dataInicio.split('-').length >= 2) {
+        [anoCompra, mesCompra] = compra.dataInicio.split('-').map(Number);
+    } else if (compra.dataCompra && compra.dataCompra.split('-').length === 3) {
+        const [a,m,d] = compra.dataCompra.split('-').map(Number);
+        anoCompra = a; mesCompra = m;
+    } else {
         return new Date();
     }
 
-    const fechamento = cartaoConfig.fechamento; // dia de fechamento do cartão
+    let dataInicioVirtual = new Date(anoCompra, mesCompra - 1, 1);
 
-    const [ano, mes, dia] = compra.dataCompra.split('-').map(Number);
-    const dataCompra = new Date(ano, mes - 1, dia);
+    // Recuperar configuração do cartão e normalizar nome do campo de fechamento
+    const cartaoConfig = cartaoConfigMap[compra.cartao] || {};
+    const diaFechamento = Number(cartaoConfig.diaFechamento || cartaoConfig.fechamento || 1);
 
-    // 1) Começa assumindo que a compra entra no mês atual
-    let mesInicio = mes;
-    let anoInicio = ano;
+    const nomeFatura = `Pagamento Fatura ${compra.cartao}`;
 
-    // 2) Se a compra foi feita DEPOIS DO FECHAMENTO → pula para o próximo mês
-    if (dia > fechamento) {
-        mesInicio++;
-        if (mesInicio > 12) {
-            mesInicio = 1;
-            anoInicio++;
+    // Avança enquanto existir confirmação de pagamento naquele mês
+    while (true) {
+        const pathKey = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
+
+        const pendenciasDesseMes = allPendencias[pathKey] || {};
+        const despesasDesseMes = allDespesas[pathKey] || {};
+
+        const faturaPagaEmPendencias = Object.values(pendenciasDesseMes).some(p =>
+            p && p.descricao === nomeFatura && p.status === 'pago'
+        );
+        const faturaPagaEmDespesas = Object.values(despesasDesseMes).some(d =>
+            d && (d.descricao === nomeFatura && d.categoria === 'Fatura')
+        );
+
+        if (faturaPagaEmPendencias || faturaPagaEmDespesas) {
+            dataInicioVirtual.setMonth(dataInicioVirtual.getMonth() + 1);
+            // continue loop para checar o próximo mês
+        } else {
+            break;
         }
     }
 
-    // 3) Retorna data da fatura real da primeira parcela
-    return new Date(anoInicio, mesInicio - 1, 1);
+    return dataInicioVirtual;
 }
 
 
@@ -559,8 +619,8 @@ function handleQuitarClick(e) {
     const valorRestante = calcularValorRestante(compra);
 
     modalQuitarMessage.innerHTML = `Quitar <strong>${compra.descricao}</strong>? <br>
-        O valor restante de <strong>${formatCurrency(valorRestante)}</strong> 
-        será lançado na sua fatura do mês atual.`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    O valor restante de <strong>${formatCurrency(valorRestante)}</strong> 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            será lançado na sua fatura do mês atual.`;
 
     const newBtnConfirm = btnQuitarConfirm.cloneNode(true);
     btnQuitarConfirm.parentNode.replaceChild(newBtnConfirm, btnQuitarConfirm);
@@ -650,7 +710,7 @@ function handleEstornoClick(e) {
     if (!compra) return;
 
     modalEstornoMessage.innerHTML = `Estornar <strong>${compra.descricao}</strong>? <br>
-        Todas as parcelas futuras serão zeradas e não aparecerão nas faturas.`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            Todas as parcelas futuras serão zeradas e não aparecerão nas faturas.`;
 
     const newBtnConfirm = btnEstornoConfirm.cloneNode(true);
     btnEstornoConfirm.parentNode.replaceChild(newBtnConfirm, btnEstornoConfirm);
