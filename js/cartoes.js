@@ -1,6 +1,5 @@
 // js/cartoes.js
-// VERSÃO 6.2 (Corrigido: Lógica de carregamento de dados anuais para faturas)
-// + Pagamento individual, pagamento parcial, "Pagar agora" avançado
+// VERSÃO 6.2+ (consolidado) — inclui: Pagamento Individual, Pagamento Parcial, Pagar Agora
 
 import {
     db,
@@ -55,6 +54,9 @@ const faturasTabNav = document.getElementById('faturas-tab-nav');
 const faturasTabContent = document.getElementById('faturas-tab-content');
 const totalGastosCartoesEl = document.getElementById('total-gastos-cartoes-mes');
 
+const pagarAgoraContainer = document.getElementById('pagar-agora-container');
+const pagarAgoraBtn = document.getElementById('btn-pagar-agora');
+
 // ---- Elementos DOM (Modais) ----
 const modalConfirm = document.getElementById('modal-confirm');
 const modalMessage = document.getElementById('modal-message');
@@ -69,8 +71,24 @@ const btnCancelEdit = document.getElementById('modal-edit-btn-cancel');
 
 const modalReverter = document.getElementById('modal-reverter-confirm');
 const modalReverterMessage = document.getElementById('modal-reverter-message');
-const btnReverterConfirm = document.getElementById('modal-reverter-btn-confirm');
-const btnReverterCancel = document.getElementById('modal-reverter-btn-cancel');
+
+const modalPagarIndividual = document.getElementById('modal-pagar-individual');
+const pagarIndividualDescricao = document.getElementById('pagar-individual-descricao');
+const pagarIndividualValor = document.getElementById('pagar-individual-valor');
+const pagarIndividualConfirm = document.getElementById('pagar-individual-confirm');
+const pagarIndividualCancel = document.getElementById('pagar-individual-cancel');
+
+const modalParcial = document.getElementById('modal-pagamento-parcial');
+const parcialDescricao = document.getElementById('pag-parcial-descricao');
+const parcialInput = document.getElementById('pag-parcial-input');
+const parcialConfirm = document.getElementById('pag-parcial-confirm');
+const parcialCancel = document.getElementById('pag-parcial-cancel');
+
+const modalPagarAgora = document.getElementById('modal-pagar-agora');
+const pagarAgoraDescricao = document.getElementById('pagar-agora-descricao');
+const pagarAgoraTotalEl = document.getElementById('pagar-agora-total');
+const pagarAgoraConfirm = document.getElementById('pagar-agora-confirm');
+const pagarAgoraCancel = document.getElementById('pagar-agora-cancel');
 
 // ---- INICIALIZAÇÃO ----
 document.addEventListener('authReady', (e) => {
@@ -91,6 +109,17 @@ document.addEventListener('authReady', (e) => {
     formEdit.addEventListener('submit', handleSalvarEditCartao);
     btnCancelEdit.addEventListener('click', () => modalEdit.style.display = 'none');
 
+    // listeners dos modais extras
+    if (pagarIndividualCancel) pagarIndividualCancel.addEventListener('click', () => modalPagarIndividual.style.display = 'none');
+    if (parcialCancel) parcialCancel.addEventListener('click', () => modalParcial.style.display = 'none');
+    if (pagarAgoraCancel) pagarAgoraCancel.addEventListener('click', () => modalPagarAgora.style.display = 'none');
+
+    if (pagarAgoraBtn) {
+        pagarAgoraBtn.addEventListener('click', () => {
+            openPagarAgoraModal();
+        });
+    }
+
     loadGerenciadorCartoes();
 });
 
@@ -105,12 +134,11 @@ function listenToPath(path, callback) {
     activeListeners.push({ ref: dataRef, callback: listenerCallback, eventType: 'value' });
 }
 // ===============================================================
-// FASE 2A: GERENCIADOR DE CARTÕES (v6.1 - Caminho atualizado)
+// GERENCIADOR DE CARTÕES
 // ===============================================================
 function loadGerenciadorCartoes() {
     limparListeners();
 
-    // v6.1: Caminho atualizado
     const configPath = `usuarios/${userId}/cartoes/config`;
     const configRef = ref(db, configPath);
 
@@ -173,10 +201,11 @@ function atualizarTabelaCartoesSalvos() {
     });
 }
 
-// v6.1: Caminho atualizado
+// salvar/editar/excluir/bloco de cartões (mantido igual)
 async function handleSalvarCartao(e) {
     e.preventDefault();
-    const nome = cartaoNomeInput.value;
+    const nome = cartaoNomeInput.value.trim();
+    if (!nome) return;
 
     const nomeExistente = Object.values(meusCartoes).some(c => c.nome.toLowerCase() === nome.toLowerCase());
     if (nomeExistente) {
@@ -222,13 +251,13 @@ function handleEditCartaoClick(e) {
     modalEdit.style.display = 'flex';
 }
 
-// v6.1: Caminho atualizado
 async function handleSalvarEditCartao(e) {
     e.preventDefault();
     const id = formEdit.dataset.id;
+    if (!id) return;
     const path = `usuarios/${userId}/cartoes/config/${id}`;
 
-    const nomeEditado = editCartaoNomeInput.value;
+    const nomeEditado = editCartaoNomeInput.value.trim();
     const idDoNome = Object.keys(meusCartoes).find(key => meusCartoes[key].nome.toLowerCase() === nomeEditado.toLowerCase());
 
     if (idDoNome && idDoNome !== id) {
@@ -257,7 +286,6 @@ async function handleSalvarEditCartao(e) {
     }
 }
 
-// v6.1: Caminho atualizado
 function handleDeleteCartaoClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -281,7 +309,6 @@ function handleDeleteCartaoClick(e) {
     showModal('modal-confirm', deleteFn);
 }
 
-// v6.1: Caminho atualizado
 async function handleBlockToggleClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -302,13 +329,11 @@ async function handleBlockToggleClick(e) {
 }
 
 // ===============================================================
-// FASE 3A: LÓGICA DE FATURAS (v6.2 - CAMINHOS CORRIGIDOS)
+// LÓGICA DE FATURAS
 // ===============================================================
 async function loadGastosAgregados() {
     estadoFaturas = {};
 
-    // v6.2: CORREÇÃO: Carrega TODOS os dados, não apenas os de 2 meses.
-    // Isto é essencial para a lógica de "avanço de fatura" (parcelamento).
     const paths = {
         despesas: `usuarios/${userId}/despesas`,
         fixos: `usuarios/${userId}/fixos`,
@@ -321,7 +346,6 @@ async function loadGastosAgregados() {
     try {
         const results = await Promise.all(promises);
 
-        // v6.2: Mapeia os resultados para o estado
         const estadoGastos = {
             despesas: results[0].val() || {},
             fixos: results[1].val() || {},
@@ -357,9 +381,6 @@ function atualizarAbasFatura() {
         tabBtn.className = 'tab-btn';
         tabBtn.dataset.cartaoId = cartao.id;
 
-        let melhorDia = (cartao.diaFechamento || 0) + 1;
-        if (melhorDia > 31) melhorDia = 1;
-
         const faturaAtual = 0;
 
         tabBtn.innerHTML = `
@@ -377,6 +398,7 @@ function atualizarAbasFatura() {
         tabContent.dataset.cartaoId = cartao.id;
         tabContent.style.display = 'none';
 
+        // Adiciona botão de pagamento parcial e manter o pagar/reverter padrão
         tabContent.innerHTML = `
             <div class="fatura-header">
                 <div>
@@ -388,6 +410,7 @@ function atualizarAbasFatura() {
                 </div>
                 <div class="fatura-actions">
                     <button class="btn-primary" id="btn-pagar-${cartao.id}" style="display: none;">Pagar Fatura</button>
+                    <button class="btn-secondary" id="btn-parcial-${cartao.id}" style="display:none;">Pagamento Parcial</button>
                     <button class="btn-secondary danger" id="btn-reverter-pagamento-${cartao.id}" style="display: none;">
                         <span class="material-icons-sharp">undo</span> Reverter Pagamento
                     </button>
@@ -403,16 +426,7 @@ function atualizarAbasFatura() {
             </div>
         `;
 
-        tabContent.querySelector(`#btn-pagar-${cartao.id}`).addEventListener('click', (e) => {
-            const total = parseFloat(e.currentTarget.dataset.totalValor || 0);
-            handlePagarFaturaClick(cartao, total);
-        });
-
-        tabContent.querySelector(`#btn-reverter-pagamento-${cartao.id}`).addEventListener('click', (e) => {
-            const total = parseFloat(e.currentTarget.dataset.totalValor || 0);
-            handleReverterPagamentoClick(cartao, total);
-        });
-
+        // Delegar listeners depois de renderizar as abas (em renderizarFaturas)
         faturasTabContent.appendChild(tabContent);
     });
 }
@@ -421,8 +435,10 @@ function handleTabClick(e) {
     const targetId = e.target.closest('.tab-btn').dataset.cartaoId;
     faturasTabNav.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     faturasTabContent.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-    faturasTabNav.querySelector(`.tab-btn[data-cartao-id="${targetId}"]`).classList.add('active');
-    faturasTabContent.querySelector(`.tab-content[data-cartao-id="${targetId}"]`).style.display = 'block';
+    const btn = faturasTabNav.querySelector(`.tab-btn[data-cartao-id="${targetId}"]`);
+    if (btn) btn.classList.add('active');
+    const content = faturasTabContent.querySelector(`.tab-content[data-cartao-id="${targetId}"]`);
+    if (content) content.style.display = 'block';
 }
 
 function ativarPrimeiraAba() {
@@ -431,7 +447,9 @@ function ativarPrimeiraAba() {
 }
 
 /**
- * Função MESTRA de cálculo (v6.2 - Lógica de 'estadoGastos' corrigida)
+ * renderizarFaturas agora:
+ * - adiciona botões por linha para pagar compra individual
+ * - liga botões de pagamento parcial e pagar agora
  */
 function renderizarFaturas(estadoGastos) {
     if (Object.keys(meusCartoes).length === 0) return;
@@ -443,7 +461,6 @@ function renderizarFaturas(estadoGastos) {
     const mesAtualPath = `${currentYear}-${currentMonth}`;
     const mesAnteriorPath = `${dataFaturaAnterior.getFullYear()}-${(dataFaturaAnterior.getMonth() + 1).toString().padStart(2, '0')}`;
 
-    // v6.2: Extrai os dados dos meses relevantes dos dados GLOBAIS
     const despesasMesAtual = estadoGastos.despesas[mesAtualPath] || {};
     const despesasMesAnt = estadoGastos.despesas[mesAnteriorPath] || {};
     const fixosMesAtual = estadoGastos.fixos[mesAtualPath] || {};
@@ -480,7 +497,6 @@ function renderizarFaturas(estadoGastos) {
         };
     });
 
-    // v6.2: Usa os dados dos meses relevantes
     const fontesGastos = [
         ...Object.values(despesasMesAnt),
         ...Object.values(despesasMesAtual),
@@ -488,10 +504,11 @@ function renderizarFaturas(estadoGastos) {
         ...Object.values(fixosMesAtual)
     ];
 
+    // Processa gastos variáveis/fixos (adiciona botão pagar por linha quando aplicável)
     fontesGastos.forEach(gasto => {
         if (gasto.categoria === 'Fatura') return;
-
         if (!gasto.data && !gasto.vencimento) return;
+
         const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === gasto.formaPagamento);
         if (!cartaoConfig) return;
 
@@ -510,17 +527,17 @@ function renderizarFaturas(estadoGastos) {
         if (isFaturaAtual && statusPagamentoAtual[cartaoConfig.id]) {
             mesFaturaAlvo.setMonth(mesFaturaAlvo.getMonth() + 1);
         }
+
         if (mesFaturaAlvo.getFullYear() === dataFatura.getFullYear() &&
             mesFaturaAlvo.getMonth() === dataFatura.getMonth()) {
 
-            // Nota: adicionamos possibilidade de pagar individual por linha
+            // passa cartaoId para o renderer para poder criar botão por linha
             estadoFaturas[cartaoConfig.id].total += gasto.valor;
-            estadoFaturas[cartaoConfig.id].html += renderLinhaGasto(gasto, cartaoConfig);
+            estadoFaturas[cartaoConfig.id].html += renderLinhaGasto(gasto, cartaoConfig.id);
         }
     });
 
-    // v6.2: Agora esta lógica funciona, pois 'estadoGastos.pendencias' e 'estadoGastos.despesas'
-    // contêm TODOS os meses, permitindo que o 'while (true)' funcione corretamente.
+    // Processa compras parceladas (specs)
     Object.values(estadoGastos.specs).forEach(compra => {
         const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === compra.cartao);
         if (!cartaoConfig) return;
@@ -530,11 +547,9 @@ function renderizarFaturas(estadoGastos) {
             return;
         }
 
-        // início REAL da compra (não avança mais nada!)
         const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
         const dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
 
-        // cálculo correto da parcela do mês
         const startYear = dataInicioVirtual.getFullYear();
         const startMonth = dataInicioVirtual.getMonth() + 1;
 
@@ -544,7 +559,6 @@ function renderizarFaturas(estadoGastos) {
 
         const parcelaAtualLabel = mesesDiff + 1;
 
-        // Exibe a parcela correspondente ao mês atual
         if (parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
 
             const status = compra.status || 'ativo';
@@ -581,15 +595,12 @@ function renderizarFaturas(estadoGastos) {
                 valor: valorParcelaOriginal,
                 categoria: 'Parcela',
                 tipo: 'spec',
-                isStrikethrough: isStrikethrough,
-                _source: 'spec',
-                _compraId: compra.id // marca para tentar encontrar e marcar como pago se necessário
-            }, cartaoConfig);
+                isStrikethrough: isStrikethrough
+            }, cartaoConfig.id);
         }
     });
 
-
-
+    // Preenche UI para cada cartão e liga eventos
     Object.values(meusCartoes).forEach(cartao => {
         const fatura = estadoFaturas[cartao.id];
         const totalAbaEl = document.getElementById(`total-aba-${cartao.id}`);
@@ -597,6 +608,7 @@ function renderizarFaturas(estadoGastos) {
         const tbodyEl = document.getElementById(`tbody-fatura-${cartao.id}`);
         const btnPagarEl = document.getElementById(`btn-pagar-${cartao.id}`);
         const btnReverterEl = document.getElementById(`btn-reverter-pagamento-${cartao.id}`);
+        const btnParcialEl = document.getElementById(`btn-parcial-${cartao.id}`);
         const limiteDisponivelEl = document.getElementById(`limite-disponivel-${cartao.id}`);
 
         if (!totalEl || !tbodyEl || !btnPagarEl || !btnReverterEl || !totalAbaEl || !limiteDisponivelEl) return;
@@ -615,6 +627,7 @@ function renderizarFaturas(estadoGastos) {
         btnPagarEl.dataset.totalValor = fatura.total;
         btnReverterEl.dataset.totalValor = fatura.total;
 
+        // botão de pagar agora (por cartão)
         btnPagarEl.className = 'btn-primary';
         btnReverterEl.className = 'btn-secondary danger';
         btnReverterEl.innerHTML = '<span class="material-icons-sharp">undo</span> Reverter Pagamento';
@@ -624,6 +637,7 @@ function renderizarFaturas(estadoGastos) {
         vencimentoDate.setHours(0, 0, 0, 0);
         const isVencida = vencimentoDate < today;
 
+        // mostra / oculta botões
         if (fatura.pago) {
             btnPagarEl.style.display = 'none';
             btnReverterEl.style.display = 'flex';
@@ -631,6 +645,7 @@ function renderizarFaturas(estadoGastos) {
             btnReverterEl.innerHTML = '<span class="material-icons-sharp">check_circle</span> Fatura Paga';
             totalEl.style.color = 'var(--success-color)';
             totalAbaEl.style.color = 'var(--success-color)';
+            if (btnParcialEl) btnParcialEl.style.display = 'none';
         } else if (fatura.total > 0) {
             btnPagarEl.style.display = 'flex';
             btnReverterEl.style.display = 'none';
@@ -645,29 +660,10 @@ function renderizarFaturas(estadoGastos) {
                 btnPagarEl.textContent = 'Pagar Fatura';
             }
 
-            // adiciona botão "Pagar Parcial" ao lado do pagar se quiser
-            // criamos um pequeno controle
-            if (!btnPagarEl.nextElementSibling || !btnPagarEl.nextElementSibling.classList.contains('btn-parcial')) {
-                const btnParcial = document.createElement('button');
-                btnParcial.className = 'btn btn-parcial';
-                btnParcial.textContent = 'Pagar Parcial';
-                btnParcial.onclick = async () => {
-                    const entrada = prompt(`Digite o valor parcial a pagar da fatura ${cartao.nome} (máx ${formatCurrency(fatura.total)}):`, formatCurrency(fatura.total));
-                    if (!entrada) return;
-                    const valorParcial = parseCurrency(entrada);
-                    if (!valorParcial || valorParcial <= 0) {
-                        alert("Valor inválido.");
-                        return;
-                    }
-                    if (valorParcial > fatura.total) {
-                        alert("O valor informado é maior que o total da fatura.");
-                        return;
-                    }
-                    await handlePagarParcial(cartao, valorParcial);
-                };
-                btnPagarEl.parentNode.appendChild(btnParcial);
+            if (btnParcialEl) {
+                btnParcialEl.style.display = 'inline-block';
+                btnParcialEl.onclick = () => openParcialModal(cartao, fatura.total);
             }
-
         } else {
             btnPagarEl.style.display = 'flex';
             btnPagarEl.textContent = 'Sem Fatura';
@@ -675,8 +671,22 @@ function renderizarFaturas(estadoGastos) {
             btnReverterEl.style.display = 'none';
             totalEl.style.color = 'var(--success-color)';
             totalAbaEl.style.color = 'var(--success-color)';
+            if (btnParcialEl) btnParcialEl.style.display = 'none';
         }
+
+        // ligar pagar/reverter (sempre rebind para não duplicar listeners)
+        btnPagarEl.onclick = () => handlePagarFaturaClick(cartao, fatura.total);
+        btnReverterEl.onclick = () => handleReverterPagamentoClick(cartao, fatura.total);
+
+        // ligar pagamentos individuais (botões por linha)
+        attachRowListeners(cartao.id);
     });
+
+    // mostrar botão global Pagar Agora se houver faturas a pagar
+    const somaTotal = Object.values(estadoFaturas).reduce((s, f) => s + (f.total || 0), 0);
+    if (pagarAgoraContainer) {
+        pagarAgoraContainer.style.display = somaTotal > 0 ? 'block' : 'none';
+    }
 }
 
 function renderTotalGastosCartoes() {
@@ -687,8 +697,11 @@ function renderTotalGastosCartoes() {
     totalGastosCartoesEl.textContent = formatCurrency(totalMes);
 }
 
-function renderLinhaGasto(gasto, cartaoConfig = null) {
-    // gasto: objeto vindo de despesas/fixos ou objeto construído para spec
+/**
+ * renderLinhaGasto agora aceita cartaoId opcional para adicionar botão pagar por linha.
+ * gasto: {data, descricao, valor, categoria, tipo, isStrikethrough}
+ */
+function renderLinhaGasto(gasto, cartaoId = '') {
     const data = gasto.data || gasto.vencimento;
     if (!data || data.split('-').length < 3) {
         console.warn("Gasto inválido (sem data) foi pulado:", gasto);
@@ -707,36 +720,19 @@ function renderLinhaGasto(gasto, cartaoConfig = null) {
     const openTag = isStrikethrough ? '<del style="color: var(--text-light);">' : '';
     const closeTag = isStrikethrough ? '</del>' : '';
 
-    // Botões adicionais (pagar individual / pagar parcial pequeno) — só quando fizer sentido
-    let actionButtons = '';
-
-    // Se a linha pertence a um cartão conhecido (pode pagar individualmente)
-    const formaPagamento = gasto.formaPagamento || gasto.cartao || (cartaoConfig && cartaoConfig.nome);
-    if (formaPagamento) {
-        // botão pagar individual (abre prompt com valor default)
-        actionButtons += `<button class="btn-small btn-pay-individual" data-forma="${formaPagamento}" data-descricao="${escapeHtml(gasto.descricao)}" data-valor="${gasto.valor}">Pagar Compra</button>`;
+    // só criar botão de pagar compra individual para gastos que não sejam 'Fatura' ou 'spec' (parcelas)
+    let botaoPagarHTML = '';
+    if (!isStrikethrough && gasto.categoria !== 'Fatura' && gasto.tipo !== 'spec' && cartaoId) {
+        const valorAttr = gasto.valor != null ? gasto.valor : 0;
+        const descricaoEsc = (gasto.descricao || '').replace(/"/g, '&quot;');
+        botaoPagarHTML = `<button class="btn-small btn-pagar-compra" data-cartao-id="${cartaoId}" data-descricao="${descricaoEsc}" data-valor="${valorAttr}" style="margin-left:8px;">Pagar</button>`;
     }
 
-    // se for parcela de specs, possibilita quitar a compra inteira diretamente (lança quitação)
-    if (gasto._source === 'spec' && gasto._compraId) {
-        actionButtons += `<button class="btn-small btn-pay-quitacao" data-compraid="${gasto._compraId}" data-valor="${gasto.valor}">Quitar</button>`;
-    }
-
-    const row = `<tr>
+    return `<tr>
                 <td>${openTag}${dataFormatada}${closeTag}</td>
-                <td>${openTag}${icone} ${gasto.descricao}${closeTag}</td>
-                <td style="display:flex; gap:8px; align-items:center;">
-                    ${openTag}${formatCurrency(gasto.valor)}${closeTag}
-                    ${actionButtons}
-                </td>
+                <td>${openTag}${icone} ${gasto.descricao} ${botaoPagarHTML}${closeTag}</td>
+                <td>${openTag}${formatCurrency(gasto.valor)}${closeTag}</td>
             </tr>`;
-
-    return row;
-}
-
-// small helper to avoid XSS if any descricao used in attributes
-function escapeHtml(str) {
-    return String(str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function calcularMesFatura(dataGasto, diaFechamento) {
@@ -752,7 +748,7 @@ function calcularMesFatura(dataGasto, diaFechamento) {
 }
 
 // ===============================================================
-// FASE 3B: LÓGICA DE PAGAMENTO (v6.1 - Caminhos atualizados)
+// LÓGICA DE PAGAMENTO
 // ===============================================================
 async function handlePagarFaturaClick(cartao, valor) {
     if (valor <= 0) {
@@ -760,7 +756,6 @@ async function handlePagarFaturaClick(cartao, valor) {
         return;
     }
 
-    // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
     const temSaldo = await verificarSaldoSuficiente(valor);
     if (!temSaldo) {
         alert("❌ Saldo em Caixa insuficiente para pagar esta fatura!");
@@ -784,19 +779,14 @@ async function handlePagarFaturaClick(cartao, valor) {
             await updateSaldoGlobal(-valor);
             await registrarPagamentoComoDespesa(cartao, valor);
 
-            // Se pagou antes do fechamento, também registra em pendencias para avançar virtualmente a fatura
-            const todayAdj = new Date();
-            todayAdj.setMinutes(todayAdj.getMinutes() - todayAdj.getTimezoneOffset());
-            const ano = todayAdj.getFullYear();
-            const mes = (todayAdj.getMonth() + 1).toString().padStart(2, '0');
-            await registrarPagamentoComoPendencia(cartao, valor, ano, mes);
-
             hideModal('modal-confirm');
             loadGastosAgregados();
         } catch (error) {
             console.error("Erro ao pagar fatura:", error);
             alert("Não foi possível processar o pagamento.");
             loadGastosAgregados();
+        } finally {
+            document.querySelectorAll('.fatura-header button').forEach(btn => btn.disabled = false);
         }
     };
 
@@ -804,232 +794,6 @@ async function handlePagarFaturaClick(cartao, valor) {
     showModal('modal-confirm', pagarFn);
 }
 
-// PAGAMENTO PARCIAL da fatura
-async function handlePagarParcial(cartao, valorParcial) {
-    if (valorParcial <= 0) {
-        alert("Valor inválido.");
-        return;
-    }
-
-    const temSaldo = await verificarSaldoSuficiente(valorParcial);
-    if (!temSaldo) {
-        alert("❌ Saldo em Caixa insuficiente para este pagamento parcial!");
-        return;
-    }
-
-    const confirmar = confirm(`Confirmar pagamento parcial de ${formatCurrency(valorParcial)} para a fatura ${cartao.nome}?`);
-    if (!confirmar) return;
-
-    try {
-        await updateSaldoGlobal(-valorParcial);
-        // registra como despesa com texto indicando parcial
-        await registrarPagamentoComoDespesaParcial(cartao, valorParcial);
-
-        // também registramos pendencia pago para avançar caso necessário
-        const todayAdj = new Date();
-        todayAdj.setMinutes(todayAdj.getMinutes() - todayAdj.getTimezoneOffset());
-        const ano = todayAdj.getFullYear();
-        const mes = (todayAdj.getMonth() + 1).toString().padStart(2, '0');
-        await registrarPagamentoComoPendencia(cartao, valorParcial, ano, mes);
-
-        loadGastosAgregados();
-    } catch (error) {
-        console.error("Erro pagar parcial:", error);
-        alert("Não foi possível processar o pagamento parcial.");
-    }
-}
-
-// PAGAMENTO INDIVIDUAL de UMA LINHA (compra específica)
-async function handlePagarCompraIndividualByPrompt(descricao, formaPagamento, valorDefault) {
-    // usa prompt simples para pedir valor
-    const entrada = prompt(`Pagar compra "${descricao}" (cartão: ${formaPagamento}). Digite o valor a pagar:`, formatCurrency(valorDefault));
-    if (!entrada) return;
-    const valor = parseCurrency(entrada);
-    if (!valor || valor <= 0) {
-        alert("Valor inválido.");
-        return;
-    }
-
-    // confirma saldo
-    const temSaldo = await verificarSaldoSuficiente(valor);
-    if (!temSaldo) {
-        alert("❌ Saldo em Caixa insuficiente para pagar esta compra!");
-        return;
-    }
-
-    // registra despesa e tenta marcar o item como pago (se encontrar)
-    try {
-        await updateSaldoGlobal(-valor);
-        await registrarPagamentoCompraIndividual(formaPagamento, descricao, valor);
-        await tentarMarcarCompraCorrespondenteComoPaga(formaPagamento, descricao, valor);
-        loadGastosAgregados();
-    } catch (error) {
-        console.error("Erro pagar compra individual:", error);
-        alert("Não foi possível processar o pagamento individual.");
-    }
-}
-
-// REGISTROS AUXILIARES (DB)
-// registra pagamento geral como despesa (currentYear-currentMonth)
-async function registrarPagamentoComoDespesa(cartao, valor) {
-    const path = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
-
-    const dataPagamentoObj = new Date();
-    dataPagamentoObj.setMinutes(dataPagamentoObj.getMinutes() - dataPagamentoObj.getTimezoneOffset());
-    const dataPagamento = dataPagamentoObj.toISOString().split('T')[0];
-
-    const despesaFatura = {
-        data: dataPagamento,
-        categoria: "Fatura",
-        descricao: `Pagamento Fatura ${cartao.nome}`,
-        formaPagamento: 'Saldo em Caixa',
-        valor: valor,
-        comprovante: null
-    };
-
-    try {
-        const newRef = push(ref(db, path));
-        await set(newRef, { ...despesaFatura, id: newRef.key });
-    } catch (error) {
-        console.error("Erro ao registrar pagamento como despesa:", error);
-        await updateSaldoGlobal(valor);
-        throw error;
-    }
-}
-
-// registra pagamento parcial com descricao distinta
-async function registrarPagamentoComoDespesaParcial(cartao, valor) {
-    const path = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
-
-    const dataPagamentoObj = new Date();
-    dataPagamentoObj.setMinutes(dataPagamentoObj.getMinutes() - dataPagamentoObj.getTimezoneOffset());
-    const dataPagamento = dataPagamentoObj.toISOString().split('T')[0];
-
-    const despesaFatura = {
-        data: dataPagamento,
-        categoria: "Fatura",
-        descricao: `Pagamento Parcial Fatura ${cartao.nome}`,
-        formaPagamento: 'Saldo em Caixa',
-        valor: valor,
-        comprovante: null
-    };
-
-    try {
-        const newRef = push(ref(db, path));
-        await set(newRef, { ...despesaFatura, id: newRef.key });
-    } catch (error) {
-        console.error("Erro ao registrar pagamento parcial:", error);
-        await updateSaldoGlobal(valor);
-        throw error;
-    }
-}
-
-// registra em pendencias (para lógica de avanço de fatura)
-async function registrarPagamentoComoPendencia(cartao, valor, ano, mes) {
-    try {
-        const pendPath = `usuarios/${userId}/pendencias/${ano}/${mes}`;
-        const pendRef = push(ref(db, pendPath));
-        const nomeFatura = `Pagamento Fatura ${cartao.nome}`;
-        await set(pendRef, {
-            id: pendRef.key,
-            descricao: nomeFatura,
-            valor: valor,
-            status: "pago",
-            data: new Date().toISOString().split('T')[0]
-        });
-    } catch (error) {
-        console.error("Erro ao registrar pendencia:", error);
-    }
-}
-
-// registra pagamento de compra individual (despesa com descrição específica)
-async function registrarPagamentoCompraIndividual(formaPagamento, descricao, valor) {
-    const path = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
-    const dataPagamentoObj = new Date();
-    dataPagamentoObj.setMinutes(dataPagamentoObj.getMinutes() - dataPagamentoObj.getTimezoneOffset());
-    const dataPagamento = dataPagamentoObj.toISOString().split('T')[0];
-
-    const despesa = {
-        data: dataPagamento,
-        categoria: "Fatura",
-        descricao: `Pagamento Compra ${descricao}`,
-        formaPagamento: 'Saldo em Caixa',
-        valor: valor,
-        comprovante: null
-    };
-
-    try {
-        const newRef = push(ref(db, path));
-        await set(newRef, { ...despesa, id: newRef.key });
-    } catch (error) {
-        console.error("Erro ao registrar pagamento individual:", error);
-        await updateSaldoGlobal(valor);
-        throw error;
-    }
-}
-
-// tenta marcar uma compra/parcelamento correspondente como pago (procura heurística)
-async function tentarMarcarCompraCorrespondenteComoPaga(formaPagamento, descricao, valor) {
-    // heurística: procura em cartoes_specs por entradas mensais (anos/meses) que tenham descricao parecida + valor similar
-    try {
-        const specsSnap = await get(ref(db, `usuarios/${userId}/cartoes_specs`));
-        if (!specsSnap.exists()) return false;
-        const specs = specsSnap.val();
-
-        // percorre níveis
-        for (const lvl1Key of Object.keys(specs || {})) {
-            const lvl1 = specs[lvl1Key];
-            if (!lvl1) continue;
-            // if lvl1 has id -> it's a master record
-            if (lvl1.id && lvl1.descricao) {
-                // ignore
-                continue;
-            } else {
-                // it's likely year -> months
-                for (const monthKey of Object.keys(lvl1 || {})) {
-                    const entries = lvl1[monthKey];
-                    if (!entries) continue;
-                    for (const entryKey of Object.keys(entries || {})) {
-                        const entry = entries[entryKey];
-                        if (!entry) continue;
-                        // match by descricao substring and similar valor and formaPagamento/cartao
-                        const descMatch = entry.descricao && descricao && entry.descricao.toLowerCase().includes(String(descricao).toLowerCase());
-                        const valorMatch = Math.abs((entry.valor || 0) - valor) < 0.01;
-                        const cartMatch = (entry.cartao === formaPagamento) || (entry.formaPagamento === formaPagamento);
-                        if ((descMatch || valorMatch) && cartMatch) {
-                            // marca como pago
-                            const path = `usuarios/${userId}/cartoes_specs/${lvl1Key}/${monthKey}/${entryKey}`;
-                            await update(ref(db, path), { status: 'pago' });
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-    } catch (error) {
-        console.error("Erro ao tentar marcar compra correspondente:", error);
-    }
-    return false;
-}
-
-// tenta encontrar compra master e marcar como quitado (quando user usa "Quitar")
-async function tentarMarcarMasterComoQuitado(compraId) {
-    try {
-        const pathMaster = `usuarios/${userId}/cartoes_specs/${compraId}`;
-        const snap = await get(ref(db, pathMaster));
-        if (snap.exists()) {
-            await update(ref(db, pathMaster), { status: 'quitado' });
-            return true;
-        }
-    } catch (error) {
-        console.error("Erro ao marcar master quitado:", error);
-    }
-    return false;
-}
-
-// ===============================================================
-// v6.1: Caminhos atualizados (reverter pagamento)
-// ===============================================================
 async function handleReverterPagamentoClick(cartao, valor) {
     if (valor <= 0) {
         console.warn("Tentativa de reverter fatura com valor zero. Buscando valor no DB...");
@@ -1038,7 +802,6 @@ async function handleReverterPagamentoClick(cartao, valor) {
     modalReverterMessage.textContent = `Tem certeza que quer reverter o pagamento da fatura ${cartao.nome} (${formatCurrency(valor)})? O valor será devolvido ao seu Saldo em Caixa.`;
 
     const reverterFn = async () => {
-        // v6.1: Caminhos atualizados
         const despesasPath = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
         const pendenciasPath = `usuarios/${userId}/pendencias/${currentYear}-${currentMonth}`;
 
@@ -1048,7 +811,6 @@ async function handleReverterPagamentoClick(cartao, valor) {
             let pagamentoId = null;
             let localPagamento = null;
 
-            // 1. Procura em 'despesas'
             const despesasSnap = await get(ref(db, despesasPath));
             if (despesasSnap.exists()) {
                 despesasSnap.forEach(child => {
@@ -1061,7 +823,6 @@ async function handleReverterPagamentoClick(cartao, valor) {
                 });
             }
 
-            // 2. Se não achou, procura em 'pendencias' (sistema antigo)
             if (!pagamentoId) {
                 const pendenciasSnap = await get(ref(db, pendenciasPath));
                 if (pendenciasSnap.exists()) {
@@ -1107,7 +868,6 @@ async function handleReverterPagamentoClick(cartao, valor) {
         return;
     }
 
-    // (v6.1) Garante que os listeners são sempre novos
     const newBtnConfirm = btnConfirm.cloneNode(true);
     btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
     newBtnConfirm.onclick = reverterFn;
@@ -1119,7 +879,6 @@ async function handleReverterPagamentoClick(cartao, valor) {
     modalReverter.style.display = 'flex';
 }
 
-// v6.1: Caminho atualizado
 async function updateSaldoGlobal(ajuste) {
     if (ajuste === 0) return;
     const saldoRef = ref(db, `usuarios/${userId}/saldo/global`);
@@ -1134,8 +893,249 @@ async function updateSaldoGlobal(ajuste) {
     }
 }
 
+async function registrarPagamentoComoDespesa(cartao, valor) {
+    const path = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
+
+    const dataPagamentoObj = new Date();
+    dataPagamentoObj.setMinutes(dataPagamentoObj.getMinutes() - dataPagamentoObj.getTimezoneOffset());
+    const dataPagamento = dataPagamentoObj.toISOString().split('T')[0];
+
+    const despesaFatura = {
+        data: dataPagamento,
+        categoria: "Fatura",
+        descricao: `Pagamento Fatura ${cartao.nome}`,
+        formaPagamento: 'Saldo em Caixa',
+        valor: valor,
+        comprovante: null
+    };
+
+    try {
+        const newRef = push(ref(db, path));
+        await set(newRef, { ...despesaFatura, id: newRef.key });
+    } catch (error) {
+        console.error("Erro ao registrar pagamento como despesa:", error);
+        await updateSaldoGlobal(valor);
+        throw error;
+    }
+}
+
 // ===============================================================
-// FUNÇÕES DE MODAL (COMPLETAS)
+// NOVAS FUNCIONALIDADES: Pagamento Individual, Parcial, Pagar Agora
+// ===============================================================
+
+/**
+ * Anexa listeners nos botões "Pagar" que foram renderizados dentro das linhas.
+ * Usa seletor por cartaoId para evitar selecionar botões de outros cartões.
+ */
+function attachRowListeners(cartaoId) {
+    const selector = `.btn-pagar-compra[data-cartao-id="${cartaoId}"]`;
+    const buttons = Array.from(document.querySelectorAll(selector));
+    buttons.forEach(btn => {
+        // evita rebind se já tiver handler
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', (e) => {
+            const descricao = btn.dataset.descricao || '';
+            const valor = parseFloat(btn.dataset.valor || 0);
+            openPagarIndividualModal(cartaoId, descricao, valor, btn);
+        });
+    });
+}
+
+function openPagarIndividualModal(cartaoId, descricao, valor, originatingButton = null) {
+    const cartao = meusCartoes[cartaoId];
+    if (!cartao) return;
+    pagarIndividualDescricao.textContent = `${cartao.icone} ${cartao.nome} — ${descricao}`;
+    pagarIndividualValor.textContent = formatCurrency(valor);
+
+    // linkar confirm dinamicamente (clona para evitar multiplos listeners)
+    if (!pagarIndividualConfirm) return;
+    const newConfirm = pagarIndividualConfirm.cloneNode(true);
+    pagarIndividualConfirm.parentNode.replaceChild(newConfirm, pagarIndividualConfirm);
+
+    newConfirm.addEventListener('click', async () => {
+        newConfirm.disabled = true;
+        try {
+            // evita pagar a mesma compra mais de uma vez: checar se já existe despesa com essa descricao e valor
+            const despesasPath = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
+            const despesasSnap = await get(ref(db, despesasPath));
+            let jaPago = false;
+            if (despesasSnap.exists()) {
+                despesasSnap.forEach(child => {
+                    const d = child.val();
+                    if (d.descricao === `Pagamento Compra ${descricao}` && d.valor === valor) {
+                        jaPago = true;
+                    }
+                });
+            }
+            if (jaPago) {
+                alert('Esta compra já foi paga (registro encontrado).');
+                modalPagarIndividual.style.display = 'none';
+                return;
+            }
+
+            const temSaldo = await verificarSaldoSuficiente(valor);
+            if (!temSaldo) {
+                alert("❌ Saldo em Caixa insuficiente para pagar esta compra!");
+                return;
+            }
+
+            await updateSaldoGlobal(-valor);
+
+            // criar despesa de pagamento da compra para registro e evitar pagamentos duplicados
+            const dataPagamentoObj = new Date();
+            dataPagamentoObj.setMinutes(dataPagamentoObj.getMinutes() - dataPagamentoObj.getTimezoneOffset());
+            const dataPagamento = dataPagamentoObj.toISOString().split('T')[0];
+
+            const despesa = {
+                data: dataPagamento,
+                categoria: "Fatura",
+                descricao: `Pagamento Compra ${descricao}`,
+                formaPagamento: 'Saldo em Caixa',
+                valor: valor,
+                comprovante: null
+            };
+
+            const newRef = push(ref(db, despesasPath));
+            await set(newRef, { ...despesa, id: newRef.key });
+
+            // feedback visual: desabilitar botão de origem (se fornecido)
+            if (originatingButton) {
+                originatingButton.disabled = true;
+                originatingButton.textContent = 'Pago';
+            }
+
+            modalPagarIndividual.style.display = 'none';
+            loadGastosAgregados();
+        } catch (error) {
+            console.error('Erro ao pagar compra individual:', error);
+            alert('Não foi possível processar o pagamento.');
+        } finally {
+            newConfirm.disabled = false;
+        }
+    });
+
+    modalPagarIndividual.style.display = 'flex';
+}
+
+/**
+ * Pagamento Parcial: abre modal onde usuário digita valor parcial e confirma.
+ */
+function openParcialModal(cartao, totalFatura) {
+    parcialDescricao.textContent = `${cartao.icone} ${cartao.nome} — Total: ${formatCurrency(totalFatura)}`;
+    parcialInput.value = formatCurrency(0);
+
+    // clona botão para remover listeners antigos
+    if (!parcialConfirm) return;
+    const newConfirm = parcialConfirm.cloneNode(true);
+    parcialConfirm.parentNode.replaceChild(newConfirm, parcialConfirm);
+
+    newConfirm.addEventListener('click', async () => {
+        const raw = (parcialInput.value || '').toString();
+        const valor = parseCurrency(raw) || 0;
+        if (valor <= 0) {
+            alert('Digite um valor válido maior que zero.');
+            return;
+        }
+        if (valor > totalFatura) {
+            if (!confirm('Valor maior que o total da fatura. Deseja prosseguir e pagar o total?')) return;
+        }
+
+        const temSaldo = await verificarSaldoSuficiente(valor);
+        if (!temSaldo) {
+            alert("❌ Saldo em Caixa insuficiente para esse pagamento!");
+            return;
+        }
+
+        try {
+            await updateSaldoGlobal(-valor);
+
+            // registra como despesa com descrição indicando pagamento parcial
+            const path = `usuarios/${userId}/despesas/${currentYear}-${currentMonth}`;
+            const dataPagamentoObj = new Date();
+            dataPagamentoObj.setMinutes(dataPagamentoObj.getMinutes() - dataPagamentoObj.getTimezoneOffset());
+            const dataPagamento = dataPagamentoObj.toISOString().split('T')[0];
+
+            const despesa = {
+                data: dataPagamento,
+                categoria: "Fatura",
+                descricao: `Pagamento Parcial Fatura ${cartao.nome}`,
+                formaPagamento: 'Saldo em Caixa',
+                valor: valor,
+                comprovante: null
+            };
+
+            const newRef = push(ref(db, path));
+            await set(newRef, { ...despesa, id: newRef.key });
+
+            modalParcial.style.display = 'none';
+            loadGastosAgregados();
+        } catch (error) {
+            console.error('Erro no pagamento parcial:', error);
+            alert('Não foi possível processar o pagamento parcial.');
+        }
+    });
+
+    modalParcial.style.display = 'flex';
+}
+
+/**
+ * Pagar Agora (global): soma todas as faturas e, se houver saldo, registra pagamentos por cartão.
+ */
+function openPagarAgoraModal() {
+    const cartoes = Object.values(meusCartoes);
+    const faturasAPagar = cartoes.map(c => ({ id: c.id, nome: c.nome, total: estadoFaturas[c.id]?.total || 0 }))
+        .filter(f => f.total > 0);
+
+    const totalAll = faturasAPagar.reduce((s, f) => s + f.total, 0);
+    pagarAgoraTotalEl.textContent = formatCurrency(totalAll);
+
+    pagarAgoraDescricao.textContent = faturasAPagar.map(f => `${f.nome}: ${formatCurrency(f.total)}`).join(' — ') || 'Nenhuma fatura';
+
+    if (!pagarAgoraConfirm) return;
+    const newConfirm = pagarAgoraConfirm.cloneNode(true);
+    pagarAgoraConfirm.parentNode.replaceChild(newConfirm, pagarAgoraConfirm);
+
+    newConfirm.addEventListener('click', async () => {
+        if (totalAll <= 0) {
+            alert('Não há faturas a pagar agora.');
+            modalPagarAgora.style.display = 'none';
+            return;
+        }
+
+        const temSaldo = await verificarSaldoSuficiente(totalAll);
+        if (!temSaldo) {
+            alert('Saldo insuficiente para pagar todas as faturas de uma vez.');
+            return;
+        }
+
+        newConfirm.disabled = true;
+        try {
+            // executa pagamentos sequenciais; se falhar em algum ponto, interrompe e mostra erro
+            for (const f of faturasAPagar) {
+                const cartao = Object.values(meusCartoes).find(c => c.nome === f.nome || c.id === f.id);
+                if (!cartao) continue;
+
+                await updateSaldoGlobal(-f.total);
+                await registrarPagamentoComoDespesa(cartao, f.total);
+            }
+
+            modalPagarAgora.style.display = 'none';
+            loadGastosAgregados();
+        } catch (error) {
+            console.error('Erro ao pagar agora:', error);
+            alert('Falha ao processar pagamentos. Verifique o console.');
+            loadGastosAgregados();
+        } finally {
+            newConfirm.disabled = false;
+        }
+    });
+
+    modalPagarAgora.style.display = 'flex';
+}
+
+// ===============================================================
+// HELPERS: evitar listeners múltiplos nos modais (showModal/hideModal mantidos)
 // ===============================================================
 function showModal(modalId, confirmFn) {
     const modal = document.getElementById(modalId);
@@ -1146,7 +1146,8 @@ function showModal(modalId, confirmFn) {
     const btnConfirm = document.getElementById('modal-btn-confirm');
     const btnCancel = document.getElementById('modal-btn-cancel');
 
-    // (v6.1) Clona para remover listeners antigos
+    if (!btnConfirm || !btnCancel) return;
+
     const newBtnConfirm = btnConfirm.cloneNode(true);
     btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
     newBtnConfirm.onclick = confirmFn;
@@ -1162,100 +1163,3 @@ function hideModal(modalId) {
         modal.style.display = 'none';
     }
 }
-
-// ===============================================================
-// EVENT DELEGATION: escuta cliques em botões criados dinamicamente
-// (pagar individual / quitar compra) — anexa once após renderizar
-// ===============================================================
-
-// Observador para delegar eventos em todo o container de faturas
-document.addEventListener('click', (e) => {
-    // pagar compra individual
-    if (e.target && e.target.classList && e.target.classList.contains('btn-pay-individual')) {
-        const descricao = e.target.dataset.descricao || '';
-        const forma = e.target.dataset.forma || '';
-        const valor = parseFloat(e.target.dataset.valor) || 0;
-        handlePagarCompraIndividualByPrompt(descricao, forma, valor);
-    }
-
-    // quitar (quando criado a partir de spec)
-    if (e.target && e.target.classList && e.target.classList.contains('btn-pay-quitacao')) {
-        const compraId = e.target.dataset.compraid;
-        const valor = parseFloat(e.target.dataset.valor) || 0;
-        if (!compraId) {
-            alert("ID da compra não encontrado.");
-            return;
-        }
-        // confirma e executa quitação — tenta marcar master como quitado e registra lançamento
-        const confirmar = confirm(`Quitar esta compra antecipadamente (valor ${formatCurrency(valor)})?`);
-        if (!confirmar) return;
-        // execução: registrar compra quitacao em cartoes_specs (como no specs.js) e pendencia
-        (async () => {
-            try {
-                // buscar a compra master para obter cartao (necessário)
-                const masterSnap = await get(ref(db, `usuarios/${userId}/cartoes_specs/${compraId}`));
-                const compraMaster = masterSnap.exists() ? masterSnap.val() : null;
-                if (!compraMaster) {
-                    alert("Compra mestre não encontrada para quitação.");
-                    return;
-                }
-                // mesma lógica que em specs.js: criar registro quitacao e parcela e pendencia
-                const today = new Date(); today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-                const dataHoje = today.toISOString().split('T')[0];
-                const diaFech = (meusCartoes && Object.values(meusCartoes).find(c => c.nome === compraMaster.cartao)?.diaFechamento) || 1;
-                const mesPrimeiraParcela = calcularMesFatura(today, diaFech);
-                const anoParcela = mesPrimeiraParcela.getFullYear();
-                const mesParcela = (mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, "0");
-
-                const mainPath = `usuarios/${userId}/cartoes_specs`;
-                const newCompraRef = push(ref(db, mainPath));
-                await set(newCompraRef, {
-                    id: newCompraRef.key,
-                    cartao: compraMaster.cartao,
-                    descricao: `(Quitação) ${compraMaster.descricao}`,
-                    valorTotal: valor,
-                    parcelas: 1,
-                    dataCompra: dataHoje,
-                    dataInicio: `${anoParcela}-${mesParcela}`,
-                    status: "quitado_pagamento"
-                });
-
-                const parcelaRef = ref(
-                    db,
-                    `usuarios/${userId}/cartoes_specs/${anoParcela}/${mesParcela}/${newCompraRef.key}_1`
-                );
-
-                await set(parcelaRef, {
-                    compraId: newCompraRef.key,
-                    cartao: compraMaster.cartao,
-                    descricao: `(Quitação) ${compraMaster.descricao} (1/1)`,
-                    parcelaNumero: 1,
-                    parcelasTotal: 1,
-                    valor: valor,
-                    dataCompra: dataHoje,
-                    status: "pago"
-                });
-
-                const pendPath = `usuarios/${userId}/pendencias/${anoParcela}/${mesParcela}`;
-                const pendRef = push(ref(db, pendPath));
-                const nomeFatura = `Pagamento Fatura ${compraMaster.cartao}`;
-                await set(pendRef, {
-                    id: pendRef.key,
-                    descricao: nomeFatura,
-                    valor: valor,
-                    status: "pago",
-                    data: dataHoje
-                });
-
-                // marcar master como 'quitado' (opcional)
-                await tentarMarcarMasterComoQuitado(compraId);
-
-                alert("Quitação registrada com sucesso.");
-                loadGastosAgregados();
-            } catch (error) {
-                console.error("Erro ao quitar compra:", error);
-                alert("Não foi possível quitar a compra.");
-            }
-        })();
-    }
-});
