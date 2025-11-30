@@ -162,7 +162,7 @@ async function loadDynamicCardData() {
 }
 
 // ===============================================================
-// 3. RENDERIZAÇÃO DA UI (v4.0 - Lógica mantida)
+// 3. RENDERIZAÇÃO DA UI (v4.0 - Lógica atualizada)
 // ===============================================================
 function renderUI() {
     if (!userId) return;
@@ -202,12 +202,24 @@ function renderParcelasDoMes() {
 
         const valorParcela = compra.valorTotal / compra.parcelas;
 
-        // 🔥 Loop: mostrar TODAS as parcelas, independente do mês
+        // Loop: mostrar TODAS as parcelas, independente do mês
         for (let i = 1; i <= compra.parcelas; i++) {
 
             const tr = document.createElement('tr');
             const icone = cartaoIcones[compra.cartao] || "💳";
             const [y, m, d] = (compra.dataCompra || "---").split('-');
+
+            // status visual opcional (mostra se a compra foi estornada/quitada)
+            let statusTag = '';
+            if (compra.status === 'quitado') {
+                statusTag = '<span class="tag success">Quitada</span>';
+            } else if (compra.status === 'estornado') {
+                statusTag = '<span class="tag danger">Estornada</span>';
+            } else if (compra.status === 'quitado_pagamento') {
+                statusTag = '<span class="tag info">Quitado (lançamento)</span>';
+            } else {
+                statusTag = '<span class="tag neutral">Pendente</span>';
+            }
 
             tr.innerHTML = `
                 <td>${icone} ${compra.cartao}</td>
@@ -215,11 +227,12 @@ function renderParcelasDoMes() {
                 <td>${(compra.dataCompra) ? `${d}/${m}/${y}` : 'N/A'}</td>
                 <td>${i} / ${compra.parcelas}</td>
                 <td>${formatCurrency(valorParcela)}</td>
+                <td>${statusTag}</td>
             `;
 
             tbodyParcelasDoMes.appendChild(tr);
 
-            // Somar AO TOTAL apenas a parcela do mês atual
+            // Somar AO TOTAL apenas a parcela que pertence ao mês selecionado
             if (i === parcelaDoMes && parcelaDoMes >= 1 && parcelaDoMes <= compra.parcelas) {
                 totalMes += valorParcela;
             }
@@ -238,8 +251,7 @@ function renderMasterList() {
     const compras = Object.values(allSpecs).sort((a, b) => (b.dataCompra || '').localeCompare(a.dataCompra || ''));
 
     compras.forEach(compra => {
-        if (compra.status === 'quitado_pagamento') return;
-
+        // Não pular 'quitado_pagamento' — mostrar histórico completo
         if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
             console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
             return;
@@ -288,7 +300,7 @@ function renderMasterList() {
 
         const icone = cartaoIcones[compra.cartao] || "💳";
 
-        const isAtiva = (compra.status !== 'quitado' && compra.status !== 'estornado' && parcelaAtual <= compra.parcelas);
+        const isAtiva = (compra.status !== 'estornado' && parcelaAtual <= compra.parcelas);
 
         tr.innerHTML = `
             <td>${dataCompraFmt}</td>
@@ -410,6 +422,7 @@ function calcularDataInicioVirtual(compra) {
 
     const nomeFatura = `Pagamento Fatura ${compra.cartao}`;
 
+    // avança enquanto existir confirmação de pagamento na pendências
     while (true) {
         const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
         const pendenciasDesseMes = allPendencias[path] || {};
@@ -540,8 +553,10 @@ function handleQuitarClick(e) {
 
 // v4.2: Caminhos atualizados
 async function executarQuitacao(compra, valorRestante) {
-    const pathCompra = `usuarios/${userId}/cartoes_specs/${compra.id}`;
-    await update(ref(db, pathCompra), { status: 'quitado' });
+    // NÃO marcamos a compra original como 'quitado' automaticamente,
+    // para que ela continue visível no histórico. Em vez disso registramos
+    // o lançamento (lançamento de pagamento) como um novo registro,
+    // preservando o histórico original.
 
     const cartaoConfig = cartaoConfigMap[compra.cartao];
     if (!cartaoConfig) {
@@ -556,7 +571,7 @@ async function executarQuitacao(compra, valorRestante) {
     const mesPrimeiraParcela = calcularMesFatura(today, cartaoConfig.diaFechamento);
     const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
 
-    // v4.2: Caminho atualizado
+    // v4.2: Caminho atualizado - cria o registro de quitação (lançamento)
     const path = `usuarios/${userId}/cartoes_specs`;
     const newCompraRef = push(ref(db, path));
 
@@ -569,6 +584,20 @@ async function executarQuitacao(compra, valorRestante) {
         dataCompra: dataCompra,
         dataInicio: dataInicioString,
         status: 'quitado_pagamento'
+    });
+
+    // Para que o sistema trate essa quitação como pagamento da fatura e avance
+    // a "dataInicioVirtual" quando apropriado, podemos também criar uma pendência
+    // de pagamento com a descrição que o calcularDataInicioVirtual busca:
+    const pendPath = `usuarios/${userId}/pendencias`;
+    const pendRef = push(ref(db, pendPath));
+    const nomeFatura = `Pagamento Fatura ${compra.cartao}`;
+    await set(pendRef, {
+        id: pendRef.key,
+        descricao: nomeFatura,
+        valor: valorRestante,
+        status: 'pago',
+        data: dataCompra
     });
 
     hideModal('modal-quitar-confirm');
