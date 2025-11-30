@@ -537,68 +537,87 @@ function renderizarFaturas(estadoGastos) {
         }
     });
 
-    // Processa compras parceladas (specs)
-    Object.values(estadoGastos.specs).forEach(compra => {
-        const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === compra.cartao);
-        if (!cartaoConfig) return;
+    // >>> SUBSTITUIR AQUI: tratamento das "specs" (parcelas)
+Object.values(estadoGastos.specs).forEach(compra => {
+    const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === (compra.cartao || compra.cartao));
+    if (!cartaoConfig) return;
 
-        if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-            console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
+    // somente masters (tem dataInicio) — se for nó mensal, ele aparece como objeto sem dataInicio e será ignorado aqui
+    if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
+        // Se for um nó mensal (ex: { '2025': { '11': { 'id_1': {...} }}}), ignoramos nesta iteração
+        // Isso mantém compatibilidade com sua estrutura atual.
+        if (!compra.id) {
+            // nó inválido para master — pular
             return;
         }
+    }
 
-        const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
-        const dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
+    // início REAL da compra (não avança mais nada!)
+    const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
+    const dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
 
-        const startYear = dataInicioVirtual.getFullYear();
-        const startMonth = dataInicioVirtual.getMonth() + 1;
+    // cálculo correto da parcela do mês
+    const startYear = dataInicioVirtual.getFullYear();
+    const startMonth = dataInicioVirtual.getMonth() + 1;
 
-        const mesesDiff =
-            (dataFatura.getFullYear() - startYear) * 12 +
-            ((dataFatura.getMonth() + 1) - startMonth);
+    const mesesDiff =
+        (dataFatura.getFullYear() - startYear) * 12 +
+        ((dataFatura.getMonth() + 1) - startMonth);
 
-        const parcelaAtualLabel = mesesDiff + 1;
+    const parcelaAtualLabel = mesesDiff + 1;
 
-        if (parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
+    if (parcelaAtualLabel < 1 || parcelaAtualLabel > compra.parcelas) {
+        return;
+    }
 
-            const status = compra.status || 'ativo';
-            const valorParcelaOriginal = compra.valorTotal / compra.parcelas;
+    // verifica se existe uma parcela mensal marcada como 'pago' no nó mensal:
+    const anoNode = estadoGastos.specs[dataFatura.getFullYear()] || {};
+    const mesNode = anoNode[(dataFatura.getMonth() + 1).toString().padStart(2, '0')] || {};
+    const parcelaKey = `${compra.id}_${parcelaAtualLabel}`;
+    const parcelaMensal = mesNode[parcelaKey];
 
-            let valorParaTotal = 0;
-            let isStrikethrough = false;
-            let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`;
+    let status = compra.status || 'ativo';
+    let valorParcelaOriginal = compra.valorTotal / compra.parcelas;
+    let valorParaTotal = 0;
+    let isStrikethrough = false;
+    let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`;
 
-            if (status === 'estornado') {
-                isStrikethrough = true;
-                valorParaTotal = 0;
-                parcelaLabel = `(Estornado)`;
-
-            } else if (status === 'quitado') {
-                isStrikethrough = true;
-                valorParaTotal = 0;
-                parcelaLabel = `(Quitado)`;
-
-            } else if (status === 'quitado_pagamento') {
-                isStrikethrough = false;
-                valorParaTotal = valorParcelaOriginal;
-                parcelaLabel = `(Pagamento Quitação)`;
-
-            } else {
-                isStrikethrough = false;
-                valorParaTotal = valorParcelaOriginal;
-            }
-
-            estadoFaturas[cartaoConfig.id].total += valorParaTotal;
-            estadoFaturas[cartaoConfig.id].html += renderLinhaGasto({
-                data: `${currentYear}-${currentMonth}-01`,
-                descricao: `${compra.descricao} ${parcelaLabel}`,
-                valor: valorParcelaOriginal,
-                categoria: 'Parcela',
-                tipo: 'spec',
-                isStrikethrough: isStrikethrough
-            }, cartaoConfig.id);
+    // Se a parcela mensal existe e está com status 'pago', não somamos o valor
+    if (parcelaMensal && parcelaMensal.status === 'pago') {
+        valorParaTotal = 0;
+        isStrikethrough = true;
+        parcelaLabel = `(Pago)`;
+    } else {
+        // aplicar regras do master (quitado, estornado, quitado_pagamento, ativo)
+        if (status === 'estornado') {
+            isStrikethrough = true;
+            valorParaTotal = 0;
+            parcelaLabel = `(Estornado)`;
+        } else if (status === 'quitado') {
+            isStrikethrough = true;
+            valorParaTotal = 0;
+            parcelaLabel = `(Quitado)`;
+        } else if (status === 'quitado_pagamento') {
+            isStrikethrough = false;
+            valorParaTotal = valorParcelaOriginal;
+            parcelaLabel = `(Pagamento Quitação)`;
+        } else {
+            isStrikethrough = false;
+            valorParaTotal = valorParcelaOriginal;
         }
+    }
+
+    estadoFaturas[cartaoConfig.id].total += valorParaTotal;
+    estadoFaturas[cartaoConfig.id].html += renderLinhaGasto({
+        data: `${currentYear}-${currentMonth}-01`,
+        descricao: `${compra.descricao} ${parcelaLabel}`,
+        valor: valorParcelaOriginal,
+        categoria: 'Parcela',
+        tipo: 'spec',
+        isStrikethrough: isStrikethrough
     });
+});
+
 
     // Preenche UI para cada cartão e liga eventos
     Object.values(meusCartoes).forEach(cartao => {
