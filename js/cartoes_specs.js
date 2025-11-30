@@ -398,34 +398,36 @@ function calcularMesFatura(dataGasto, diaFechamento) {
 }
 
 function calcularDataInicioVirtual(compra) {
-    if (!compra || !compra.dataInicio) return new Date();
-
-    const [anoCompra, mesCompra] = compra.dataInicio.split('-');
-    if (!anoCompra || !mesCompra) return new Date();
-
-    let dataInicioVirtual = new Date(anoCompra, mesCompra - 1, 1);
+    if (!compra || !compra.dataCompra) return new Date();
 
     const cartaoConfig = cartaoConfigMap[compra.cartao];
-    if (!cartaoConfig) return dataInicioVirtual;
+    if (!cartaoConfig || !cartaoConfig.fechamento) {
+        console.warn("Cartão sem configuração de fechamento:", compra.cartao);
+        return new Date();
+    }
 
-    const nomeFatura = `Pagamento Fatura ${compra.cartao}`;
+    const fechamento = cartaoConfig.fechamento; // dia de fechamento do cartão
 
-    // avança enquanto existir confirmação de pagamento na pendências
-    while (true) {
-        const path = `${dataInicioVirtual.getFullYear()}-${(dataInicioVirtual.getMonth() + 1).toString().padStart(2, '0')}`;
-        const pendenciasDesseMes = allPendencias[path] || {};
-        const faturaPaga = Object.values(pendenciasDesseMes).some(p =>
-            p.descricao === nomeFatura && p.status === 'pago'
-        );
+    const [ano, mes, dia] = compra.dataCompra.split('-').map(Number);
+    const dataCompra = new Date(ano, mes - 1, dia);
 
-        if (faturaPaga) {
-            dataInicioVirtual.setMonth(dataInicioVirtual.getMonth() + 1);
-        } else {
-            break;
+    // 1) Começa assumindo que a compra entra no mês atual
+    let mesInicio = mes;
+    let anoInicio = ano;
+
+    // 2) Se a compra foi feita DEPOIS DO FECHAMENTO → pula para o próximo mês
+    if (dia > fechamento) {
+        mesInicio++;
+        if (mesInicio > 12) {
+            mesInicio = 1;
+            anoInicio++;
         }
     }
-    return dataInicioVirtual;
+
+    // 3) Retorna data da fatura real da primeira parcela
+    return new Date(anoInicio, mesInicio - 1, 1);
 }
+
 
 function calcularValorRestante(compra) {
     const today = new Date();
