@@ -1114,7 +1114,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     border: 1px solid var(--border-color);
 }
 
-/* ================= v7.2 — SIDEBAR (perfil + sair) ================== */
+/* ================= v7.3 — SIDEBAR (perfil + sair) ================== */
 
 .sidebar-footer {
     margin-top: auto;
@@ -1132,7 +1132,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
 
     margin: 0 1rem 1rem 1rem;
 
-    background: transparent;          /* <<< Fica igual ao menu */
+    background: transparent;          
     border-radius: var(--border-radius-2);
 }
 
@@ -1162,7 +1162,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     overflow: hidden;
     text-overflow: ellipsis;
 
-    max-width: 120px;    /* <<< Ajuste fino do espaço do nome */
+    max-width: 140px;  
 }
 
 /* logout — apenas o ícone */
@@ -1186,9 +1186,17 @@ body.dark-theme .tab-btn:hover:not(.active) {
     color: var(--text-color);
 }
 
-/* remove o texto sair completamente */
-.logout-text {
+/* ======= REMOVER O TEXTO “Sair” DE FORMA DEFINITIVA ======= */
+#logout-button .logout-text,
+.logout-area .logout-text,
+#logout-button span:nth-child(2) {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* hover */
