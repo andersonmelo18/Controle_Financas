@@ -1115,49 +1115,23 @@ body.dark-theme .tab-btn:hover:not(.active) {
 }
 
 /* =============================================================== */
-/* v5.1: Correção do Layout do Sidebar (Perfil e Botão Sair) */
-/* (Este é o ÚNICO bloco que você precisa para o footer do sidebar) */
+/* v5.0: Estilos do Perfil do Utilizador no Sidebar */
 /* =============================================================== */
 
-/* 1. Força o sidebar a usar 100% da altura e ser um container flex */
-/* (Se o seu .sidebar já tiver 'display: flex', não há problema) */
-.sidebar {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* 2. FAZ A LISTA DE LINKS CRESCER */
-/* Esta é a correção principal. */
-/* Faz a lista de links (ul) ocupar todo o espaço vertical, */
-/* empurrando o .sidebar-footer para o fundo naturalmente. */
-.sidebar ul {
-    flex-grow: 1; 
-}
-
-/* 3. Reseta o .sidebar-footer (Remove o 'position: absolute' antigo) */
 .sidebar-footer {
-    position: relative; /* Reseta de 'absolute' */
-    bottom: auto;       /* Reseta de '1rem' */
-    
-    /* Organiza o perfil e o botão verticalmente */
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    
-    /* Adiciona padding para não colar no fundo */
-    padding-bottom: 1rem;
+    gap: 0.5rem; /* Espaço entre o perfil e o botão Sair */
 }
 
-/* 4. Estilos do perfil */
 .user-profile {
     display: flex;
     align-items: center;
     gap: 0.8rem;
     padding: 1rem 1.5rem;
-    background: var(--color-background-light);
+    background: var(--color-background-light); /* Um fundo leve */
     border-radius: var(--border-radius-2);
-    margin: 0.5rem 1rem 0 1rem;
+    margin: 0.5rem 1rem 0 1rem; /* Margem para alinhar */
 }
 
 .user-profile img {
@@ -1172,35 +1146,35 @@ body.dark-theme .tab-btn:hover:not(.active) {
     color: var(--text-color);
     font-weight: 500;
     font-size: 0.9rem;
+    /* Evita que nomes longos quebrem o layout */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 5. Estilo do botão Sair (com display: flex) */
+/* Ajuste do botão Sair */
 .sidebar-footer #logout-button {
-    /* Copia o estilo dos links <li><a> do menu */
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    color: var(--text-light);
-    text-decoration: none;
-    position: relative;
-    transition: all 300ms ease;
-    
-    /* Margem para alinhar com o perfil */
-    margin: 0 1rem 0 1rem;
-    border-radius: var(--border-radius-2);
+    margin-top: 0; /* Remove a margem de cima antiga */
+    width: auto; /* Faz o botão Sair ter a mesma largura do perfil */
+    margin: 0 1rem 1rem 1rem;
+    justify-content: center; /* Centraliza o ícone e texto */
 }
 
-.sidebar-footer #logout-button:hover {
-    background: var(--color-background-light);
-    color: var(--color-primary);
-}
+/* Ajuste do sidebar para mobile (para o perfil não vazar) */
+@media (max-width: 800px) {
+    .sidebar {
+        /* ... (outros estilos do sidebar) ... */
+        overflow-y: auto; /* Permite scroll se o nome for muito grande */
+    }
 
-.sidebar-footer #logout-button span {
-     font-size: 1.7rem;
+    .user-profile {
+        margin: 0.5rem 1rem 0 1rem; 
+        padding: 0.8rem 1rem;
+    }
+
+    .sidebar-footer #logout-button {
+         margin: 0 1rem 1rem 1rem;
+    }
 }
 
 /* =============================================================== */
