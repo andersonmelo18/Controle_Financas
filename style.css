@@ -1115,24 +1115,23 @@ body.dark-theme .tab-btn:hover:not(.active) {
 }
 
 /* =============================================================== */
-/* v6.0 – SIDEBAR FIXO, PERFIL E BOTÃO SAIR SEM SUMIR              */
+/* v6.1 – SIDEBAR FIXO, PERFIL + SAIR NA MESMA LINHA               */
 /* =============================================================== */
 
-/* 1. Sidebar ocupa a altura total e organiza tudo verticalmente */
+/* Sidebar */
 .sidebar {
     height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-/* 2. Lista de navegação cresce e empurra o footer para baixo */
 .sidebar ul {
     flex-grow: 1;
     margin: 0;
     padding: 0;
 }
 
-/* 3. Footer fixo no final da sidebar, sem position absolute */
+/* Footer final */
 .sidebar-footer {
     display: flex;
     flex-direction: column;
@@ -1143,16 +1142,26 @@ body.dark-theme .tab-btn:hover:not(.active) {
 }
 
 /* =============================================================== */
-/* PERFIL DO USUÁRIO */
+/* PERFIL + SAIR (agora juntos na mesma linha)                     */
 /* =============================================================== */
-.user-profile {
+.user-area {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.8rem;
+
     padding: 1rem 1.5rem;
     background: var(--color-background-light);
     border-radius: var(--border-radius-2);
     margin: 0 1rem;
+
+    gap: 1rem;
+}
+
+/* Foto + Nome */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
 }
 
 .user-profile img {
@@ -1168,37 +1177,54 @@ body.dark-theme .tab-btn:hover:not(.active) {
     font-weight: 500;
     font-size: 0.9rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* =============================================================== */
-/* BOTÃO SAIR */
+/* BOTÃO SAIR (ícone + texto só aparece no hover)                  */
 /* =============================================================== */
-#logout-button {
-    /* Garantido que NUNCA fique invisível */
-    display: flex !important;
+.logout-area {
+    display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    margin: 0 1rem;
-    border-radius: var(--border-radius-2);
-
-    color: var(--text-light);
-    text-decoration: none;
+    gap: 0.3rem;
     cursor: pointer;
-    transition: all 250ms ease;
+    padding: 0.3rem 0.4rem;
+    border-radius: var(--border-radius-1);
+
+    transition: background 200ms ease, color 200ms ease;
 }
 
-#logout-button span {
-    font-size: 1.7rem;
+.logout-icon {
+    font-size: 1.6rem;
+    color: var(--text-color);
 }
 
-#logout-button:hover {
-    background: var(--color-background-light);
+/* Texto "Sair" escondido */
+.logout-text {
+    opacity: 0;
+    transform: translateX(-6px);
+    pointer-events: none;
+
+    color: var(--text-color);
+    font-size: 0.9rem;
+    transition: opacity 250ms ease, transform 250ms ease;
+}
+
+/* Hover → texto aparece suavemente */
+.logout-area:hover .logout-text {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Hover → destaque */
+.logout-area:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.logout-area:hover .logout-icon {
     color: var(--color-primary);
 }
 
 /* =============================================================== */
-/* Fim */
+/* Fim                                                            */
 /* =============================================================== */
