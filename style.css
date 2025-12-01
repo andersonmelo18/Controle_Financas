@@ -1194,9 +1194,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
 
 /* Texto SAIR */
 .logout-text {
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--color-primary);
+    display: none !important;
 }
 
 /* Hover do SAIR */
