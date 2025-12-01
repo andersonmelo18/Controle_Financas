@@ -60,10 +60,12 @@ onAuthStateChanged(auth, async (user) => {
         const userRef = ref(dbInstance, `autorizacoes/${user.uid}`);
         const snapshot = await get(userRef);
 
+        // Verifica se o user existe na lista E se o status é "aprovado"
         if (snapshot.exists() && snapshot.val().status === 'aprovado') {
             // --- 2. UTILIZADOR APROVADO ---
             currentUserId = user.uid;
             
+            // Se ele estava na pág de login, redireciona para o index
             if (isLoginPage) {
                 window.location.href = 'index.html';
                 return;
