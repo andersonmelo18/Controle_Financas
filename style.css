@@ -1114,117 +1114,122 @@ body.dark-theme .tab-btn:hover:not(.active) {
     border: 1px solid var(--border-color);
 }
 
-/* =============================================================== */
-/* v6.1 – SIDEBAR FIXO, PERFIL + SAIR NA MESMA LINHA               */
-/* =============================================================== */
+/* ================= v6.2 — SIDEBAR (perfil + sair) ================== */
+/* Colocar este bloco NO FINAL do seu CSS para garantir prioridade. */
 
-/* Sidebar */
 .sidebar {
     height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-.sidebar ul {
+/* garante que a UL empurre o footer */
+.sidebar > ul {
     flex-grow: 1;
     margin: 0;
     padding: 0;
 }
 
-/* Footer final */
+/* footer */
 .sidebar-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    padding: 1rem 0 1.2rem 0;
     margin-top: auto;
+    padding: 0.75rem 0;
+}
+
+/* container do perfil + botão sair (mesma linha) */
+.user-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+
+    /* aparência */
+    padding: 0.8rem 1rem;
+    margin: 0 1rem;
+    background: var(--color-background-light);
+    border-radius: var(--border-radius-2);
+
+    /* força para sobrepor estilos anteriores */
     position: relative;
 }
 
-/* =============================================================== */
-/* PERFIL + SAIR (agora juntos na mesma linha)                     */
-/* =============================================================== */
-.user-area {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    padding: 1rem 1.5rem;
-    background: var(--color-background-light);
-    border-radius: var(--border-radius-2);
-    margin: 0 1rem;
-
-    gap: 1rem;
-}
-
-/* Foto + Nome */
+/* perfil - imagem + nome */
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.75rem;
 }
 
+/* imagem */
 .user-profile img {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--color-primary);
+    flex-shrink: 0;
 }
 
-.user-profile span {
+/* nome - permitir ocultar no mobile se quiser */
+#user-name {
     color: var(--text-color);
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 6px;
 }
 
-/* =============================================================== */
-/* BOTÃO SAIR (ícone + texto só aparece no hover)                  */
-/* =============================================================== */
+/* area do logout (ícone + texto) */
 .logout-area {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
     cursor: pointer;
-    padding: 0.3rem 0.4rem;
-    border-radius: var(--border-radius-1);
-
-    transition: background 200ms ease, color 200ms ease;
+    user-select: none;
+    transition: background 180ms ease, color 180ms ease;
+    /* garante visibilidade caso regras antigas escondam */
+    display: flex !important;
 }
 
+/* ícone */
 .logout-icon {
-    font-size: 1.6rem;
+    font-size: 20px;
+    line-height: 1;
     color: var(--text-color);
 }
 
-/* Texto "Sair" escondido */
+/* texto "Sair" inicialmente escondido */
 .logout-text {
     opacity: 0;
     transform: translateX(-6px);
     pointer-events: none;
-
+    transition: opacity 180ms ease, transform 180ms ease;
     color: var(--text-color);
-    font-size: 0.9rem;
-    transition: opacity 250ms ease, transform 250ms ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
 }
 
-/* Hover → texto aparece suavemente */
-.logout-area:hover .logout-text {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-/* Hover → destaque */
+/* hover - mostra texto e destaca */
 .logout-area:hover {
     background: var(--color-primary-light);
     color: var(--color-primary);
 }
-
 .logout-area:hover .logout-icon {
     color: var(--color-primary);
 }
+.logout-area:hover .logout-text {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
 
-/* =============================================================== */
-/* Fim                                                            */
-/* =============================================================== */
+/* RESPONSIVIDADE: opcional — esconde o nome em telas pequenas */
+@media (max-width: 480px) {
+    #user-name { display: none; }
+    .logout-text { display: none; } /* deixa só o ícone para economizar espaço */
+    .user-profile img { width: 36px; height: 36px; }
+}

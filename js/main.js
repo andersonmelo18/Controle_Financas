@@ -113,6 +113,33 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// garante que o logout-area exista e funcione
+(function ensureLogout() {
+    const logout = document.getElementById('logout-button'); // sua estrutura usa id aqui
+    if (!logout) return;
+
+    // força visibilidade caso alguma regra antiga tenha colocado display:none
+    logout.style.display = 'flex';
+    logout.style.alignItems = 'center';
+
+    // delega o clique para deslogar — adapta caso você use signOut(auth)
+    logout.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof signOut === 'function' && window.auth) {
+            signOut(auth).then(() => {
+                window.location.href = 'login.html';
+            }).catch(err => {
+                console.error('Erro ao deslogar:', err);
+                // fallback: redireciona mesmo assim
+                window.location.href = 'login.html';
+            });
+        } else {
+            // fallback simples se não houver signOut disponível
+            window.location.href = 'login.html';
+        }
+    });
+})();
+
 // ===============================================================
 
 
