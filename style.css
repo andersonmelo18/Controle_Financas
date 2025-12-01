@@ -1114,72 +1114,66 @@ body.dark-theme .tab-btn:hover:not(.active) {
     border: 1px solid var(--border-color);
 }
 
-/* ================= v6.5 — Layout compacto ================== */
-
-.sidebar-footer {
-    margin-top: auto;
-    padding: 0.6rem 0 0.8rem 0;
-}
-
-/* container principal */
+/* ====== CONTAINER PRINCIPAL ====== */
 .user-area {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.6rem;
 
-    padding: 0.7rem 0.9rem;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
     margin: 0 1rem 1rem;
 
     background: var(--color-background-light);
     border-radius: var(--border-radius-2);
 }
 
-/* perfil compacto */
+/* ====== FOTO + NOME ====== */
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    min-width: 0; /* permite o nome encolher */
+    gap: 0.5rem;
+    min-width: 0; /* deixa o nome encolher se precisar */
 }
 
-/* foto menor */
+/* foto pequena e proporcional */
 .user-profile img {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--color-primary);
 }
 
-/* nome aparece normal */
+/* nome curto e sem estourar layout */
 #user-name {
-    color: var(--text-color);
-    font-weight: 500;
     font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-color);
 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-
-    max-width: 110px; /* impede estourar */
+    max-width: 110px;
 }
 
-/* logout */
+/* ====== BOTÃO SAIR (somente ícone + texto no hover) ====== */
 .logout-area {
     display: flex !important;
     align-items: center;
     gap: 4px;
 
-    padding: 6px 8px;
-    border-radius: 8px;
+    padding: 4px 6px;
+    border-radius: 6px;
     cursor: pointer;
+    user-select: none;
+
     transition: 0.2s ease;
 }
 
-/* ícone menor */
+/* ícone pequeno */
 .logout-icon {
-    font-size: 18px;
+    font-size: 20px;
     color: var(--text-color);
 }
 
@@ -1187,13 +1181,14 @@ body.dark-theme .tab-btn:hover:not(.active) {
 .logout-text {
     opacity: 0;
     transform: translateX(-4px);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-color);
     pointer-events: none;
 
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
+/* HOVER */
 .logout-area:hover {
     background: var(--color-primary-light);
 }
@@ -1207,8 +1202,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     transform: translateX(0);
 }
 
-/* responsivo */
-@media (max-width: 480px) {
-    #user-name { display: none; }
-    .logout-text { display: none; }
+/* RESPONSIVO – muito pequeno */
+@media (max-width: 440px) {
+    #user-name { max-width: 70px; }
 }
