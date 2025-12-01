@@ -1176,3 +1176,92 @@ body.dark-theme .tab-btn:hover:not(.active) {
          margin: 0 1rem 1rem 1rem;
     }
 }
+
+/* =============================================================== */
+/* v5.1: Correção do Layout do Sidebar (Perfil e Botão Sair) */
+/* =============================================================== */
+
+/* 1. Força o sidebar a usar 100% da altura e ser um container flex */
+.sidebar {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* ... (outros estilos que o .sidebar já tenha) ... */
+}
+
+/* 2. FAZ A LISTA DE LINKS CRESCER */
+/* Esta é a correção principal. */
+/* Faz a lista de links (ul) ocupar todo o espaço vertical, */
+/* empurrando o .sidebar-footer para o fundo naturalmente. */
+.sidebar ul {
+    flex-grow: 1; 
+}
+
+/* 3. Reseta o .sidebar-footer */
+.sidebar-footer {
+    /* REMOVE a posição absoluta antiga */
+    position: relative; /* Reseta de 'absolute' */
+    bottom: auto;       /* Reseta de '1rem' */
+    
+    /* Mantém os novos estilos flex */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    /* Adiciona padding para não colar no fundo */
+    padding-bottom: 1rem;
+}
+
+/* 4. Estilos do perfil (como antes) */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem 1.5rem;
+    background: var(--color-background-light);
+    border-radius: var(--border-radius-2);
+    margin: 0.5rem 1rem 0 1rem;
+}
+
+.user-profile img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-primary);
+}
+
+.user-profile span {
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 5. Estilo do botão Sair (corrigido) */
+.sidebar-footer #logout-button {
+    /* Copia o estilo dos links <li><a> do menu */
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    color: var(--text-light);
+    text-decoration: none;
+    position: relative;
+    transition: all 300ms ease;
+    
+    /* Margem para alinhar com o perfil */
+    margin: 0 1rem 0 1rem;
+    border-radius: var(--border-radius-2);
+}
+
+.sidebar-footer #logout-button:hover {
+    background: var(--color-background-light);
+    color: var(--color-primary);
+}
+
+.sidebar-footer #logout-button span {
+     font-size: 1.7rem;
+}
