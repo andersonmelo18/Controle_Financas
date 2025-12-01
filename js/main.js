@@ -54,15 +54,15 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         // --- 1. Utilizador está logado no Google ---
         
-        // v5.1: VERIFICA A PERMISSÃO NA BASE DE DADOS (usando o 'db' correto do config)
+        // Verifica a permissão na base de dados
         const userRef = ref(db, `autorizacoes/${user.uid}`); 
         
         try {
             const snapshot = await get(userRef);
 
-            // Verifica se o user existe na lista E se o status é "aprovado"
+            // Verifica se o user existe na lista e se o status é "aprovado"
             if (snapshot.exists() && snapshot.val().status === 'aprovado') {
-                // --- 2. UTILIZADOR APROVADO ---
+                // --- 2. Utilizador aprovado ---
                 currentUserId = user.uid;
                 
                 // Se ele estava na pág de login, redireciona para o index
@@ -71,15 +71,19 @@ onAuthStateChanged(auth, async (user) => {
                     return;
                 }
 
-                // v5.0: MOSTRA O NOME E FOTO DO UTILIZADOR
+                // --- MOSTRAR NOME + FOTO ---
                 const userNameEl = document.getElementById('user-name');
                 const userPhotoEl = document.getElementById('user-photo');
                 if (userNameEl) userNameEl.textContent = user.displayName;
-                // Fallback para uma imagem de avatar padrão
-                if (userPhotoEl) userPhotoEl.src = user.photoURL || 'https://i.ibb.co/t235T11/avatar.png'; 
+                if (userPhotoEl) userPhotoEl.src = user.photoURL || 'https://i.ibb.co/t235T11/avatar.png';
 
+                // --- MOSTRAR BOTÃO SAIR (CORREÇÃO) ---
+                const logoutButton = document.getElementById("logout-button");
+                if (logoutButton) {
+                    logoutButton.style.display = "flex";   // sempre visível
+                }
 
-                // Dispara o evento que avisa os outros scripts
+                // --- Dispara evento para outros scripts ---
                 document.dispatchEvent(new CustomEvent('authReady', {
                     detail: { userId: currentUserId }
                 }));
@@ -89,31 +93,26 @@ onAuthStateChanged(auth, async (user) => {
                 listenToGlobalAlerts(currentUserId);
 
             } else {
-                // --- 3. UTILIZADOR NÃO APROVADO (Pendente ou Bloqueado) ---
-                
-                // Desloga-o
+                // --- 3. Utilizador não aprovado ---
                 await signOut(auth);
-                
-                // (O 'onAuthStateChanged' vai disparar de novo com user=null
-                // e o bloco 'else' abaixo fará o redirecionamento)
                 console.warn("Permissão negada. A deslogar...");
             }
+
         } catch (error) {
             console.error("Erro ao ler permissão no main.js:", error);
             await signOut(auth);
         }
 
     } else {
-        // --- 4. UTILIZADOR NÃO ESTÁ LOGADO ---
-        if (isLoginPage) {
-            return; // Permanece na página de login
-        }
+        // --- 4. Utilizador não está logado ---
+        if (isLoginPage) return; // permanece na tela de login
         
         // Redireciona para o login
         console.log("Usuário não está logado. Redirecionando para login.html");
         window.location.href = 'login.html';
     }
 });
+
 // ===============================================================
 
 
