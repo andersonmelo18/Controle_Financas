@@ -1,5 +1,5 @@
 // js/main.js
-// VERSÃO 5.0 (Auth Guard, Logout, Caminho 'usuarios/' e Mostra Utilizador)
+// VERSÃO 5.1 (Auth Guard, Logout, Caminho 'usuarios/' e Mostra Utilizador)
 
 import { 
     db, 
@@ -12,9 +12,8 @@ import {
     off,
     signOut // IMPORTA O signOut
 } from './firebase-config.js';
-// v5.0: Importa 'getDatabase' para a verificação de permissão
-import { getDatabase } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
 
+// v5.1: NÃO importa mais o 'getDatabase' daqui, usa o 'db' do config
 
 let currentUserId = null;
 let currentYear = new Date().getFullYear();
@@ -46,7 +45,7 @@ let globalAlertData = {
 
 
 // ===============================================================
-// LÓGICA DE AUTENTICAÇÃO (v5.0 - "AUTH GUARD" ATUALIZADO)
+// LÓGICA DE AUTENTICAÇÃO (v5.1 - "AUTH GUARD" ATUALIZADO E CORRIGIDO)
 // ===============================================================
 onAuthStateChanged(auth, async (user) => {
     // Verifica se estamos na página de login para evitar loops
@@ -55,48 +54,53 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         // --- 1. Utilizador está logado no Google ---
         
-        // v5.0: VERIFICA A PERMISSÃO NA BASE DE DADOS
-        const dbInstance = getDatabase();
-        const userRef = ref(dbInstance, `autorizacoes/${user.uid}`);
-        const snapshot = await get(userRef);
+        // v5.1: VERIFICA A PERMISSÃO NA BASE DE DADOS (usando o 'db' correto do config)
+        const userRef = ref(db, `autorizacoes/${user.uid}`); 
+        
+        try {
+            const snapshot = await get(userRef);
 
-        // Verifica se o user existe na lista E se o status é "aprovado"
-        if (snapshot.exists() && snapshot.val().status === 'aprovado') {
-            // --- 2. UTILIZADOR APROVADO ---
-            currentUserId = user.uid;
-            
-            // Se ele estava na pág de login, redireciona para o index
-            if (isLoginPage) {
-                window.location.href = 'index.html';
-                return;
+            // Verifica se o user existe na lista E se o status é "aprovado"
+            if (snapshot.exists() && snapshot.val().status === 'aprovado') {
+                // --- 2. UTILIZADOR APROVADO ---
+                currentUserId = user.uid;
+                
+                // Se ele estava na pág de login, redireciona para o index
+                if (isLoginPage) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // v5.0: MOSTRA O NOME E FOTO DO UTILIZADOR
+                const userNameEl = document.getElementById('user-name');
+                const userPhotoEl = document.getElementById('user-photo');
+                if (userNameEl) userNameEl.textContent = user.displayName;
+                // Fallback para uma imagem de avatar padrão
+                if (userPhotoEl) userPhotoEl.src = user.photoURL || 'https://i.ibb.co/t235T11/avatar.png'; 
+
+
+                // Dispara o evento que avisa os outros scripts
+                document.dispatchEvent(new CustomEvent('authReady', {
+                    detail: { userId: currentUserId }
+                }));
+                
+                updateMonthDisplay();
+                listenToGlobalBalance(currentUserId);
+                listenToGlobalAlerts(currentUserId);
+
+            } else {
+                // --- 3. UTILIZADOR NÃO APROVADO (Pendente ou Bloqueado) ---
+                
+                // Desloga-o
+                await signOut(auth);
+                
+                // (O 'onAuthStateChanged' vai disparar de novo com user=null
+                // e o bloco 'else' abaixo fará o redirecionamento)
+                console.warn("Permissão negada. A deslogar...");
             }
-
-            // v5.0: MOSTRA O NOME E FOTO DO UTILIZADOR
-            const userNameEl = document.getElementById('user-name');
-            const userPhotoEl = document.getElementById('user-photo');
-            if (userNameEl) userNameEl.textContent = user.displayName;
-            // Fallback para uma imagem de avatar padrão
-            if (userPhotoEl) userPhotoEl.src = user.photoURL || 'https://i.ibb.co/t235T11/avatar.png'; 
-
-
-            // Dispara o evento que avisa os outros scripts
-            document.dispatchEvent(new CustomEvent('authReady', {
-                detail: { userId: currentUserId }
-            }));
-            
-            updateMonthDisplay();
-            listenToGlobalBalance(currentUserId);
-            listenToGlobalAlerts(currentUserId);
-
-        } else {
-            // --- 3. UTILIZADOR NÃO APROVADO (Pendente ou Bloqueado) ---
-            
-            // Desloga-o
+        } catch (error) {
+            console.error("Erro ao ler permissão no main.js:", error);
             await signOut(auth);
-            
-            // (O 'onAuthStateChanged' vai disparar de novo com user=null
-            // e o bloco 'else' abaixo fará o redirecionamento)
-            console.warn("Permissão negada. A deslogar...");
         }
 
     } else {
@@ -352,8 +356,7 @@ function listenToGlobalAlerts(userId) {
     globalAlertListeners.push({ ref: despesasAtualRef, callback: despesasAtualCallback, eventType: 'value' });
 }
 
-// (Lógica de processar e renderizar alertas mantida do v3.3, mas agora
-// é chamada de forma mais segura pelo 'reprocessarPagamentos')
+// (Lógica de processar e renderizar alertas mantida do v3.3)
 function processAndRenderAlerts() {
     let allAlerts = [];
     
@@ -539,7 +542,7 @@ function listenToGlobalBalance(userId) {
     const balanceContainer = document.getElementById('global-balance-container');
     const balanceEl = document.getElementById('global-balance-display');
     
-    if (!balanceEl || !balanceContainer) {
+    if (!balanceContainer || !balanceEl) {
         return;
     }
 
