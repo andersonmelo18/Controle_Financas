@@ -1114,103 +1114,82 @@ body.dark-theme .tab-btn:hover:not(.active) {
     border: 1px solid var(--border-color);
 }
 
-/* ================= v7.3 — SIDEBAR (perfil + sair) ================== */
-
-.sidebar-footer {
-    margin-top: auto;
-    padding: 1rem 0;
-}
-
-/* container geral */
-.user-area {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 0.75rem;
-    padding: 0.6rem 1rem;
-
-    margin: 0 1rem 1rem 1rem;
-
-    background: transparent;          
-    border-radius: var(--border-radius-2);
-}
-
-/* foto + nome */
-.user-profile {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-}
-
-/* foto */
-.user-profile img {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--color-primary);
-}
-
-/* nome */
-#user-name {
-    color: var(--text-color);
-    font-weight: 500;
-    font-size: 0.95rem;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    max-width: 140px;  
-}
-
-/* logout — apenas o ícone */
-.logout-area {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-
-    width: 38px;
-    height: 38px;
-
-    border-radius: 10px;
-    cursor: pointer;
-
-    transition: background 0.2s ease, color 0.2s ease;
-}
-
-/* ícone */
-.logout-icon {
-    font-size: 22px;
-    color: var(--text-color);
-}
-
-/* ======= REMOVER O TEXTO “Sair” DE FORMA DEFINITIVA ======= */
-#logout-button .logout-text,
-.logout-area .logout-text,
-#logout-button span:nth-child(2) {
+/* --- REMOVER TEXTO "SAIR" DEFINITIVAMENTE --- */
+.logout-area .logout-text {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
     width: 0 !important;
     height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
 }
 
-/* hover */
+/* --- ÁREA DO USUÁRIO (FOTO + NOME + PORTA) --- */
+.sidebar-footer {
+    width: 100%;
+    padding: 10px;
+    background: transparent !important;
+}
+
+.user-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 8px 10px;
+}
+
+/* FOTO E NOME */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#user-photo {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Nome do usuário */
+#user-name {
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* --- BOTÃO DE SAIR (SOMENTE ÍCONE) --- */
+.logout-area {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.3s;
+    background: transparent !important;
+}
+
 .logout-area:hover {
-    background: var(--color-primary);
-}
-.logout-area:hover .logout-icon {
-    color: white;
+    background: rgba(255, 0, 0, 0.25);
 }
 
-/* responsivo */
-@media (max-width: 480px) {
-    #user-name {
-        max-width: 90px;
-        font-size: 0.85rem;
-    }
+.logout-icon {
+    font-size: 24px;
+    color: #fff;
+}
+
+/* Garantir que nada do layout antigo force branco */
+.sidebar-footer,
+.user-area,
+.logout-area {
+    background-color: transparent !important;
 }
