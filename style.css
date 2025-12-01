@@ -1118,14 +1118,13 @@ body.dark-theme .tab-btn:hover:not(.active) {
 
 .sidebar-footer {
     padding: 12px 14px;
-    background: #f4f4f4;
     border-top: 1px solid #dcdcdc;
 }
 
 .user-area {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* FOTO | NOME | SAIR */
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
 }
 
@@ -1133,65 +1132,54 @@ body.dark-theme .tab-btn:hover:not(.active) {
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 10px;
 }
 
 .user-profile img {
-    width: 36px;         /* tamanho ideal */
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     object-fit: cover;
 }
 
-/* ------------------- NOME DO USUÁRIO ------------------- */
-/* Caixa do nome */
+/* NOME DO USUÁRIO (no centro) */
 #user-name {
+    text-align: center;
     font-size: 14px;
-    font-weight: 500;
-    max-width: 110px;
+    font-weight: 600;
     white-space: nowrap;
-}
-
-/* -------- OPÇÃO 1: CORTAR COM "..." -------- */
-/* ATIVAR esta linha se quiser cortar nome longo */
-#user-name {
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: ellipsis; /* só coloca ... quando realmente necessário */
+    max-width: 100%;
 }
 
-/* -------- OPÇÃO 2: NOME QUE ROLA -------- */
-/*
-#user-name {
-    overflow-x: auto;
-    scrollbar-width: none; 
-}
-
-#user-name::-webkit-scrollbar {
-    display: none;
-}
-*/
-
-/* ------------------- ÁREA DE LOGOUT ------------------- */
+/* BOTÃO DE SAIR */
 .logout-area {
     display: flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
-    padding: 5px 8px;
-    background: #e7e7e7;
-    border-radius: 6px;
-    transition: 0.2s;
+    padding: 6px 10px;
+    background: var(--color-primary-light);
+    border-radius: 8px;
+    transition: 0.2s ease;
 }
 
 .logout-area:hover {
-    background: #dcdcdc;
+    background: var(--color-primary);
+}
+
+.logout-area:hover .logout-icon,
+.logout-area:hover .logout-text {
+    color: #fff;
 }
 
 .logout-icon {
     font-size: 20px;
+    color: var(--color-primary);
 }
 
 .logout-text {
     font-size: 14px;
     font-weight: 500;
+    color: var(--color-primary);
 }
