@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="icon" type="image/png" href="./static/logo.png">
     
     <title>Despesas Fixas - Controle Financeiro</title>
 
@@ -32,7 +32,21 @@
             <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
         </ul>
         <div class="sidebar-footer">
-            <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
+            <div class="user-area">
+
+                <!-- PERFIL DO USUÁRIO -->
+                <div class="user-profile">
+                    <img id="user-photo" src="https://i.ibb.co/t235T11/avatar.png" alt="Foto">
+                    <span id="user-name">Carregando...</span>
+                </div>
+
+                <!-- BOTÃO DE SAIR -->
+                <div class="logout-area" id="logout-button">
+                    <span class="material-icons-sharp logout-icon">logout</span>
+                    <span class="logout-text">Sair</span>
+                </div>
+
+            </div>
         </div>
     </nav>
 

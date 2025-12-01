@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="icon" type="image/png" href="logo.png">
-    
+
+    <link rel="icon" type="image/png" href="./static/logo.png">
+
     <title>Pendências - Controle Financeiro</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
@@ -31,7 +31,21 @@
             <li><a href="investimentos.html"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
         </ul>
         <div class="sidebar-footer">
-            <a href="#" id="logout-button"><span class="material-icons-sharp">logout</span>Sair</a>
+            <div class="user-area">
+
+                <!-- PERFIL DO USUÁRIO -->
+                <div class="user-profile">
+                    <img id="user-photo" src="https://i.ibb.co/t235T11/avatar.png" alt="Foto">
+                    <span id="user-name">Carregando...</span>
+                </div>
+
+                <!-- BOTÃO DE SAIR -->
+                <div class="logout-area" id="logout-button">
+                    <span class="material-icons-sharp logout-icon">logout</span>
+                    <span class="logout-text">Sair</span>
+                </div>
+
+            </div>
         </div>
     </nav>
 
@@ -40,7 +54,7 @@
             <button class="hamburger-menu">
                 <span class="material-icons-sharp">menu</span>
             </button>
-            
+
             <h2>Controle de Pendências</h2>
 
             <div class="month-selector">
@@ -50,7 +64,7 @@
             </div>
 
             <div class="header-actions">
-            
+
                 <div class="global-balance" id="global-balance-container" style="display: none;">
                     <small>Saldo em Caixa</small>
                     <h3 id="global-balance-display">R$ 0,00</h3>
@@ -63,13 +77,14 @@
                     </button>
                     <div id="notification-dropdown" class="dropdown-content">
                         <div id="notification-list">
-                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                            <p id="notification-placeholder"
+                                style="padding: 1rem; text-align: center; color: var(--text-light);">
                                 Nenhum alerta no momento.
                             </p>
                         </div>
                     </div>
                 </div>
-                
+
                 <button class="theme-toggler">
                     <span class="material-icons-sharp active">light_mode</span>
                     <span class="material-icons-sharp">dark_mode</span>
@@ -128,7 +143,7 @@
                 <button class="tab-btn active" id="btn-tab-eu-devo">O que eu devo</button>
                 <button class="tab-btn" id="btn-tab-me-devem">O que me devem</button>
             </div>
-            
+
             <div class="tab-content" id="card-eu-devo">
                 <div class="table-container">
                     <table id="table-eu-devo">
@@ -150,8 +165,8 @@
                 <h3 style="margin-top: 1.5rem; text-align: right;">
                     A Pagar (Mês): <span id="total-eu-devo-pendente" style="color: var(--warning-color);">R$ 0,00</span>
                 </h3>
-                </div>
-            
+            </div>
+
             <div class="tab-content" id="card-me-devem" style="display: none;">
                 <div class="table-container">
                     <table id="table-me-devem">
@@ -171,9 +186,10 @@
                     </table>
                 </div>
                 <h3 style="margin-top: 1.5rem; text-align: right;">
-                    A Receber (Mês): <span id="total-me-devem-pendente" style="color: var(--success-color);">R$ 0,00</span>
+                    A Receber (Mês): <span id="total-me-devem-pendente" style="color: var(--success-color);">R$
+                        0,00</span>
                 </h3>
-                </div>
+            </div>
         </section>
     </main>
 
@@ -214,14 +230,14 @@
     <div class="modal-container" id="modal-edit-pendencia" style="display: none;">
         <div class="modal-content">
             <h2>Editar Pendência</h2>
-            
+
             <form id="form-edit-pendencia" class="form-container">
-                
+
                 <div class="form-group">
                     <label for="edit-pendencia-tipo">Tipo (Não pode ser alterado)</label>
                     <input type="text" id="edit-pendencia-tipo" disabled>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit-pendencia-vencimento">Vencimento (Não pode ser alterado)</label>
                     <input type="date" id="edit-pendencia-vencimento" disabled>
@@ -260,17 +276,17 @@
             </form>
         </div>
     </div>
-    
+
     <!-- =============================================================== -->
     <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
     <!-- =============================================================== -->
-    
+
     <!-- Scripts 'compat' ANTIGOS REMOVIDOS -->
-    
+
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/pendencias.js"></script>
-    
+
     <!-- Modal de Logout (Copiado) -->
     <div id="modal-logout-confirm" class="modal-overlay">
         <div class="modal-content">
@@ -287,4 +303,5 @@
         </div>
     </div>
 </body>
+
 </html>
