@@ -1114,95 +1114,84 @@ body.dark-theme .tab-btn:hover:not(.active) {
     border: 1px solid var(--border-color);
 }
 
-/* ====== CONTAINER PRINCIPAL ====== */
+/* ------------------- ÁREA DO USUÁRIO NA SIDEBAR ------------------- */
+
+.sidebar-footer {
+    padding: 12px 14px;
+    background: #f4f4f4;
+    border-top: 1px solid #dcdcdc;
+}
+
 .user-area {
     display: flex;
     align-items: center;
     justify-content: space-between;
-
-    gap: 0.6rem;
-    padding: 0.6rem 0.8rem;
-    margin: 0 1rem 1rem;
-
-    background: var(--color-background-light);
-    border-radius: var(--border-radius-2);
+    gap: 12px;
 }
 
-/* ====== FOTO + NOME ====== */
+/* FOTO DO USUÁRIO */
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-width: 0; /* deixa o nome encolher se precisar */
+    gap: 10px;
 }
 
-/* foto pequena e proporcional */
 .user-profile img {
-    width: 30px;
-    height: 30px;
+    width: 36px;         /* tamanho ideal */
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--color-primary);
 }
 
-/* nome curto e sem estourar layout */
+/* ------------------- NOME DO USUÁRIO ------------------- */
+/* Caixa do nome */
 #user-name {
-    font-size: 0.85rem;
+    font-size: 14px;
     font-weight: 500;
-    color: var(--text-color);
-
+    max-width: 110px;
     white-space: nowrap;
+}
+
+/* -------- OPÇÃO 1: CORTAR COM "..." -------- */
+/* ATIVAR esta linha se quiser cortar nome longo */
+#user-name {
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 110px;
 }
 
-/* ====== BOTÃO SAIR (somente ícone + texto no hover) ====== */
+/* -------- OPÇÃO 2: NOME QUE ROLA -------- */
+/*
+#user-name {
+    overflow-x: auto;
+    scrollbar-width: none; 
+}
+
+#user-name::-webkit-scrollbar {
+    display: none;
+}
+*/
+
+/* ------------------- ÁREA DE LOGOUT ------------------- */
 .logout-area {
-    display: flex !important;
+    display: flex;
     align-items: center;
-    gap: 4px;
-
-    padding: 4px 6px;
-    border-radius: 6px;
+    gap: 6px;
     cursor: pointer;
-    user-select: none;
-
-    transition: 0.2s ease;
+    padding: 5px 8px;
+    background: #e7e7e7;
+    border-radius: 6px;
+    transition: 0.2s;
 }
 
-/* ícone pequeno */
+.logout-area:hover {
+    background: #dcdcdc;
+}
+
 .logout-icon {
     font-size: 20px;
-    color: var(--text-color);
 }
 
-/* texto escondido até hover */
 .logout-text {
-    opacity: 0;
-    transform: translateX(-4px);
-    font-size: 0.8rem;
-    color: var(--text-color);
-    pointer-events: none;
-
-    transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-/* HOVER */
-.logout-area:hover {
-    background: var(--color-primary-light);
-}
-
-.logout-area:hover .logout-icon {
-    color: var(--color-primary);
-}
-
-.logout-area:hover .logout-text {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-/* RESPONSIVO – muito pequeno */
-@media (max-width: 440px) {
-    #user-name { max-width: 70px; }
+    font-size: 14px;
+    font-weight: 500;
 }
