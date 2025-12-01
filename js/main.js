@@ -1,5 +1,5 @@
 // js/main.js
-// VERSÃO 4.1 (Auth Google, Logout com Confirmação, Caminho 'usuarios/' e Correção de Alertas)
+// VERSÃO 5.0 (Auth Guard, Logout, Caminho 'usuarios/' e Mostra Utilizador)
 
 import { 
     db, 
@@ -12,6 +12,9 @@ import {
     off,
     signOut // IMPORTA O signOut
 } from './firebase-config.js';
+// v5.0: Importa 'getDatabase' para a verificação de permissão
+import { getDatabase } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
 
 let currentUserId = null;
 let currentYear = new Date().getFullYear();
@@ -43,41 +46,64 @@ let globalAlertData = {
 
 
 // ===============================================================
-// LÓGICA DE AUTENTICAÇÃO (v4.1 - NOVO "AUTH GUARD")
+// LÓGICA DE AUTENTICAÇÃO (v5.0 - "AUTH GUARD" ATUALIZADO)
 // ===============================================================
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     // Verifica se estamos na página de login para evitar loops
     const isLoginPage = window.location.pathname.endsWith('login.html');
 
     if (user) {
-        // 1. Usuário está logado (Google)
-        currentUserId = user.uid;
+        // --- 1. Utilizador está logado no Google ---
         
-        // Se o usuário está logado e tentou aceder ao login.html, redireciona para o index
-        if (isLoginPage) {
-            window.location.href = 'index.html';
-            return;
-        }
+        // v5.0: VERIFICA A PERMISSÃO NA BASE DE DADOS
+        const dbInstance = getDatabase();
+        const userRef = ref(dbInstance, `autorizacoes/${user.uid}`);
+        const snapshot = await get(userRef);
 
-        // Dispara o evento que avisa os outros scripts que o ID está pronto
-        document.dispatchEvent(new CustomEvent('authReady', {
-            detail: { userId: currentUserId }
-        }));
-        
-        updateMonthDisplay();
-        listenToGlobalBalance(currentUserId);
-        listenToGlobalAlerts(currentUserId);
+        if (snapshot.exists() && snapshot.val().status === 'aprovado') {
+            // --- 2. UTILIZADOR APROVADO ---
+            currentUserId = user.uid;
+            
+            if (isLoginPage) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // v5.0: MOSTRA O NOME E FOTO DO UTILIZADOR
+            const userNameEl = document.getElementById('user-name');
+            const userPhotoEl = document.getElementById('user-photo');
+            if (userNameEl) userNameEl.textContent = user.displayName;
+            // Fallback para uma imagem de avatar padrão
+            if (userPhotoEl) userPhotoEl.src = user.photoURL || 'https://i.ibb.co/t235T11/avatar.png'; 
+
+
+            // Dispara o evento que avisa os outros scripts
+            document.dispatchEvent(new CustomEvent('authReady', {
+                detail: { userId: currentUserId }
+            }));
+            
+            updateMonthDisplay();
+            listenToGlobalBalance(currentUserId);
+            listenToGlobalAlerts(currentUserId);
+
+        } else {
+            // --- 3. UTILIZADOR NÃO APROVADO (Pendente ou Bloqueado) ---
+            
+            // Desloga-o
+            await signOut(auth);
+            
+            // (O 'onAuthStateChanged' vai disparar de novo com user=null
+            // e o bloco 'else' abaixo fará o redirecionamento)
+            console.warn("Permissão negada. A deslogar...");
+        }
 
     } else {
-        // 2. Usuário NÃO está logado
-        
-        // Se ele já está na página de login, não faz nada
+        // --- 4. UTILIZADOR NÃO ESTÁ LOGADO ---
         if (isLoginPage) {
-            return;
+            return; // Permanece na página de login
         }
         
-        // Se ele está em qualquer outra página (index, cartoes, etc.) e NÃO está logado,
-        // redireciona para o login.
+        // Redireciona para o login
         console.log("Usuário não está logado. Redirecionando para login.html");
         window.location.href = 'login.html';
     }
@@ -190,8 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function showLogoutConfirm() {
     const modal = document.getElementById('modal-logout-confirm');
     if (!modal) {
-        console.error("Modal de logout não encontrado no HTML!");
-        // Se o modal não existe, faz o logout direto
+        console.error("Modal de logout não encontrado no HTML! Fazendo logout direto.");
         (async () => {
             try { await signOut(auth); } catch (e) { console.error(e); }
         })();
