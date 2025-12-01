@@ -1114,75 +1114,116 @@ body.dark-theme .tab-btn:hover:not(.active) {
     border: 1px solid var(--border-color);
 }
 
-/* ------------------- ÁREA DO USUÁRIO NA SIDEBAR (versão corrigida) ------------------- */
+/* ========================= v7.0 — SIDEBAR (perfil + sair) ========================= */
+/* Coloque este bloco NO FINAL do CSS para garantir prioridade */
 
+/* FOOTER da sidebar */
 .sidebar-footer {
-    padding: 10px 14px;
-    background: inherit !important;    /* pega o mesmo fundo da sidebar */
+    margin-top: auto;
+    padding: 1rem 0;
+    background: transparent !important;
 }
 
+/* Área inteira do usuário (foto + nome + logout em linha) */
 .user-area {
-    display: grid;
-    grid-template-columns: auto 1fr auto; /* FOTO | NOME | SAIR */
+    display: flex;
+    flex-direction: row;            /* itens em linha */
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
+    gap: 0.75rem;
 
-    background: inherit !important;    /* força usar o mesmo fundo */
-    padding: 0;
-    margin: 0;
+    padding: 0.8rem 1rem;
+    margin: 0 1rem 1rem 1rem;
+    border-radius: var(--border-radius-2);
+
+    background: transparent !important;     /* <<< fundo transparente real */
+    box-shadow: none !important;
+    border: none !important;
 }
 
-/* FOTO */
+/* Foto + nome lado a lado */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Foto */
 .user-profile img {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid var(--color-primary);
+    flex-shrink: 0;
 }
 
-/* NOME */
+/* Nome — agora ocupa espaço flexível */
 #user-name {
-    text-align: center;
-    font-size: 14px;
+    color: var(--text-color);
     font-weight: 600;
+    font-size: 0.95rem;
+
+    max-width: 110px;          /* reduz corte */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--text-color);
 }
 
-/* BOTÃO SAIR */
+/* Área do botão SAIR */
 .logout-area {
     display: flex !important;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px 10px;
 
-    background: var(--color-primary-light);
+    padding: 8px 10px;
     border-radius: 8px;
 
     cursor: pointer;
+    background: var(--color-primary-light);
     transition: 0.2s ease;
+    flex-shrink: 0;             /* impede do botão encolher */
 }
 
-/* Hover */
-.logout-area:hover {
-    background: var(--color-primary);
-}
-
+/* Ícone */
 .logout-icon {
     font-size: 20px;
     color: var(--color-primary);
 }
 
+/* Texto SAIR */
 .logout-text {
-    font-size: 14px;
+    font-size: 0.95rem;
     font-weight: 500;
     color: var(--color-primary);
 }
 
-.logout-area:hover .logout-text,
-.logout-area:hover .logout-icon {
+/* Hover do SAIR */
+.logout-area:hover {
+    background: var(--color-primary);
+}
+.logout-area:hover .logout-icon,
+.logout-area:hover .logout-text {
     color: white;
+}
+
+/* Força todos os elementos do footer a serem transparentes */
+.sidebar .sidebar-footer,
+.sidebar .sidebar-footer * {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 480px) {
+    #user-name {
+        max-width: 80px;
+        font-size: 0.85rem;
+    }
+
+    .user-profile img {
+        width: 34px;
+        height: 34px;
+    }
 }
