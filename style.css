@@ -1117,8 +1117,8 @@ body.dark-theme .tab-btn:hover:not(.active) {
 /* ------------------- ÁREA DO USUÁRIO NA SIDEBAR ------------------- */
 
 .sidebar-footer {
-    padding: 12px 14px;
-    border-top: 1px solid #dcdcdc;
+    padding: 10px 14px;
+    /* sem background — usa o mesmo da sidebar */
 }
 
 .user-area {
@@ -1126,51 +1126,45 @@ body.dark-theme .tab-btn:hover:not(.active) {
     grid-template-columns: auto 1fr auto; /* FOTO | NOME | SAIR */
     align-items: center;
     gap: 12px;
+
+    background: transparent !important; /* mantém igual ao menu */
+    padding: 0; /* remove caixa ao redor */
 }
 
-/* FOTO DO USUÁRIO */
-.user-profile {
-    display: flex;
-    align-items: center;
-}
-
+/* FOTO */
 .user-profile img {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
 }
 
-/* NOME DO USUÁRIO (no centro) */
+/* NOME (fica no centro com espaço flexível) */
 #user-name {
     text-align: center;
     font-size: 14px;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* só coloca ... quando realmente necessário */
-    max-width: 100%;
+    text-overflow: ellipsis;
 }
 
-/* BOTÃO DE SAIR */
+/* BOTÃO SAIR */
 .logout-area {
-    display: flex;
+    display: flex !important;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    cursor: pointer;
     padding: 6px 10px;
+
     background: var(--color-primary-light);
     border-radius: 8px;
+    cursor: pointer;
     transition: 0.2s ease;
 }
 
 .logout-area:hover {
     background: var(--color-primary);
-}
-
-.logout-area:hover .logout-icon,
-.logout-area:hover .logout-text {
-    color: #fff;
 }
 
 .logout-icon {
@@ -1182,4 +1176,9 @@ body.dark-theme .tab-btn:hover:not(.active) {
     font-size: 14px;
     font-weight: 500;
     color: var(--color-primary);
+}
+
+.logout-area:hover .logout-text,
+.logout-area:hover .logout-icon {
+    color: white;
 }
