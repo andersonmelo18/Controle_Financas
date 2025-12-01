@@ -1115,8 +1115,9 @@ body.dark-theme .tab-btn:hover:not(.active) {
 }
 
 /* =============================================================== */
-/* v5.1: Correção do Layout do Sidebar (Perfil e Botão Sair) */
-/* (Este é o ÚNICO bloco que você precisa para o footer do sidebar) */
+/* v5.1: CORREÇÃO DO LAYOUT DO SIDEBAR (PERFIL E BOTÃO SAIR) */
+/* (Este bloco SUBSTITUI qualquer outro estilo .sidebar-footer, */
+/* .user-profile, ou #logout-button que você tinha antes) */
 /* =============================================================== */
 
 /* 1. Força o sidebar a usar 100% da altura e ser um container flex */
