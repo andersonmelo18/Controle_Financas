@@ -1193,3 +1193,321 @@ body.dark-theme .tab-btn:hover:not(.active) {
 .logout-area {
     background-color: transparent !important;
 }
+
+/* =========================
+   CSS REVISIONADO v1.0
+   - Responsividade sidebar & header
+   - User area (perfil + logout)
+   - Global balance fix (não cortado)
+   Colar no FINAL do style.css (CTRL+F5 após salvar)
+   ========================= */
+
+/* --- Se quiser, ajuste essas variáveis para combinar com seu tema --- */
+:root{
+  --sidebar-width: 260px;
+  --sidebar-bg: var(--color-sidebar, #0f1724); /* fallback se não existir */
+  --text-color: var(--text-color, #e6eef8);
+  --muted: rgba(255,255,255,0.65);
+  --primary: var(--color-primary, #4A90E2);
+  --primary-light: var(--color-primary-light, rgba(74,144,226,0.12));
+  --border-radius: 10px;
+}
+
+/* -------------------
+   Base / Reset leve
+   ------------------- */
+* { box-sizing: border-box; }
+html,body { height:100%; }
+body {
+  margin:0;
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-color);
+  background: var(--app-background, #f5f7fb);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* -------------------
+   LAYOUT: SIDEBAR + CONTENT
+   ------------------- */
+.sidebar{
+  width: var(--sidebar-width);
+  min-height: 100vh;      /* permite crescer se necessário */
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar-bg);
+  color: var(--text-color);
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;       /* evita scroll duplo */
+  z-index: 30;
+}
+
+/* Conteúdo principal ajuste com sidebar fixo */
+.content {
+  margin-left: var(--sidebar-width);
+  padding: 20px;
+  min-height: 100vh;
+  background: transparent;
+}
+
+/* Ajuste caso a app use header fixo - mantém espaço */
+.main-header { display:flex; align-items:center; gap:12px; justify-content:space-between; }
+
+/* UL do menu cresce e empurra o footer */
+.sidebar > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-grow: 1;
+  overflow: auto;
+}
+
+/* itens do menu (básico) */
+.sidebar ul li { margin: 0; }
+.sidebar ul li a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--text-color);
+}
+.sidebar ul li.active a { background: rgba(255,255,255,0.03); }
+
+/* ========================
+   SIDEBAR FOOTER / USER-AREA
+   ======================== */
+
+/* footer fica no final graças ao margin-top:auto no container pai */
+.sidebar-footer{
+  margin-top: auto;
+  padding: 10px 14px;
+  background: transparent !important; /* força transparente para herdar fundo */
+  border-top: 1px solid rgba(255,255,255,0.03);
+}
+
+/* grid: FOTO | NOME (flexível) | ICON */
+.user-area {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent !important;
+  padding: 4px 0;
+  position: relative;
+}
+
+/* perfil: imagem + nome (imagem à esquerda) */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* garante que a imagem use o id real */
+#user-photo,
+.user-profile img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.06);
+  display: block;
+}
+
+/* nome central ocupando espaço disponível */
+#user-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-color);
+  text-align: left;   /* fica central entre a foto e o ícone pela grid */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  padding: 0 6px;
+}
+
+/* logout — somente ícone visível (texto escondido) */
+.logout-area {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 180ms ease;
+  position: relative;
+}
+
+/* remover qualquer texto "Sair" exibido por CSS antigo */
+.logout-area .logout-text,
+#logout-button .logout-text,
+#logout-button span:nth-child(2) {
+  display:none !important;
+  visibility:hidden !important;
+  width:0 !important;
+  height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+}
+
+/* icone */
+.logout-icon {
+  font-size: 20px;
+  color: var(--text-color);
+}
+
+/* hover */
+.logout-area:hover {
+  background: var(--primary-light);
+}
+.logout-area:hover .logout-icon {
+  color: var(--primary);
+}
+
+/* ========================
+   HEADER / AÇÕES (Saldo Global etc.)
+   ======================== */
+
+.main-header {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding: 8px 0;
+  /* se tiver background no header, herdar é ok */
+}
+
+/* área das ações no header, contém saldo, botões e notificações */
+.header-actions {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-left: auto;
+  align-items:center;
+}
+
+/* SALDO GLOBAL — evita corte com flex-shrink:0 e limite mínimo */
+.global-balance,
+.global-balance * {
+  box-sizing: border-box;
+}
+
+.global-balance {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  min-width: 120px;    /* garante espaço mínimo para não cortar */
+  flex-shrink: 0;      /* evita encolher e cortar conteúdo */
+  color: var(--text-color);
+}
+.global-balance small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.global-balance h3 {
+  margin:0;
+  font-size: 1rem;
+  font-weight:700;
+}
+
+/* Ajuste específico: se o saldo for longo, o número quebra com ellipsis */
+#global-balance-display {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+/* BOTÕES primários/segundários - leve ajuste */
+.btn-primary, .btn-secondary {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+/* BADGE notif */
+.badge {
+  background: var(--primary);
+  color: white;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+
+/* ========================
+   GRID / Kpis / Cards (ajustes responsivos)
+   ======================== */
+
+.kpi-grid {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* cartões */
+.card {
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+  border-radius: 12px;
+  color: var(--text-color);
+  overflow: hidden;
+}
+
+/* Ajustes de responsividade global */
+@media (max-width: 1024px) {
+  .kpi-grid { grid-template-columns: repeat(2,1fr); }
+  .content { padding: 14px; }
+}
+
+@media (max-width: 768px) {
+  /* reduz sidebar para mobile (padrão: menu colapsado por JS) */
+  .sidebar { width: 220px; }
+  .content { margin-left: 220px; padding: 12px; }
+  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+
+  /* header actions empilham caso necessário */
+  .header-actions { gap:8px; flex-wrap:wrap; align-items:center; }
+  .global-balance { min-width: 100px; }
+}
+
+@media (max-width: 480px) {
+  /* mobile estreito: sidebar compacta */
+  .sidebar { width: 200px; }
+  .content { margin-left: 200px; padding: 10px; }
+
+  /* user-area: força grid, garante que nome não empurre */
+  .user-area { grid-template-columns: auto 1fr auto; gap:8px; padding:6px 0; }
+
+  /* menor avatar */
+  #user-photo { width:30px; height:30px; }
+
+  /* reduz o nome para evitar corte desnecessário, ainda com ellipsis */
+  #user-name { font-size:0.85rem; max-width: 120px; }
+
+  /* saldo global mais compacto mas não encolhe demais */
+  .global-balance { min-width: 92px; padding: 4px 8px; }
+}
+
+/* ===== segurança: garantir footer não tenha caixa branca ===== */
+.sidebar .sidebar-footer,
+.sidebar .sidebar-footer * {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
