@@ -1,8 +1,8 @@
 /* =============================================================== */
-/* ARQUIVO CSS REATORADO (v6.0) */
-/* Layout principal movido para CSS Grid. */
+/* ARQUIVO CSS (v6.1 - BASEADO NO SEU ZIP ORIGINAL) */
+/* Layout 'margin-left' mantido. */
 /* Corrigido o sidebar-footer (Perfil e Logout). */
-/* Limpas as media queries conflituantes. */
+/* Corrigidas as media queries de 800px (Mobile). */
 /* =============================================================== */
 
 /* Reset Básico e Variáveis CSS */
@@ -13,12 +13,16 @@
     --success-color: #7ED321; /* Verde */
     --warning-color: #F5A623; /* Laranja */
     
+    /* =================================== */
+    /* NOVAS VARIÁVEIS (v6.0) */
+    /* =================================== */
     --primary-transparent: rgba(74, 144, 226, 0.1);
     --danger-transparent: rgba(208, 2, 27, 0.05);
     --danger-transparent-hover: rgba(208, 2, 27, 0.1);
     --warning-transparent: rgba(245, 166, 35, 0.05);
     --warning-transparent-hover: rgba(245, 166, 35, 0.1);
     --success-transparent: rgba(126, 211, 33, 0.1);
+    /* =================================== */
 
     --text-color: #333;
     --text-light: #777;
@@ -29,13 +33,6 @@
     
     --border-color: #E6E6E6;
 
-    /* Variáveis da Tema Dark */
-    --dark-text-color: #E0E0E0;
-    --dark-text-light: #A0A0A0;
-    --dark-bg-color: #1A1A2E;
-    --dark-bg-light: #1F2847;
-    --dark-border-color: #3A3A5A;
-
     --border-radius-1: 3px;
     --border-radius-2: 6px;
     --border-radius-3: 12px;
@@ -43,12 +40,12 @@
     --shadow: 0 4px 12px rgba(0,0,0,0.05);
     
     --sidebar-width: 250px;
-    --sidebar-width-mobile: 220px;
 }
 
 /* =================================== */
-/* DARK MODE */
+/* DARK MODE (v6.1 - CORRIGIDO) */
 /* =================================== */
+/* v6.1: Bloco de Dark Mode consolidado com as variáveis novas E as suas originais */
 .dark-theme {
     --primary-color: #5A90E2;
     --secondary-color: #60E3C2;
@@ -63,14 +60,14 @@
     --warning-transparent-hover: rgba(245, 182, 67, 0.15);
     --success-transparent: rgba(142, 211, 65, 0.1);
 
-    --text-color: var(--dark-text-color);
-    --text-light: var(--dark-text-light);
-    --bg-color: var(--dark-bg-color);
-    --bg-light: var(--dark-bg-light);
-    --border-color: var(--dark-border-color);
-    
-    /* O bg-dark e bg-dark-light não mudam */
+    /* Suas variáveis originais */
+    --text-color: #E0E0E0;
+    --text-light: #A0A0A0;
+    --bg-color: #1A1A2E;
+    --bg-light: #1F2847;
+    --border-color: #3A3A5A;
 }
+
 
 /* =================================== */
 /* ESTILOS GLOBAIS (Body, Fontes) */
@@ -86,48 +83,41 @@ body {
     font-size: 14px;
     background-color: var(--bg-color);
     color: var(--text-color);
-    overflow-x: hidden; /* Previne scroll horizontal */
+    overflow-x: hidden;
+    display: flex; /* Mantido do seu original */
 }
 
 /* =============================================================== */
-/* LAYOUT PRINCIPAL (v6.0 - CSS GRID) */
-/* O layout principal agora usa CSS Grid para ser mais robusto. */
+/* LAYOUT PRINCIPAL (v6.1 - Baseado no seu 'margin-left') */
 /* =============================================================== */
-body {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
-    grid-template-areas: "sidebar content";
-    transition: grid-template-columns 300ms ease;
-}
 
 /* 1. SIDEBAR (NAV) */
 .sidebar {
-    grid-area: sidebar;
-    height: 100vh;
+    width: var(--sidebar-width);
     background: var(--bg-dark);
     color: #FFF;
     overflow-x: hidden;
     overflow-y: auto;
-    
-    /* v6.0: Torna o sidebar um container flex */
-    /* Isto é essencial para o footer fixo */
+    position: fixed; /* Mantido do seu original */
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transition: left 300ms ease, width 300ms ease;
+
+    /* v6.1: ADIÇÕES PARA O FOOTER FUNCIONAR */
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    
-    /* v6.0: Posição 'sticky' para o caso de o conteúdo */
-    /* do sidebar ser maior que a tela (ex: mobile) */
-    position: sticky;
-    top: 0;
-    transition: left 300ms ease;
 }
 
 /* 2. CONTENT (MAIN) */
 .content {
-    grid-area: content;
-    /* v6.0: Remove 'margin-left' e 'width' antigos */
+    flex-grow: 1; /* Mantido do seu original */
     padding: 1.5rem;
-    overflow-y: auto; /* Permite scroll do conteúdo */
-    height: 100vh; /* Ocupa a altura da tela */
+    overflow-y: auto;
+    height: 100vh;
+    margin-left: var(--sidebar-width); /* Mantido do seu original */
+    transition: margin-left 300ms ease; /* v6.1: Adicionada transição */
 }
 
 /* 3. HEADER (Dentro do Content) */
@@ -141,17 +131,15 @@ body {
     border-radius: var(--border-radius-2);
     box-shadow: var(--shadow);
     
-    /* Faz o header ficar fixo no topo do .content */
     position: sticky;
     top: 0;
     z-index: 50;
     
-    /* Transição para o padding do mobile */
     transition: padding-left 300ms ease;
 }
 
 /* =============================================================== */
-/* COMPONENTES DO SIDEBAR */
+/* COMPONENTES DO SIDEBAR (v6.1 - Corrigido) */
 /* =============================================================== */
 
 .sidebar-header {
@@ -169,11 +157,11 @@ body {
     color: var(--primary-color);
 }
 
-/* v6.0: Faz a lista de links crescer */
 .sidebar ul {
     list-style: none;
     padding: 1rem 0;
-    flex-grow: 1; /* <-- MÁGICA! Empurra o footer para baixo */
+    /* v6.1: FAZ A LISTA CRESCER (Empurra o footer para baixo) */
+    flex-grow: 1; 
 }
 
 .sidebar ul li a {
@@ -200,7 +188,7 @@ body {
 
 /* =============================================================== */
 /* v5.1: CORREÇÃO DO SIDEBAR FOOTER (CONSOLIDADO) */
-/* Este é o ÚNICO bloco que você precisa para o footer */
+/* (Substitui o seu '.sidebar-footer { position: absolute; }') */
 /* =============================================================== */
 
 /* 1. Reseta o .sidebar-footer (Remove o 'position: absolute' antigo) */
@@ -274,6 +262,7 @@ body {
 
 /* =============================================================== */
 /* COMPONENTES DO HEADER (CONTENT) */
+/* (Mantido do seu CSS original e do v6.0) */
 /* =============================================================== */
 
 .header-left {
@@ -284,7 +273,7 @@ body {
 
 /* Botão Hamburger (só aparece em mobile) */
 .hamburger-menu {
-    display: none; /* Escondido por padrão */
+    display: none; /* Escondido por padrão (Ativado no media query) */
     background: none;
     border: none;
     cursor: pointer;
@@ -483,6 +472,7 @@ body {
 
 /* =============================================================== */
 /* ESTILOS DE COMPONENTES GLOBAIS (Botões, Inputs, Tabelas, etc.) */
+/* (Mantido do seu CSS original e do v6.0) */
 /* =============================================================== */
 
 /* --- Títulos de Página --- */
@@ -582,15 +572,26 @@ body {
 .btn-icon.success:hover { background: var(--success-transparent); }
 
 /* --- Formulários --- */
+/* (Mantido do seu CSS original) */
+.form-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.dark-theme .form-container { border-bottom-color: var(--border-color); }
+
 .form-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 1rem;
+    gap: 0.5rem;
 }
 
 .form-group label {
     font-weight: 500;
-    margin-bottom: 0.5rem;
     color: var(--text-color);
 }
 
@@ -620,6 +621,7 @@ body {
 }
 
 /* --- Tabelas --- */
+/* (Mantido do seu CSS original e do v6.0) */
 .table-container {
     width: 100%;
     overflow-x: auto;
@@ -636,6 +638,9 @@ table th, table td {
     border-bottom: 1px solid var(--border-color);
     text-align: left;
     white-space: nowrap;
+}
+.dark-theme table th, .dark-theme table td {
+    border-bottom-color: var(--border-color);
 }
 
 table th {
@@ -655,6 +660,7 @@ table .actions {
 }
 
 /* Tags (para status) */
+/* (Mantido do seu CSS original e do v6.0) */
 .tag {
     padding: 0.25rem 0.5rem;
     border-radius: var(--border-radius-1);
@@ -669,8 +675,12 @@ table .actions {
 .tag.success { background: var(--success-transparent); color: var(--success-color); }
 .tag.danger { background: var(--danger-transparent); color: var(--danger-color); }
 .tag.warning { background: var(--warning-transparent); color: var(--warning-color); }
+/* v6.1: Adicionado o .tag.info que faltava */
+.tag.info { background: var(--primary-transparent); color: var(--primary-color); }
+
 
 /* --- KPIs (Painel Principal) --- */
+/* (Mantido do seu CSS original) */
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -684,44 +694,39 @@ table .actions {
     border-radius: var(--border-radius-2);
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    /* display: flex; (removido para usar o layout do seu zip) */
 }
+.dark-theme .kpi-card { border-color: var(--border-color); }
 
-.kpi-card .icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.kpi-card h4 {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 500;
 }
-.kpi-card .icon span {
+.kpi-card h2 {
     font-size: 1.8rem;
-    color: #FFF;
-}
-.kpi-card.success .icon { background: var(--success-color); }
-.kpi-card.danger .icon { background: var(--danger-color); }
-.kpi-card.warning .icon { background: var(--warning-color); }
-.kpi-card.primary .icon { background: var(--primary-color); }
-
-.kpi-card .info h3 {
-    font-size: 1.5rem;
     font-weight: 600;
+    margin: 0.5rem 0;
 }
-.kpi-card .info small {
+.kpi-card small {
     font-size: 0.85rem;
     color: var(--text-light);
 }
+/* Cores do texto dos KPIs (do seu zip) */
+.kpi-card.kpi-lucro h2.text-success { color: var(--success-color); }
+.kpi-card.kpi-lucro h2.text-danger { color: var(--danger-color); }
+#kpi-saldo-acumulado.text-danger { color: var(--danger-color); }
+#kpi-saldo-acumulado.text-success { color: var(--success-color); }
 
 /* --- Abas (Tabs) --- */
+/* (Mantido do v6.0) */
 .tab-nav {
     display: flex;
     border-bottom: 2px solid var(--border-color);
     margin-bottom: 1.5rem;
     overflow-x: auto;
 }
+.dark-theme .tab-nav { border-bottom-color: var(--border-color); }
 
 .tab-btn {
     padding: 0.8rem 1.2rem;
@@ -732,7 +737,7 @@ table .actions {
     color: var(--text-light);
     font-weight: 500;
     font-size: 0.95rem;
-    margin-bottom: -2px; /* Alinha com a borda principal */
+    margin-bottom: -2px;
     transition: all 300ms ease;
     white-space: nowrap;
 }
@@ -754,8 +759,9 @@ table .actions {
 }
 
 /* --- Modais --- */
-.modal-backdrop {
-    display: none; /* Escondido por padrão */
+/* (Renomeado de .modal-backdrop para .modal-overlay para bater com seu HTML) */
+.modal-overlay {
+    display: none; 
     position: fixed;
     top: 0;
     left: 0;
@@ -776,6 +782,9 @@ table .actions {
     max-width: 500px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
+.dark-theme .modal-content {
+    background-color: var(--dark-bg-light); /* Fundo do modal escuro */
+}
 
 .modal-header {
     display: flex;
@@ -784,7 +793,7 @@ table .actions {
     margin-bottom: 1.5rem;
 }
 
-.modal-header h2 {
+.modal-header h2, .modal-header h3 {
     font-size: 1.3rem;
 }
 
@@ -793,17 +802,29 @@ table .actions {
     line-height: 1.6;
 }
 
+/* (Estilos do seu zip para .modal-footer) */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+.dark-theme .modal-footer { border-top-color: var(--border-color); }
+
+
 /* Estilo específico para modal de confirmação */
 #modal-message {
     font-size: 1rem;
     color: var(--text-color);
     line-height: 1.6;
-    white-space: pre-wrap; /* Mantém as quebras de linha (ex: alerta de fatura) */
+    white-space: pre-wrap; 
 }
 
 
 /* =============================================================== */
-/* RESPONSIVIDADE (v6.0 - REVISADO) */
+/* RESPONSIVIDADE (v6.1 - CORRIGIDO) */
 /* =============================================================== */
 
 /* Tablet (Paisagem) e Desktops Pequenos */
@@ -815,38 +836,35 @@ table .actions {
 
 /* Tablet (Retrato) - Ponto de viragem do Sidebar */
 @media (max-width: 800px) {
-    /* v6.0: O layout Grid do Body é alterado */
-    body {
-        grid-template-columns: 1fr; /* Apenas o conteúdo é visível */
-        grid-template-areas: "content";
-    }
-
-    /* v6.0: O sidebar fica por cima, escondido por padrão */
+    
+    /* v6.1: Esconde o sidebar por padrão */
     .sidebar {
-        position: fixed;
         left: -260px; /* Escondido fora da tela */
         width: 250px;
         z-index: 100;
         box-shadow: 10px 0 30px rgba(0,0,0,0.2);
     }
     
+    /* v6.1: Mostra o sidebar quando o hamburger é clicado (JS adiciona .active) */
     .sidebar.active {
-        left: 0; /* Mostra o sidebar */
+        left: 0;
     }
     
-    /* v6.0: O conteúdo ocupa 100% */
+    /* v6.1: O conteúdo ocupa 100% da largura */
     .content {
-        /* Não precisa de 'margin-left: 0' pois o Grid já cuida disso */
+        margin-left: 0;
         padding: 1rem;
     }
     
+    /* v6.1: Corrige o padding do header para dar espaço ao hamburger */
     .header-main {
-        padding-left: 4.5rem; /* Espaço para o hamburger */
-        position: sticky; /* Mantém sticky */
+        padding-left: 4.5rem; 
+        position: sticky; 
     }
 
+    /* v6.1: Mostra o hamburger */
     .hamburger-menu {
-        display: block; /* Mostra o hamburger */
+        display: block; 
         position: absolute;
         left: 1rem;
         top: 50%;
@@ -854,7 +872,7 @@ table .actions {
         z-index: 1;
     }
     
-    /* v6.0: Remove regras de '768px' que conflituavam */
+    /* v6.1: Empilha os KPIs */
     .kpi-grid { 
         grid-template-columns: 1fr; /* KPIs 1x1 */
         gap: 1rem;
@@ -865,6 +883,9 @@ table .actions {
         flex-wrap: wrap; /* Permite quebrar linha */
     }
 }
+
+/* v6.1: REMOVIDO o @media (max-width: 768px) que estava em conflito */
+
 
 /* Mobile (Pequeno) */
 @media (max-width: 480px) {
@@ -899,6 +920,12 @@ table .actions {
         padding: 1rem;
     }
 
+    /* (Mantido do seu CSS original) */
+    .form-container {
+        grid-template-columns: 1fr; /* 1 coluna */
+        gap: 1rem;
+    }
+    
     .form-actions {
         flex-direction: column;
     }
