@@ -496,11 +496,11 @@ function renderizarFaturas(estadoGastos) {
         if (!cartaoConfig) return;
 
         const dataGasto = new Date((gasto.data || gasto.vencimento) + 'T12:00:00');
-
+        
         // 1. Calcula o mês ORIGINAL do gasto
         let mesOriginalFatura = calcularMesFatura(dataGasto, cartaoConfig.diaFechamento);
         const isFaturaAtualOriginal = (mesOriginalFatura.getFullYear() === dataFatura.getFullYear() &&
-            mesOriginalFatura.getMonth() === dataFatura.getMonth());
+                                      mesOriginalFatura.getMonth() === dataFatura.getMonth());
 
         // 2. Se for deste mês, SEMPRE adiciona no Histórico (HTML)
         if (isFaturaAtualOriginal) {
@@ -508,7 +508,10 @@ function renderizarFaturas(estadoGastos) {
         }
 
         // 3. Agora, calcula o mês ALVO (com roll-over) para o TOTAL
-        let mesFaturaAlvo = mesOriginalFatura;
+        
+        // !! ESTA É A LINHA QUE EU CORRIGI !!
+        // Precisamos criar uma CÓPIA da data, senão alteramos a original
+        let mesFaturaAlvo = new Date(mesOriginalFatura.getTime()); 
 
         const isFaturaAnterior = (mesFaturaAlvo.getFullYear() === dataFaturaAnterior.getFullYear() &&
             mesFaturaAlvo.getMonth() === dataFaturaAnterior.getMonth());
