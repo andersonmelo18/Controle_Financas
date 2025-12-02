@@ -496,7 +496,19 @@ function renderizarFaturas(estadoGastos) {
         if (!cartaoConfig) return;
 
         const dataGasto = new Date((gasto.data || gasto.vencimento) + 'T12:00:00');
-        let mesFaturaAlvo = calcularMesFatura(dataGasto, cartaoConfig.diaFechamento);
+
+        // 1. Calcula o mês ORIGINAL do gasto
+        let mesOriginalFatura = calcularMesFatura(dataGasto, cartaoConfig.diaFechamento);
+        const isFaturaAtualOriginal = (mesOriginalFatura.getFullYear() === dataFatura.getFullYear() &&
+            mesOriginalFatura.getMonth() === dataFatura.getMonth());
+
+        // 2. Se for deste mês, SEMPRE adiciona no Histórico (HTML)
+        if (isFaturaAtualOriginal) {
+            estadoFaturas[cartaoConfig.id].html += renderLinhaGasto(gasto);
+        }
+
+        // 3. Agora, calcula o mês ALVO (com roll-over) para o TOTAL
+        let mesFaturaAlvo = mesOriginalFatura;
 
         const isFaturaAnterior = (mesFaturaAlvo.getFullYear() === dataFaturaAnterior.getFullYear() &&
             mesFaturaAlvo.getMonth() === dataFaturaAnterior.getMonth());
@@ -510,80 +522,89 @@ function renderizarFaturas(estadoGastos) {
         if (isFaturaAtual && statusPagamentoAtual[cartaoConfig.id]) {
             mesFaturaAlvo.setMonth(mesFaturaAlvo.getMonth() + 1);
         }
+
+        // 4. Se o mês ALVO (pós roll-over) ainda for o atual, soma no Total
         if (mesFaturaAlvo.getFullYear() === dataFatura.getFullYear() &&
             mesFaturaAlvo.getMonth() === dataFatura.getMonth()) {
 
             estadoFaturas[cartaoConfig.id].total += gasto.valor;
-            estadoFaturas[cartaoConfig.id].html += renderLinhaGasto(gasto);
         }
     });
 
     // v6.2: Agora esta lógica funciona, pois 'estadoGastos.pendencias' e 'estadoGastos.despesas'
     // contêm TODOS os meses, permitindo que o 'while (true)' funcione corretamente.
     Object.values(estadoGastos.specs).forEach(compra => {
-    const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === compra.cartao);
-    if (!cartaoConfig) return;
+        const cartaoConfig = Object.values(meusCartoes).find(c => c.nome === compra.cartao);
+        if (!cartaoConfig) return;
 
-    if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-        console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
-        return;
-    }
-
-    // início REAL da compra (não avança mais nada!)
-    const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
-    const dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
-
-    // cálculo correto da parcela do mês
-    const startYear = dataInicioVirtual.getFullYear();
-    const startMonth = dataInicioVirtual.getMonth() + 1;
-
-    const mesesDiff =
-        (dataFatura.getFullYear() - startYear) * 12 +
-        ((dataFatura.getMonth() + 1) - startMonth);
-
-    const parcelaAtualLabel = mesesDiff + 1;
-
-    // Exibe a parcela correspondente ao mês atual
-    if (parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
-
-        const status = compra.status || 'ativo';
-        const valorParcelaOriginal = compra.valorTotal / compra.parcelas;
-
-        let valorParaTotal = 0;
-        let isStrikethrough = false;
-        let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`;
-
-        if (status === 'estornado') {
-            isStrikethrough = true;
-            valorParaTotal = 0;
-            parcelaLabel = `(Estornado)`;
-
-        } else if (status === 'quitado') {
-            isStrikethrough = true;
-            valorParaTotal = 0;
-            parcelaLabel = `(Quitado)`;
-
-        } else if (status === 'quitado_pagamento') {
-            isStrikethrough = false;
-            valorParaTotal = valorParcelaOriginal;
-            parcelaLabel = `(Pagamento Quitação)`;
-
-        } else {
-            isStrikethrough = false;
-            valorParaTotal = valorParcelaOriginal;
+        if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
+            console.warn('Compra parcelada ignorada (dataInicio inválida):', compra.descricao);
+            return;
         }
 
-        estadoFaturas[cartaoConfig.id].total += valorParaTotal;
-        estadoFaturas[cartaoConfig.id].html += renderLinhaGasto({
-            data: `${currentYear}-${currentMonth}-01`,
-            descricao: `${compra.descricao} ${parcelaLabel}`,
-            valor: valorParcelaOriginal,
-            categoria: 'Parcela',
-            tipo: 'spec',
-            isStrikethrough: isStrikethrough
-        });
-    }
-});
+        // início REAL da compra (não avança mais nada!)
+        const [anoInicioOriginal, mesInicioOriginal] = compra.dataInicio.split('-').map(Number);
+        const dataInicioVirtual = new Date(anoInicioOriginal, mesInicioOriginal - 1, 1);
+
+        // cálculo correto da parcela do mês
+        const startYear = dataInicioVirtual.getFullYear();
+        const startMonth = dataInicioVirtual.getMonth() + 1;
+
+        const mesesDiff =
+            (dataFatura.getFullYear() - startYear) * 12 +
+            ((dataFatura.getMonth() + 1) - startMonth);
+
+        const parcelaAtualLabel = mesesDiff + 1;
+
+        // Exibe a parcela correspondente ao mês atual
+        if (parcelaAtualLabel >= 1 && parcelaAtualLabel <= compra.parcelas) {
+
+            const status = compra.status || 'ativo';
+            const valorParcelaOriginal = compra.valorTotal / compra.parcelas;
+
+            let valorParaTotal = 0;
+            let isStrikethrough = false;
+            let parcelaLabel = `(${parcelaAtualLabel}/${compra.parcelas})`;
+
+            if (status === 'estornado') {
+                isStrikethrough = true;
+                valorParaTotal = 0;
+                parcelaLabel = `(Estornado)`;
+
+            } else if (status === 'quitado') {
+                isStrikethrough = true;
+                valorParaTotal = 0;
+                parcelaLabel = `(Quitado)`;
+
+            } else if (status === 'quitado_pagamento') {
+                isStrikethrough = false;
+                valorParaTotal = valorParcelaOriginal;
+                parcelaLabel = `(Pagamento Quitação)`;
+
+            } else {
+                isStrikethrough = false;
+                valorParaTotal = valorParcelaOriginal;
+            }
+
+            // 1. SEMPRE adiciona no Histórico (HTML),
+            // mostrando o valor original da parcela (com/sem 'strikethrough')
+            estadoFaturas[cartaoConfig.id].html += renderLinhaGasto({
+                data: `${currentYear}-${currentMonth}-01`, // Data simbólica para ordenação
+                descricao: `${compra.descricao} ${parcelaLabel}`,
+                valor: valorParcelaOriginal,
+                categoria: 'Parcela',
+                tipo: 'spec',
+                isStrikethrough: isStrikethrough // Aplica o 'riscado' se for adiantamento
+            });
+
+            // 2. SÓ adiciona ao Total a pagar (valorParaTotal)
+            // se a fatura atual NÃO estiver paga.
+            const isPaga = statusPagamentoAtual[cartaoConfig.id];
+            if (!isPaga) {
+                estadoFaturas[cartaoConfig.id].total += valorParaTotal;
+            }
+        }
+    });
 
 
 
