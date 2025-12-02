@@ -1,6 +1,7 @@
 /* =============================================================== */
-/* ARQUIVO CSS (v6.1 - BASEADO NO SEU ZIP ORIGINAL) */
-/* Layout 'margin-left' mantido. */
+/* ARQUIVO CSS (v6.2 - BASEADO NO SEU ZIP ORIGINAL) */
+/* BUG de 'display: flex' no body REMOVIDO. */
+/* Layout 'margin-left' mantido e corrigido. */
 /* Corrigido o sidebar-footer (Perfil e Logout). */
 /* Corrigidas as media queries de 800px (Mobile). */
 /* =============================================================== */
@@ -79,16 +80,16 @@
     font-family: 'Poppins', 'Inter', sans-serif;
 }
 
+/* v6.2: CORRIGIDO - Removido 'display: flex' */
 body {
     font-size: 14px;
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow-x: hidden;
-    display: flex; /* Mantido do seu original */
 }
 
 /* =============================================================== */
-/* LAYOUT PRINCIPAL (v6.1 - Baseado no seu 'margin-left') */
+/* LAYOUT PRINCIPAL (v6.2 - Corrigido) */
 /* =============================================================== */
 
 /* 1. SIDEBAR (NAV) */
@@ -112,7 +113,7 @@ body {
 
 /* 2. CONTENT (MAIN) */
 .content {
-    flex-grow: 1; /* Mantido do seu original */
+    /* v6.2: CORRIGIDO - Removido 'flex-grow: 1' */
     padding: 1.5rem;
     overflow-y: auto;
     height: 100vh;
