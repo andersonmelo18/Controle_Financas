@@ -83,14 +83,25 @@ onAuthStateChanged(auth, async (user) => {
                     logoutButton.style.display = "flex";   // sempre visível
                 }
 
-                // --- Dispara evento para outros scripts ---
+                // --- 🔴 INÍCIO DA CORREÇÃO 🔴 ---
+
+                // 1. Atualiza o display (ex: "Dezembro") PRIMEIRO.
+                // Isso garante que o 'data-month' esteja com "12" antes de qualquer
+                // outro script tentar lê-lo.
+                updateMonthDisplay();
+                
+                // 2. Dispara o evento (avisa os outros scripts) DEPOIS.
+                // Agora, quando o 'authReady' rodar nas outras páginas,
+                // ele vai ler o valor "12" que acabamos de definir.
                 document.dispatchEvent(new CustomEvent('authReady', {
                     detail: { userId: currentUserId }
                 }));
                 
-                updateMonthDisplay();
+                // 3. Carrega o restante
                 listenToGlobalBalance(currentUserId);
                 listenToGlobalAlerts(currentUserId);
+
+                // --- 🟢 FIM DA CORREÇÃO 🟢 ---
 
             } else {
                 // --- 3. Utilizador não aprovado ---
