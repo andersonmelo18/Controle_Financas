@@ -359,6 +359,56 @@
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/index.js"></script>
 
+    <script>
+        // 1) Ajuste de --vh para corrigir 100vh no Android (Poco/Xiaomi)
+        (function setVh() {
+            function updateVh() {
+                document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+            }
+            window.addEventListener('resize', updateVh);
+            window.addEventListener('orientationchange', updateVh);
+            updateVh();
+        })();
+
+        // 2) Hamburger toggle — abre/fecha a sidebar no mobile
+        (function sidebarToggle() {
+            const btn = document.querySelector('.hamburger-menu');
+            const sidebar = document.querySelector('.sidebar');
+            if (!btn || !sidebar) return;
+            btn.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+
+            // Fecha a sidebar ao clicar fora (opcional)
+            document.addEventListener('click', (e) => {
+                if (!sidebar.classList.contains('open')) return;
+                const isClickInside = sidebar.contains(e.target) || btn.contains(e.target);
+                if (!isClickInside) sidebar.classList.remove('open');
+            });
+        })();
+
+        // 3) Logout seguro (adapte se seu signOut vier de módulo)
+        (function attachLogout() {
+            const logout = document.getElementById('logout-button');
+            if (!logout) return;
+            logout.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    // se você usa firebase modular e tem signOut/auth no escopo global
+                    if (typeof signOut === 'function' && window.auth) {
+                        await signOut(auth);
+                    }
+                } catch (err) {
+                    console.warn('Erro no signOut (pode ser ok):', err);
+                } finally {
+                    // garante redirecionamento para login
+                    window.location.href = 'login.html';
+                }
+            });
+        })();
+    </script>
+
+
 </body>
 
 </html>
