@@ -1320,12 +1320,6 @@ body.dark-theme .tab-btn:hover:not(.active) {
     flex-wrap: wrap;
 }
 
-
-/* Título das despesas em vermelho */
-.kpi-card h4 {
-    color: #ff3b3b;
-}
-
 /* Valor das despesas em vermelho */
 #kpi-total-despesas {
     color: #ff3b3b !important;
