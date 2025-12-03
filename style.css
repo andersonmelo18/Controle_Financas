@@ -1276,3 +1276,57 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
+/* ===== Correção Android — Fixar área do usuário no rodapé da sidebar ===== */
+@media (max-width: 900px) {
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-footer {
+        margin-top: auto !important;
+    }
+
+    .user-area {
+        position: relative;
+        width: 100%;
+    }
+}
+
+/* ===== Correção Android — Alinhamento do cabeçalho financeiro ===== */
+.header-financeiro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.header-financeiro .saldo-global {
+    flex: 1 1 auto;
+    min-width: 180px;
+}
+
+.header-financeiro .acoes-financeiras {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.header-financeiro .export-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+
+/* Título das despesas em vermelho */
+.kpi-card h4 {
+    color: #ff3b3b;
+}
+
+/* Valor das despesas em vermelho */
+#kpi-total-despesas {
+    color: #ff3b3b !important;
+}
