@@ -1,11 +1,3 @@
-/* =============================================================== */
-/* ARQUIVO CSS (v6.2 - BASEADO NO SEU ZIP ORIGINAL) */
-/* BUG de 'display: flex' no body REMOVIDO. */
-/* Layout 'margin-left' mantido e corrigido. */
-/* Corrigido o sidebar-footer (Perfil e Logout). */
-/* Corrigidas as media queries de 800px (Mobile). */
-/* =============================================================== */
-
 /* Reset Básico e Variáveis CSS */
 :root {
     --primary-color: #4A90E2; /* Azul */
@@ -28,914 +20,1344 @@
     --text-color: #333;
     --text-light: #777;
     --bg-color: #F4F7FA; /* Fundo principal */
-    --bg-light: #FFFFFF; /* Cor dos 'cards' */
-    --bg-dark: #222B45; /* Cor da Sidebar */
-    --bg-dark-light: #2C3E50; /* Fundo do perfil no sidebar */
+    --card-bg: #FFFFFF;
+    --border-color: #E0E0E0;
     
-    --border-color: #E6E6E6;
+    --sidebar-bg: #1A202C; /* Preto/Azul Escuro */
+    --sidebar-text: #A0AEC0;
+    --sidebar-active: var(--primary-color);
+    --sidebar-hover: #2D3748;
 
-    --border-radius-1: 3px;
-    --border-radius-2: 6px;
-    --border-radius-3: 12px;
-    
-    --shadow: 0 4px 12px rgba(0,0,0,0.05);
-    
-    --sidebar-width: 250px;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --card-radius: 8px;
 }
 
 /* =================================== */
-/* DARK MODE (v6.1 - CORRIGIDO) */
+/* MOTOR TEMA ESCURO */
 /* =================================== */
-/* v6.1: Bloco de Dark Mode consolidado com as variáveis novas E as suas originais */
-.dark-theme {
-    --primary-color: #5A90E2;
-    --secondary-color: #60E3C2;
-    --danger-color: #E05252;
-    --success-color: #8ED341;
-    --warning-color: #F5B643;
+body.dark-theme {
+    --text-color: #edeffd;
+    --text-light: #a3bdcc;
+    --bg-color: #181a1e;
+    --card-bg: #202528;
+    --border-color: #363949;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     
-    --primary-transparent: rgba(90, 144, 226, 0.1);
-    --danger-transparent: rgba(224, 82, 82, 0.1);
-    --danger-transparent-hover: rgba(224, 82, 82, 0.15);
-    --warning-transparent: rgba(245, 182, 67, 0.1);
-    --warning-transparent-hover: rgba(245, 182, 67, 0.15);
-    --success-transparent: rgba(142, 211, 65, 0.1);
-
-    /* Suas variáveis originais */
-    --text-color: #E0E0E0;
-    --text-light: #A0A0A0;
-    --bg-color: #1A1A2E;
-    --bg-light: #1F2847;
-    --border-color: #3A3A5A;
+    /* v6.0: Variáveis transparentes para o tema escuro */
+    --primary-transparent: rgba(74, 144, 226, 0.15);
+    --danger-transparent: rgba(208, 2, 27, 0.15);
+    --danger-transparent-hover: rgba(208, 2, 27, 0.25);
+    --warning-transparent: rgba(245, 166, 35, 0.15);
+    --warning-transparent-hover: rgba(245, 166, 35, 0.25);
+    --success-transparent: rgba(126, 211, 33, 0.15);
 }
+/* =================================== */
 
 
-/* =================================== */
-/* ESTILOS GLOBAIS (Body, Fontes) */
-/* =================================== */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Poppins', 'Inter', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* v6.2: CORRIGIDO - Removido 'display: flex' */
 body {
-    font-size: 14px;
     background-color: var(--bg-color);
     color: var(--text-color);
-    overflow-x: hidden;
+    display: flex;
+    min-height: 100vh;
 }
 
-/* =============================================================== */
-/* LAYOUT PRINCIPAL (v6.2 - Corrigido) */
-/* =============================================================== */
-
-/* 1. SIDEBAR (NAV) */
+/* --- Layout Principal --- */
 .sidebar {
-    width: var(--sidebar-width);
-    background: var(--bg-dark);
-    color: #FFF;
-    overflow-x: hidden;
-    overflow-y: auto;
-    position: fixed; /* Mantido do seu original */
-    top: 0;
-    left: 0;
-    z-index: 100;
-    transition: left 300ms ease, width 300ms ease;
-
-    /* v6.1: ADIÇÕES PARA O FOOTER FUNCIONAR */
-    height: 100vh;
+    width: 260px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1001;
+    transition: width 0.3s ease;
 }
 
-/* 2. CONTENT (MAIN) */
 .content {
-    /* v6.2: CORRIGIDO - Removido 'flex-grow: 1' */
-    padding: 1.5rem;
-    overflow-y: auto;
-    height: 100vh;
-    margin-left: var(--sidebar-width); /* Mantido do seu original */
-    transition: margin-left 300ms ease; /* v6.1: Adicionada transição */
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    padding: 0;
+    transition: margin-left 0.3s ease;
 }
 
-/* 3. HEADER (Dentro do Content) */
-.header-main {
+.main-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: var(--bg-light);
-    border-radius: var(--border-radius-2);
-    box-shadow: var(--shadow);
-    
+    padding: 1.2rem 2rem;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
-    z-index: 50;
-    
-    transition: padding-left 300ms ease;
+    z-index: 999;
 }
 
-/* =============================================================== */
-/* COMPONENTES DO SIDEBAR (v6.1 - Corrigido) */
-/* =============================================================== */
-
-.sidebar-header {
-    padding: 1.5rem;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-header h3 {
+.main-header h2 {
+    color: var(--text-color);
     font-size: 1.5rem;
-    font-weight: 600;
 }
 
+/* --- Menu Lateral (Sidebar) --- */
+.sidebar-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--sidebar-hover);
+}
+.sidebar-header h3 {
+    color: #FFF;
+    font-size: 1.5rem;
+}
 .sidebar-header h3 span {
     color: var(--primary-color);
 }
 
 .sidebar ul {
     list-style: none;
-    padding: 1rem 0;
-    /* v6.1: FAZ A LISTA CRESCER (Empurra o footer para baixo) */
-    flex-grow: 1; 
+    flex-grow: 1;
+    padding-top: 1rem;
 }
-
+.sidebar ul li {
+    margin: 0.5rem 1rem;
+}
 .sidebar ul li a {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1rem 1.5rem;
-    color: var(--dark-text-light);
+    padding: 0.9rem 1.5rem;
+    color: var(--sidebar-text);
     text-decoration: none;
-    position: relative;
-    transition: all 300ms ease;
+    border-radius: var(--card-radius);
+    transition: all 0.3s ease;
 }
-
-.sidebar ul li a:hover,
-.sidebar ul li.active a {
+.sidebar ul li a:hover {
+    background: var(--sidebar-hover);
     color: #FFF;
-    background: var(--primary-transparent);
-    border-right: 4px solid var(--primary-color);
+}
+.sidebar ul li.active a {
+    background: var(--primary-color);
+    color: #FFF;
+    font-weight: 600;
+}
+.sidebar ul li a .material-icons-sharp {
+    font-size: 1.4rem;
 }
 
-.sidebar ul li a span {
-    font-size: 1.7rem;
-}
-
-/* =============================================================== */
-/* v5.1: CORREÇÃO DO SIDEBAR FOOTER (CONSOLIDADO) */
-/* (Substitui o seu '.sidebar-footer { position: absolute; }') */
-/* =============================================================== */
-
-/* 1. Reseta o .sidebar-footer (Remove o 'position: absolute' antigo) */
 .sidebar-footer {
-    position: relative; /* Reseta de 'absolute' */
-    bottom: auto;       /* Reseta de '1rem' */
-    
-    /* Organiza o perfil e o botão verticalmente */
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    
-    /* Adiciona padding para não colar no fundo */
-    padding-bottom: 1rem;
-    margin-top: auto; /* Garante que é empurrado para o fim */
+    padding: 1rem;
+    border-top: 1px solid var(--sidebar-hover);
 }
-
-/* 2. Estilos do perfil */
-.user-profile {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    padding: 1rem 1.5rem;
-    background: var(--bg-dark-light); /* Fundo um pouco mais claro */
-    border-radius: var(--border-radius-2);
-    margin: 0.5rem 1rem 0 1rem;
-}
-
-.user-profile img {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--primary-color);
-}
-
-.user-profile span {
-    color: #FFF; /* Texto branco no fundo escuro */
-    font-weight: 500;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* 3. Estilo do botão Sair (com display: flex) */
-.sidebar-footer #logout-button {
-    /* Copia o estilo dos links <li><a> do menu */
+.sidebar-footer a {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1rem 1.5rem;
-    color: var(--dark-text-light);
+    padding: 0.9rem 1.5rem;
+    color: var(--sidebar-text);
     text-decoration: none;
-    position: relative;
-    transition: all 300ms ease;
-    
-    /* Margem para alinhar com o perfil */
-    margin: 0 1rem 0 1rem;
-    border-radius: var(--border-radius-2);
+    border-radius: var(--card-radius);
+    transition: all 0.3s ease;
+}
+.sidebar-footer a:hover {
+    background: var(--danger-color);
+    color: #FFF;
 }
 
-.sidebar-footer #logout-button:hover {
-    background: var(--danger-transparent-hover);
-    color: var(--danger-color);
-}
 
-.sidebar-footer #logout-button span {
-     font-size: 1.7rem;
-}
-
-/* =============================================================== */
-/* COMPONENTES DO HEADER (CONTENT) */
-/* (Mantido do seu CSS original e do v6.0) */
-/* =============================================================== */
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-/* Botão Hamburger (só aparece em mobile) */
-.hamburger-menu {
-    display: none; /* Escondido por padrão (Ativado no media query) */
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-color);
-}
-
-.hamburger-menu span {
-    font-size: 2rem;
-}
-
-/* Controles de Mês */
+/* --- Seletor de Mês Fixo --- */
 .month-selector {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: var(--bg-color);
+    gap: 1rem;
+    background: var(--card-bg);
+    padding: 0.5rem 1rem;
+    border-radius: var(--card-radius);
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-2);
-    padding: 0.5rem 0.8rem;
 }
-
+.month-selector h3 {
+    color: var(--primary-color);
+    font-weight: 600;
+    width: 140px; 
+    text-align: center;
+}
 .month-selector button {
-    background: none;
+    background: transparent;
     border: none;
     cursor: pointer;
-    color: var(--text-light);
-    transition: all 300ms ease;
+    color: var(--text-color);
+    display: grid;
+    place-items: center;
 }
-
 .month-selector button:hover {
     color: var(--primary-color);
 }
 
-.month-selector h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
+/* --- Conteúdo (Cards, Grids) --- */
+.kpi-grid, .main-grid {
+    display: grid;
+    gap: 1.5rem;
+    padding: 2rem;
 }
 
-/* Ações do Header (Direita) */
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
-/* Saldo Global */
-.global-balance {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+.main-grid {
+    grid-template-columns: 2fr 1fr; /* 2/3 para principal, 1/3 para secundário */
 }
 
-.global-balance small {
-    font-size: 0.75rem;
-    color: var(--text-light);
+.main-grid.two-cols {
+    grid-template-columns: 1fr 1fr;
 }
 
-.global-balance h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--success-color); /* Começa verde */
-}
 
-/* Botão de Notificação */
-.notification-bell {
-    position: relative;
-}
-
-.notification-bell button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-light);
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-}
-
-.notification-bell button:hover {
-    color: var(--primary-color);
-}
-
-.notification-bell button.has-alerts {
-    color: var(--warning-color);
-    animation: bell-ring 0.5s ease-in-out 3;
-}
-
-@keyframes bell-ring {
-    0%, 100% { transform: rotate(0); }
-    25% { transform: rotate(15deg); }
-    75% { transform: rotate(-15deg); }
-}
-
-.notification-count {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: var(--danger-color);
-    color: #FFF;
-    font-size: 0.7rem;
-    font-weight: 600;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 2px solid var(--bg-light);
-}
-
-/* Dropdown de Notificação */
-.notification-dropdown {
-    display: none;
-    position: absolute;
-    top: 40px;
-    right: 0;
-    width: 300px;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-2);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    z-index: 100;
-    overflow: hidden;
-}
-
-.notification-dropdown.show {
-    display: block;
-}
-
-.notification-dropdown-header {
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-    font-weight: 600;
-}
-
-#notification-list {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.notification-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.notification-item:last-child {
-    border-bottom: none;
-}
-
-.notification-item span {
-    font-size: 1.5rem;
-}
-.notification-item.due-today span { color: var(--danger-color); }
-.notification-item.due-soon span { color: var(--warning-color); }
-
-.notification-item strong {
-    font-weight: 500;
-}
-.notification-item small {
-    font-size: 0.8rem;
-    color: var(--text-light);
-}
-
-#notification-placeholder {
-    padding: 2rem 1rem;
-    text-align: center;
-    color: var(--text-light);
-}
-
-/* Tema (Sol/Lua) */
-.theme-toggler {
-    display: flex;
-    align-items: center;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-2);
-    padding: 0.5rem;
-    cursor: pointer;
-}
-
-.theme-toggler span {
-    font-size: 1.2rem;
-    color: var(--text-light);
-    padding: 0.2rem;
-    border-radius: var(--border-radius-1);
-}
-
-.theme-toggler span.active {
-    background: var(--primary-color);
-    color: #FFF;
-}
-
-/* =============================================================== */
-/* ESTILOS DE COMPONENTES GLOBAIS (Botões, Inputs, Tabelas, etc.) */
-/* (Mantido do seu CSS original e do v6.0) */
-/* =============================================================== */
-
-/* --- Títulos de Página --- */
-.page-title {
-    font-size: 1.8rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    color: var(--text-color);
-}
-
-/* --- Cards / Seções --- */
 .card {
-    background-color: var(--bg-light);
-    border-radius: var(--border-radius-2);
-    box-shadow: var(--shadow);
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
     padding: 1.5rem;
-    margin-bottom: 1.5rem;
     border: 1px solid var(--border-color);
 }
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1rem;
+.card h3 {
     margin-bottom: 1rem;
-}
-
-.card-header h2 {
-    font-size: 1.2rem;
     font-weight: 600;
 }
 
-/* --- Botões --- */
-.btn {
-    padding: 0.75rem 1.25rem;
-    border: none;
-    border-radius: var(--border-radius-2);
-    cursor: pointer;
-    font-weight: 500;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 300ms ease;
-    font-size: 0.9rem;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: #FFF;
-}
-.btn-primary:hover {
-    opacity: 0.85;
-}
-
-.btn-secondary {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-}
-.btn-secondary:hover {
-    background-color: var(--border-color);
-}
-
-.btn-danger {
-    background-color: var(--danger-transparent);
-    color: var(--danger-color);
-    border: 1px solid var(--danger-color);
-}
-.btn-danger:hover {
-    background-color: var(--danger-transparent-hover);
-}
-
-/* Botões de Ícone (para tabelas) */
-.btn-icon {
-    background: none;
-    border: 1px solid transparent;
-    border-radius: var(--border-radius-1);
-    padding: 0.3rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 300ms ease;
-}
-.btn-icon span {
-    font-size: 1.2rem;
-}
-
-.btn-icon.warning { color: var(--warning-color); }
-.btn-icon.warning:hover { background: var(--warning-transparent); }
-.btn-icon.danger { color: var(--danger-color); }
-.btn-icon.danger:hover { background: var(--danger-transparent); }
-.btn-icon.success { color: var(--success-color); }
-.btn-icon.success:hover { background: var(--success-transparent); }
-
-/* --- Formulários --- */
-/* (Mantido do seu CSS original) */
+/* --- Elementos de Formulário (Inputs, Botões) --- */
 .form-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    align-items: flex-start;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
     margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
-.dark-theme .form-container { border-bottom-color: var(--border-color); }
-
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
 }
-
 .form-group label {
-    font-weight: 500;
-    color: var(--text-color);
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-2);
-    background-color: var(--bg-color);
-    color: var(--text-color);
     font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
 }
-
+.form-group input,
+.form-group select,
+.form-group input[type="file"] { 
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    font-size: 1rem;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px var(--primary-transparent);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
 }
 
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1.5rem;
+/* Botões */
+.btn, .btn-primary, .btn-secondary, .btn-danger, .btn-icon, .btn-success {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: var(--card-radius);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
-/* --- Tabelas --- */
-/* (Mantido do seu CSS original e do v6.0) */
+.btn-primary {
+    background: var(--primary-color);
+    color: #FFF;
+}
+.btn-primary:hover {
+    background: #3a7bc8;
+}
+
+.btn-secondary {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+    background: #e9ecef;
+}
+body.dark-theme .btn-secondary:hover {
+    background: #363949;
+}
+
+
+.btn-danger {
+    background: var(--danger-color);
+    color: #FFF;
+}
+.btn-danger:hover {
+    background: #b00215;
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: #FFF;
+}
+.btn-success:hover {
+    background: #69b320;
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    background: transparent;
+    color: var(--text-light);
+}
+.btn-icon:hover {
+    color: var(--primary-color);
+    background: var(--border-color);
+}
+.btn-icon.danger:hover {
+    color: var(--danger-color);
+    background: var(--danger-transparent);
+}
+.btn-icon.success:hover {
+    color: var(--success-color);
+    background: var(--success-transparent);
+}
+.btn-icon.info:hover {
+    color: var(--primary-color);
+    background: var(--primary-transparent);
+}
+.btn-icon.info {
+    color: var(--primary-color);
+}
+
+/* Botões desativados */
+.btn-primary:disabled,
+.btn-success:disabled,
+.btn-danger:disabled,
+.btn-secondary:disabled {
+    background: var(--border-color);
+    color: var(--text-light);
+    cursor: not-allowed;
+    border-color: var(--border-color);
+}
+body.dark-theme .btn-primary:disabled,
+body.dark-theme .btn-success:disabled,
+body.dark-theme .btn-danger:disabled,
+body.dark-theme .btn-secondary:disabled {
+    background: #363949;
+    color: var(--text-light);
+}
+
+/* --- Tabelas de Histórico --- */
 .table-container {
     width: 100%;
     overflow-x: auto;
 }
-
 table {
     width: 100%;
     border-collapse: collapse;
-    color: var(--text-color);
+    margin-top: 1.5rem;
 }
-
-table th, table td {
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid var(--border-color);
+th, td {
+    padding: 0.9rem 1rem;
     text-align: left;
-    white-space: nowrap;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap; /* Impede quebra de linha nas células */
 }
-.dark-theme table th, .dark-theme table td {
-    border-bottom-color: var(--border-color);
-}
-
-table th {
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
+thead th {
+    background: var(--bg-color);
     color: var(--text-light);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    font-weight: 600;
 }
-
-table tbody tr:hover {
-    background-color: var(--primary-transparent);
+tbody tr:hover {
+    background-color: var(--bg-color);
 }
-
-table .actions {
+td.actions {
     display: flex;
     gap: 0.5rem;
 }
 
-/* Tags (para status) */
-/* (Mantido do seu CSS original e do v6.0) */
-.tag {
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--border-radius-1);
-    font-weight: 600;
-    font-size: 0.8rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
+/* Checkbox de Status */
+.status-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
 }
-.tag span { font-size: 1rem; }
-
+/* Tags de Categoria/Status */
+.tag {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
 .tag.success { background: var(--success-transparent); color: var(--success-color); }
 .tag.danger { background: var(--danger-transparent); color: var(--danger-color); }
 .tag.warning { background: var(--warning-transparent); color: var(--warning-color); }
-/* v6.1: Adicionado o .tag.info que faltava */
 .tag.info { background: var(--primary-transparent); color: var(--primary-color); }
 
-
-/* --- KPIs (Painel Principal) --- */
-/* (Mantido do seu CSS original) */
-.kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.kpi-card {
-    background: var(--bg-light);
-    padding: 1.5rem;
-    border-radius: var(--border-radius-2);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-    /* display: flex; (removido para usar o layout do seu zip) */
-}
-.dark-theme .kpi-card { border-color: var(--border-color); }
-
-.kpi-card h4 {
-    color: var(--text-light);
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-.kpi-card h2 {
-    font-size: 1.8rem;
-    font-weight: 600;
-    margin: 0.5rem 0;
-}
-.kpi-card small {
-    font-size: 0.85rem;
-    color: var(--text-light);
-}
-/* Cores do texto dos KPIs (do seu zip) */
-.kpi-card.kpi-lucro h2.text-success { color: var(--success-color); }
-.kpi-card.kpi-lucro h2.text-danger { color: var(--danger-color); }
-#kpi-saldo-acumulado.text-danger { color: var(--danger-color); }
-#kpi-saldo-acumulado.text-success { color: var(--success-color); }
-
-/* --- Abas (Tabs) --- */
-/* (Mantido do v6.0) */
-.tab-nav {
-    display: flex;
-    border-bottom: 2px solid var(--border-color);
-    margin-bottom: 1.5rem;
-    overflow-x: auto;
-}
-.dark-theme .tab-nav { border-bottom-color: var(--border-color); }
-
-.tab-btn {
-    padding: 0.8rem 1.2rem;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: none;
-    cursor: pointer;
-    color: var(--text-light);
-    font-weight: 500;
-    font-size: 0.95rem;
-    margin-bottom: -2px;
-    transition: all 300ms ease;
-    white-space: nowrap;
-}
-
-.tab-btn:hover {
-    color: var(--text-color);
-}
-
-.tab-btn.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-}
-
-.tab-content {
-    display: none; /* Escondido por padrão */
-}
-.tab-content.active {
-    display: block; /* Mostrado por JS */
-}
-
 /* --- Modais --- */
-/* (Renomeado de .modal-backdrop para .modal-overlay para bater com seu HTML) */
 .modal-overlay {
-    display: none; 
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    display: none; 
     justify-content: center;
     align-items: center;
-    padding: 1rem;
+    z-index: 10000;
 }
-
 .modal-content {
-    background: var(--bg-light);
-    border-radius: var(--border-radius-2);
+    background: var(--card-bg);
     padding: 2rem;
-    width: 100%;
+    border-radius: var(--card-radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    width: 90%;
     max-width: 500px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
-.dark-theme .modal-content {
-    background-color: var(--dark-bg-light); /* Fundo do modal escuro */
-}
-
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
-
-.modal-header h2, .modal-header h3 {
-    font-size: 1.3rem;
-}
-
 .modal-body {
     margin-bottom: 1.5rem;
-    line-height: 1.6;
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
 }
 
-/* (Estilos do seu zip para .modal-footer) */
+/* Modal de Edição (Estilo Fixo) */
+.modal-container {
+    display: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000; 
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+.modal-container .modal-content {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: var(--card-radius);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh; 
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.btn-save {
+    background-color: var(--success-color);
+    color: white;
+}
+.btn-save:hover {
+    background-color: #69b320;
+}
+.btn-cancel {
+    background-color: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+.btn-cancel:hover {
+    background-color: var(--bg-color);
+}
+body.dark-theme .btn-cancel:hover {
+    background: #363949;
+}
+
+
+/* =================================== */
+/* HEADER GLOBAL (v5.0) */
+/* =================================== */
+.main-header .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.header-actions .global-balance {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background-color: var(--card-bg);
+    padding: 0.5rem 1rem;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    transition: all 300ms ease;
+}
+.header-actions .global-balance small {
+    color: var(--text-light);
+    font-size: 0.75rem;
+    white-space: nowrap; 
+}
+.header-actions .global-balance h3 {
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+    color: var(--success-color);
+}
+.header-actions .theme-toggler {
+    background: var(--border-color); 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 2.2rem;
+    width: 4.8rem;
+    cursor: pointer;
+    border-radius: var(--card-radius); 
+}
+.header-actions .theme-toggler span {
+    font-size: 1.4rem;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.header-actions .theme-toggler span.active {
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--card-radius);
+}
+body.dark-theme .header-actions .theme-toggler {
+    background: #363949;
+}
+
+/* =================================== */
+/* NOTIFICAÇÕES GLOBAIS (v5.0) */
+/* =================================== */
+.notification-bell {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+#notification-button {
+    position: relative; 
+}
+/* Efeito de "piscar" para o sino */
+#notification-button.has-alerts {
+    color: var(--primary-color);
+    animation: bell-ring 1.5s ease-in-out infinite;
+}
+@keyframes bell-ring {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(15deg); }
+    75% { transform: rotate(-15deg); }
+}
+
+.badge {
+    position: absolute;
+    top: -5px;
+    right: -2px;
+    background-color: var(--danger-color);
+    color: var(--card-bg); /* Mudado para 'card-bg' para funcionar no dark */
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--card-bg);
+}
+.dropdown-content {
+    display: none; 
+    position: absolute;
+    top: 100%; 
+    right: 0;
+    margin-top: 10px; 
+    background-color: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    border-radius: var(--card-radius);
+    width: 320px;
+    z-index: 100;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+}
+.dropdown-content.show {
+    display: block;
+}
+#notification-list {
+    display: flex;
+    flex-direction: column;
+}
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.notification-item:last-child {
+    border-bottom: none;
+}
+.notification-item .material-icons-sharp {
+    font-size: 1.2rem;
+}
+.notification-item.due-today {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+.notification-item.due-soon {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+/* =================================== */
+/* RESPONSIVIDADE (v5.0) */
+/* =================================== */
+@media (max-width: 800px) {
+    .sidebar {
+        transform: translateX(-260px); 
+        position: fixed;
+        left: 0;
+        z-index: 1002;
+        transition: transform 0.3s ease-in-out;
+    }
+    .sidebar.active {
+        transform: translateX(0);
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+    }
+    .content {
+        width: 100%;
+        margin-left: 0;
+    }
+    .hamburger-menu {
+        display: block; 
+        background: transparent;
+        border: none;
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 1.8rem; 
+    }
+    .main-header {
+        padding: 1rem; 
+        gap: 1rem;
+        flex-wrap: wrap; 
+        justify-content: center; 
+    }
+    .main-header h2 {
+        width: 100%; 
+        text-align: center;
+        order: -1; 
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+    .month-selector {
+        gap: 0.5rem;
+    }
+    .month-selector h3 {
+        width: 120px; 
+        font-size: 1rem;
+    }
+    .kpi-grid, 
+    .main-grid,
+    .main-grid.two-cols {
+        grid-template-columns: 1fr;
+        padding: 1rem; 
+    }
+    .form-container {
+        grid-template-columns: 1fr;
+    }
+    .card {
+        padding: 1rem;
+    }
+    .header-actions .global-balance small {
+        display: none;
+    }
+    .header-actions .global-balance h3 {
+        font-size: 1rem;
+    }
+}
+@media (min-width: 801px) {
+    .hamburger-menu {
+        display: none;
+    }
+}
+
+/* ===============================================================
+   ESTILOS ESPECÍFICOS DE PÁGINAS (Cleaned Up)
+   =============================================================== */
+
+/* --- Gráficos (index, fixos, investimentos) --- */
+.chart-container {
+    position: relative;
+    height: 400px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+.chart-container canvas {
+    flex-grow: 1;
+    min-height: 0;
+}
+.content-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+.content-section h2 {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+.chart-placeholder {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-light);
+    width: 100%;
+    align-self: center;
+    margin: auto;
+}
+
+/* --- Index (Dashboard) --- */
+#kpi-grid-dashboard {
+    grid-template-columns: repeat(3, 1fr);
+}
+#kpi-grid-dashboard .kpi-card h2 {
+    font-size: 1.8rem;
+}
+.goal-container .goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.progress-bar {
+    height: 10px;
+    background: var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+.progress {
+    height: 100%;
+    background: var(--success-color);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+.goal-details {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+}
+.goal-details small, .goal-container p {
+    color: var(--text-light);
+}
+.goal-details strong {
+    color: var(--text-color);
+}
+.despesas-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.despesas-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--border-color);
+}
+.despesas-list li span {
+    color: var(--text-light);
+}
+.despesas-list li strong {
+    font-size: 1.1rem;
+}
+.despesas-list li.total-geral {
+    padding-top: 1rem;
+    border-top: 2px solid var(--border-color);
+    border-bottom: none;
+}
+.despesas-list li.total-geral span,
+.despesas-list li.total-geral strong {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+.limite-cartao-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+#table-resumo-anual .total-row td {
+    font-weight: 700;
+    border-top: 2px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+.text-danger { color: var(--danger-color); }
+.text-success { color: var(--success-color); }
+
+/* --- Entradas / Despesas (Filtros, Agrupamento) --- */
+.search-bar {
+    position: relative;
+}
+.search-bar .material-icons-sharp {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none; 
+}
+.search-bar input {
+    padding-left: 2.5rem !important; 
+}
+#btn-limpar-filtros {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#btn-limpar-filtros .material-icons-sharp {
+    font-size: 1.2rem;
+}
+tr.day-header td {
+    background-color: var(--bg-color); 
+    color: var(--text-color);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    border-top: 2px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+body.dark-theme tr.day-header td {
+    background-color: #2c3036;
+}
+tr.day-header:first-child td {
+    border-top: none;
+}
+#tbody-entradas tr:not(.day-header) td:first-child,
+#tbody-despesas-variaveis tr:not(.day-header) td:first-child {
+    padding-left: 1.5rem; 
+}
+.table-footer {
+    margin-top: 1.5rem;
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; 
+    gap: 1rem;
+}
+.table-footer h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+.table-footer h3 span {
+    font-weight: 700;
+}
+
+/* --- Entradas (Gráfico Semanal) --- */
+.card canvas#grafico-semanal {
+    max-height: 250px;
+    width: 100%;
+}
+#filtro-semana {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--card-radius);
+    cursor: pointer;
+}
+#filtro-semana:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* --- Comprovantes (Entradas / Despesas) --- */
+a.btn-icon-small {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    padding: 2px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none; 
+}
+a.btn-icon-small:hover {
+    background: var(--primary-transparent);
+}
+.text-center {
+    text-align: center;
+}
+/* Centraliza colunas de comprovante */
+#table-entradas th:nth-child(4),
+#table-entradas td:nth-child(4),
+#table-despesas-variaveis th:nth-child(4),
+#table-despesas-variaveis td:nth-child(4) {
+    text-align: center;
+}
+
+/* --- Fixos / Pendências (Alertas de Tabela) --- */
+tr.vencido td {
+    background-color: var(--danger-transparent);
+    color: var(--danger-color);
+}
+tr.vencido:hover td {
+    background-color: var(--danger-transparent-hover);
+}
+tr.vencido .tag,
+tr.vencido strong,
+tr.vencido span,
+tr.vencido a {
+    color: var(--danger-color) !important;
+}
+tr.proximo td {
+    background-color: var(--warning-transparent);
+    color: var(--warning-color);
+}
+tr.proximo:hover td {
+    background-color: var(--warning-transparent-hover);
+}
+tr.proximo .tag,
+tr.proximo strong,
+tr.proximo span,
+tr.proximo a {
+    color: var(--warning-color) !important;
+}
+tr.vencido .status-checkbox,
+tr.proximo .status-checkbox {
+    border-color: currentColor;
+}
+/* Linhas Pagas (Pendencias) */
+tr.pago td {
+    color: var(--text-light);
+    text-decoration: line-through;
+}
+tr.pago .tag, tr.pago .btn-icon {
+    opacity: 0.5;
+    text-decoration: none;
+}
+
+/* --- Pendências (Abas) --- */
+.tab-nav {
+    display: flex;
+    justify-content: center; 
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+.tab-btn {
+    padding: 0.8rem 1.5rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 1rem;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transform: translateY(2px);
+}
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+.tab-btn:hover:not(.active) {
+    background-color: var(--bg-color);
+}
+body.dark-theme .tab-btn:hover:not(.active) {
+    background-color: #2c3036;
+}
+
+/* --- Cartões (Abas e Botões de Fatura) --- */
+#faturas-tab-nav {
+    justify-content: flex-start; /* Alinha à esquerda */
+    overflow-x: auto; /* Permite scrollar as abas */
+}
+#faturas-tab-nav .tab-btn {
+    /* Ajuste para caber mais abas */
+    padding: 0.8rem 1.2rem;
+    flex-shrink: 0; /* Impede que as abas encolham */
+    white-space: nowrap;
+}
+#faturas-tab-nav .tab-btn small {
+    display: block;
+    font-size: 0.9rem;
+    margin-top: 2px;
+}
+.fatura-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.fatura-header h2 {
+    margin: 0;
+}
+.fatura-header small {
+    color: var(--text-light);
+}
+.fatura-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Botão de Pagar Fatura (Vencida) */
+.fatura-actions .btn-primary.danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: #FFF;
+}
+.fatura-actions .btn-primary.danger:hover {
+    background-color: #b00215;
+    border-color: #b00215;
+}
+
+/* Botão de Reverter Pagamento (Fatura Paga) */
+.fatura-actions .btn-secondary.success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: #FFF;
+}
+.fatura-actions .btn-secondary.success:hover {
+    background-color: #69b320;
+    border-color: #69b320;
+}
+.fatura-actions .btn-secondary.success .material-icons-sharp {
+    color: #FFF;
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+}
+
+/* --- Responsividade Específica (Index) --- */
+@media (max-width: 1200px) {
+    #kpi-grid-dashboard {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 800px) {
+    #kpi-grid-dashboard,
+    .main-grid.two-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---- Novos modais ---- */
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 14px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+}
+
 .modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
     margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-color);
 }
-.dark-theme .modal-footer { border-top-color: var(--border-color); }
 
-
-/* Estilo específico para modal de confirmação */
-#modal-message {
+.pagar-agora-container button {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .7rem 1.2rem;
     font-size: 1rem;
-    color: var(--text-color);
-    line-height: 1.6;
-    white-space: pre-wrap; 
 }
 
+.currency {
+    padding: .8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
 
-/* =============================================================== */
-/* RESPONSIVIDADE (v6.1 - CORRIGIDO) */
-/* =============================================================== */
+/* --- REMOVER TEXTO "SAIR" DEFINITIVAMENTE --- */
+.logout-area .logout-text {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+}
 
-/* Tablet (Paisagem) e Desktops Pequenos */
-@media (max-width: 1200px) {
-    .kpi-grid {
-        grid-template-columns: repeat(2, 1fr); /* KPIs 2x2 */
+/* --- ÁREA DO USUÁRIO (FOTO + NOME + PORTA) --- */
+.sidebar-footer {
+    width: 100%;
+    padding: 10px;
+    background: transparent !important;
+}
+
+.user-area {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 8px 10px;
+}
+
+/* FOTO E NOME */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#user-photo {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Nome do usuário */
+#user-name {
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* --- BOTÃO DE SAIR (SOMENTE ÍCONE) --- */
+.logout-area {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.3s;
+    background: transparent !important;
+}
+
+.logout-area:hover {
+    background: rgba(255, 0, 0, 0.25);
+}
+
+.logout-icon {
+    font-size: 24px;
+    color: #fff;
+}
+
+/* Garantir que nada do layout antigo force branco */
+.sidebar-footer,
+.user-area,
+.logout-area {
+    background-color: transparent !important;
+}
+
+/* ========= FIX SIDEBAR NO MOBILE ========= */
+@media (max-width: 768px) {
+
+    body, html {
+        height: 100%;
+        overflow-x: hidden;
     }
-}
 
-/* Tablet (Retrato) - Ponto de viragem do Sidebar */
-@media (max-width: 800px) {
-    
-    /* v6.1: Esconde o sidebar por padrão */
+    /* SIDEBAR TRAVADA NO TOPO */
     .sidebar {
-        left: -260px; /* Escondido fora da tela */
-        width: 250px;
-        z-index: 100;
-        box-shadow: 10px 0 30px rgba(0,0,0,0.2);
-    }
-    
-    /* v6.1: Mostra o sidebar quando o hamburger é clicado (JS adiciona .active) */
-    .sidebar.active {
-        left: 0;
-    }
-    
-    /* v6.1: O conteúdo ocupa 100% da largura */
-    .content {
-        margin-left: 0;
-        padding: 1rem;
-    }
-    
-    /* v6.1: Corrige o padding do header para dar espaço ao hamburger */
-    .header-main {
-        padding-left: 4.5rem; 
-        position: sticky; 
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+
+        width: 80% !important;
+        max-width: 300px;
+        height: 100vh !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-y: auto !important;
+
+        z-index: 9999 !important;
+        transform: translateX(-100%); /* sidebar começa escondida */
+        transition: transform .3s ease;
     }
 
-    /* v6.1: Mostra o hamburger */
-    .hamburger-menu {
-        display: block; 
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1;
+    /* QUANDO O MENU ESTIVER ABERTO */
+    .sidebar.open {
+        transform: translateX(0);
     }
-    
-    /* v6.1: Empilha os KPIs */
-    .kpi-grid { 
-        grid-template-columns: 1fr; /* KPIs 1x1 */
-        gap: 1rem;
+
+    /* CONTEÚDO NÃO PODE EMPURRAR A SIDEBAR NO MOBILE */
+    .content {
+        margin-left: 0 !important;
+        padding-left: 10px;
+        padding-right: 10px;
     }
-    
+
+    /* FIX DO HEADER QUE EMPURRAVA A SIDEBAR */
+    .main-header {
+        position: sticky;
+        top: 0;
+        z-index: 2000;
+    }
+}
+/* ======== FIX DO SALDO GLOBAL NO MOBILE ======== */
+@media (max-width: 768px) {
+
+    .global-balance {
+        min-width: 120px;
+        max-width: 180px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+
+        white-space: nowrap; /* impede quebrar feio */
+    }
+
+    .global-balance h3 {
+        font-size: 1rem;
+    }
+
+    .global-balance small {
+        font-size: 0.75rem;
+    }
+
+    /* Arruma botão PDF/CSV empurrando o layout */
     .header-actions {
-        gap: 0.5rem;
-        flex-wrap: wrap; /* Permite quebrar linha */
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
     }
 }
 
-/* v6.1: REMOVIDO o @media (max-width: 768px) que estava em conflito */
-
-
-/* Mobile (Pequeno) */
-@media (max-width: 480px) {
-    .content {
-        padding: 0.5rem;
-    }
-    
-    .header-main {
-        padding: 0.8rem;
-        padding-left: 4rem;
-        flex-wrap: wrap; /* Header quebra em 2 linhas se necessário */
-    }
-    
-    .month-selector {
-        width: 100%;
-        justify-content: center;
-        order: 3; /* Vai para baixo */
-        margin-top: 0.5rem;
-    }
-    
-    .header-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
-
-    .page-title {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .card {
-        padding: 1rem;
-    }
-
-    /* (Mantido do seu CSS original) */
-    .form-container {
-        grid-template-columns: 1fr; /* 1 coluna */
-        gap: 1rem;
-    }
-    
-    .form-actions {
+/* ===== Correção Android — Fixar área do usuário no rodapé da sidebar ===== */
+@media (max-width: 900px) {
+    .sidebar {
+        display: flex;
         flex-direction: column;
     }
-    .form-actions .btn {
-        width: 100%;
-        justify-content: center;
+
+    .sidebar-footer {
+        margin-top: auto !important;
     }
 
-    .modal-content {
-        padding: 1.5rem 1rem;
+    .user-area {
+        position: relative;
+        width: 100%;
     }
 }
+
+/* ===== Correção Android — Alinhamento do cabeçalho financeiro ===== */
+.header-financeiro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.header-financeiro .saldo-global {
+    flex: 1 1 auto;
+    min-width: 180px;
+}
+
+.header-financeiro .acoes-financeiras {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.header-financeiro .export-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Valor das despesas em vermelho */
+#kpi-total-despesas {
+    color: #ff3b3b !important;
+}
+
+/* === Ajuste real de altura para Android/iOS (v8.0) === */
+.sidebar {
+    height: 100dvh;
+}
+
+/* === Botão Sair visível e sempre no final do menu (v8.0) === */
+.sidebar .logout-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    margin-top: auto;
+    padding: 12px 16px;
+}
+
+/* === Corrige rodapé no mobile sem position absolute (v8.0) === */
+.footer {
+    position: relative !important;
+    margin-top: auto;
+}
+
+/* === Ajuste automático de tabelas no mobile (v8.0) === */
+@media (max-width: 480px) {
+    table td,
+    table th {
+        padding: 6px !important;
+        font-size: 0.85rem;
+    }
+
+    table {
+        width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+}
+
+
