@@ -1,26 +1,20 @@
-/* ===========================
-   style_v8_final.css
-   (base: seu CSS original + limpeza e patch v8)
-   Referência do arquivo original: :contentReference[oaicite:1]{index=1}
-   =========================== */
-
-/* Reset Básico e Variáveis CSS (consolidado) */
+/* Reset Básico e Variáveis CSS */
 :root {
     --primary-color: #4A90E2; /* Azul */
     --secondary-color: #50E3C2; /* Verde-água */
     --danger-color: #D0021B; /* Vermelho */
     --success-color: #7ED321; /* Verde */
     --warning-color: #F5A623; /* Laranja */
-
+    
     /* =================================== */
-    /* NOVAS VARIÁVEIS (v6.0) - versão consolidada */
+    /* NOVAS VARIÁVEIS (v6.0) */
     /* =================================== */
-    --primary-transparent: rgba(74, 144, 226, 0.15);
-    --danger-transparent: rgba(208, 2, 27, 0.15);
-    --danger-transparent-hover: rgba(208, 2, 27, 0.25);
-    --warning-transparent: rgba(245, 166, 35, 0.15);
-    --warning-transparent-hover: rgba(245, 166, 35, 0.25);
-    --success-transparent: rgba(126, 211, 33, 0.15);
+    --primary-transparent: rgba(74, 144, 226, 0.1);
+    --danger-transparent: rgba(208, 2, 27, 0.05);
+    --danger-transparent-hover: rgba(208, 2, 27, 0.1);
+    --warning-transparent: rgba(245, 166, 35, 0.05);
+    --warning-transparent-hover: rgba(245, 166, 35, 0.1);
+    --success-transparent: rgba(126, 211, 33, 0.1);
     /* =================================== */
 
     --text-color: #333;
@@ -28,7 +22,7 @@
     --bg-color: #F4F7FA; /* Fundo principal */
     --card-bg: #FFFFFF;
     --border-color: #E0E0E0;
-
+    
     --sidebar-bg: #1A202C; /* Preto/Azul Escuro */
     --sidebar-text: #A0AEC0;
     --sidebar-active: var(--primary-color);
@@ -38,7 +32,9 @@
     --card-radius: 8px;
 }
 
-/* MOTOR TEMA ESCURO (consolidado) */
+/* =================================== */
+/* MOTOR TEMA ESCURO */
+/* =================================== */
 body.dark-theme {
     --text-color: #edeffd;
     --text-light: #a3bdcc;
@@ -46,7 +42,8 @@ body.dark-theme {
     --card-bg: #202528;
     --border-color: #363949;
     --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-
+    
+    /* v6.0: Variáveis transparentes para o tema escuro */
     --primary-transparent: rgba(74, 144, 226, 0.15);
     --danger-transparent: rgba(208, 2, 27, 0.15);
     --danger-transparent-hover: rgba(208, 2, 27, 0.25);
@@ -54,8 +51,9 @@ body.dark-theme {
     --warning-transparent-hover: rgba(245, 166, 35, 0.25);
     --success-transparent: rgba(126, 211, 33, 0.15);
 }
+/* =================================== */
 
-/* Base reset */
+
 * {
     margin: 0;
     padding: 0;
@@ -63,7 +61,6 @@ body.dark-theme {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Body e layout principal (preservado) */
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -173,6 +170,7 @@ body {
     color: #FFF;
 }
 
+
 /* --- Seletor de Mês Fixo --- */
 .month-selector {
     display: flex;
@@ -219,6 +217,7 @@ body {
 .main-grid.two-cols {
     grid-template-columns: 1fr 1fr;
 }
+
 
 .card {
     background: var(--card-bg);
@@ -301,6 +300,7 @@ body {
 body.dark-theme .btn-secondary:hover {
     background: #363949;
 }
+
 
 .btn-danger {
     background: var(--danger-color);
@@ -410,7 +410,7 @@ td.actions {
 .tag.warning { background: var(--warning-transparent); color: var(--warning-color); }
 .tag.info { background: var(--primary-transparent); color: var(--primary-color); }
 
-/* --- Modais (consolidado) --- */
+/* --- Modais --- */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -496,7 +496,10 @@ body.dark-theme .btn-cancel:hover {
     background: #363949;
 }
 
-/* HEADER GLOBAL (v5.0) - consolidado */
+
+/* =================================== */
+/* HEADER GLOBAL (v5.0) */
+/* =================================== */
 .main-header .header-actions {
     display: flex;
     align-items: center;
@@ -549,7 +552,9 @@ body.dark-theme .header-actions .theme-toggler {
     background: #363949;
 }
 
-/* NOTIFICAÇÕES GLOBAIS (consolidado) */
+/* =================================== */
+/* NOTIFICAÇÕES GLOBAIS (v5.0) */
+/* =================================== */
 .notification-bell {
     position: relative;
     display: flex;
@@ -558,6 +563,7 @@ body.dark-theme .header-actions .theme-toggler {
 #notification-button {
     position: relative; 
 }
+/* Efeito de "piscar" para o sino */
 #notification-button.has-alerts {
     color: var(--primary-color);
     animation: bell-ring 1.5s ease-in-out infinite;
@@ -567,12 +573,13 @@ body.dark-theme .header-actions .theme-toggler {
     25% { transform: rotate(15deg); }
     75% { transform: rotate(-15deg); }
 }
+
 .badge {
     position: absolute;
     top: -5px;
     right: -2px;
     background-color: var(--danger-color);
-    color: var(--card-bg);
+    color: var(--card-bg); /* Mudado para 'card-bg' para funcionar no dark */
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -627,7 +634,9 @@ body.dark-theme .header-actions .theme-toggler {
     font-weight: 500;
 }
 
-/* RESPONSIVIDADE (consolidado) */
+/* =================================== */
+/* RESPONSIVIDADE (v5.0) */
+/* =================================== */
 @media (max-width: 800px) {
     .sidebar {
         transform: translateX(-260px); 
@@ -697,7 +706,11 @@ body.dark-theme .header-actions .theme-toggler {
     }
 }
 
-/* ESTILOS ESPECÍFICOS DE PÁGINAS (consolidado) */
+/* ===============================================================
+   ESTILOS ESPECÍFICOS DE PÁGINAS (Cleaned Up)
+   =============================================================== */
+
+/* --- Gráficos (index, fixos, investimentos) --- */
 .chart-container {
     position: relative;
     height: 400px;
@@ -727,7 +740,7 @@ body.dark-theme .header-actions .theme-toggler {
     margin: auto;
 }
 
-/* Index (Dashboard) - consolidado */
+/* --- Index (Dashboard) --- */
 #kpi-grid-dashboard {
     grid-template-columns: repeat(3, 1fr);
 }
@@ -806,7 +819,7 @@ body.dark-theme .header-actions .theme-toggler {
 .text-danger { color: var(--danger-color); }
 .text-success { color: var(--success-color); }
 
-/* Entradas / Despesas (Filtros) - consolidado */
+/* --- Entradas / Despesas (Filtros, Agrupamento) --- */
 .search-bar {
     position: relative;
 }
@@ -865,7 +878,7 @@ tr.day-header:first-child td {
     font-weight: 700;
 }
 
-/* Entradas (Gráfico Semanal) */
+/* --- Entradas (Gráfico Semanal) --- */
 .card canvas#grafico-semanal {
     max-height: 250px;
     width: 100%;
@@ -883,7 +896,7 @@ tr.day-header:first-child td {
     outline: none;
 }
 
-/* Comprovantes (Entradas / Despesas) */
+/* --- Comprovantes (Entradas / Despesas) --- */
 a.btn-icon-small {
     background: none;
     border: none;
@@ -911,7 +924,7 @@ a.btn-icon-small:hover {
     text-align: center;
 }
 
-/* Fixos / Pendências (Alertas de Tabela) */
+/* --- Fixos / Pendências (Alertas de Tabela) --- */
 tr.vencido td {
     background-color: var(--danger-transparent);
     color: var(--danger-color);
@@ -942,6 +955,7 @@ tr.vencido .status-checkbox,
 tr.proximo .status-checkbox {
     border-color: currentColor;
 }
+/* Linhas Pagas (Pendencias) */
 tr.pago td {
     color: var(--text-light);
     text-decoration: line-through;
@@ -951,7 +965,7 @@ tr.pago .tag, tr.pago .btn-icon {
     text-decoration: none;
 }
 
-/* Pendências (Abas) */
+/* --- Pendências (Abas) --- */
 .tab-nav {
     display: flex;
     justify-content: center; 
@@ -980,7 +994,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     background-color: #2c3036;
 }
 
-/* Cartões (Abas e Botões de Fatura) */
+/* --- Cartões (Abas e Botões de Fatura) --- */
 #faturas-tab-nav {
     justify-content: flex-start; /* Alinha à esquerda */
     overflow-x: auto; /* Permite scrollar as abas */
@@ -1044,7 +1058,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     margin-right: 0.5rem;
 }
 
-/* Responsividade Index */
+/* --- Responsividade Específica (Index) --- */
 @media (max-width: 1200px) {
     #kpi-grid-dashboard {
         grid-template-columns: repeat(2, 1fr);
@@ -1057,7 +1071,8 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
-/* Novos modais (consolidado duplicatas) */
+/* ---- Novos modais ---- */
+
 .modal-overlay {
     position: fixed;
     top: 0; left: 0;
@@ -1068,6 +1083,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     justify-content: center;
     z-index: 9999;
 }
+
 .modal-content {
     background: var(--card-bg);
     padding: 2rem;
@@ -1076,6 +1092,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     max-width: 420px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.25);
 }
+
 .modal-footer {
     display: flex;
     justify-content: flex-end;
@@ -1097,7 +1114,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     border: 1px solid var(--border-color);
 }
 
-/* --- REMOÇÃO: texto "SAIR" foi ocultado propositalmente no original (mantido) --- */
+/* --- REMOVER TEXTO "SAIR" DEFINITIVAMENTE --- */
 .logout-area .logout-text {
     display: none !important;
     visibility: hidden !important;
@@ -1108,7 +1125,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     position: absolute !important;
 }
 
-/* Área do usuário (consolidado) */
+/* --- ÁREA DO USUÁRIO (FOTO + NOME + PORTA) --- */
 .sidebar-footer {
     width: 100%;
     padding: 10px;
@@ -1124,17 +1141,22 @@ body.dark-theme .tab-btn:hover:not(.active) {
     backdrop-filter: none !important;
     padding: 8px 10px;
 }
+
+/* FOTO E NOME */
 .user-profile {
     display: flex;
     align-items: center;
     gap: 10px;
 }
+
 #user-photo {
     width: 38px;
     height: 38px;
     border-radius: 50%;
     object-fit: cover;
 }
+
+/* Nome do usuário */
 #user-name {
     color: #fff;
     white-space: nowrap;
@@ -1144,6 +1166,8 @@ body.dark-theme .tab-btn:hover:not(.active) {
     font-size: 14px;
     font-weight: 500;
 }
+
+/* --- BOTÃO DE SAIR (SOMENTE ÍCONE) --- */
 .logout-area {
     display: flex;
     align-items: center;
@@ -1153,20 +1177,24 @@ body.dark-theme .tab-btn:hover:not(.active) {
     transition: background 0.3s;
     background: transparent !important;
 }
+
 .logout-area:hover {
     background: rgba(255, 0, 0, 0.25);
 }
+
 .logout-icon {
     font-size: 24px;
     color: #fff;
 }
+
+/* Garantir que nada do layout antigo force branco */
 .sidebar-footer,
 .user-area,
 .logout-area {
     background-color: transparent !important;
 }
 
-/* FIX SIDEBAR NO MOBILE (consolidado) */
+/* ========= FIX SIDEBAR NO MOBILE ========= */
 @media (max-width: 768px) {
 
     body, html {
@@ -1174,6 +1202,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
         overflow-x: hidden;
     }
 
+    /* SIDEBAR TRAVADA NO TOPO */
     .sidebar {
         position: fixed !important;
         top: 0 !important;
@@ -1192,24 +1221,26 @@ body.dark-theme .tab-btn:hover:not(.active) {
         transition: transform .3s ease;
     }
 
+    /* QUANDO O MENU ESTIVER ABERTO */
     .sidebar.open {
         transform: translateX(0);
     }
 
+    /* CONTEÚDO NÃO PODE EMPURRAR A SIDEBAR NO MOBILE */
     .content {
         margin-left: 0 !important;
         padding-left: 10px;
         padding-right: 10px;
     }
 
+    /* FIX DO HEADER QUE EMPURRAVA A SIDEBAR */
     .main-header {
         position: sticky;
         top: 0;
         z-index: 2000;
     }
 }
-
-/* FIX DO SALDO GLOBAL NO MOBILE */
+/* ======== FIX DO SALDO GLOBAL NO MOBILE ======== */
 @media (max-width: 768px) {
 
     .global-balance {
@@ -1221,7 +1252,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
         align-items: flex-end;
         justify-content: center;
 
-        white-space: nowrap;
+        white-space: nowrap; /* impede quebrar feio */
     }
 
     .global-balance h3 {
@@ -1232,6 +1263,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
         font-size: 0.75rem;
     }
 
+    /* Arruma botão PDF/CSV empurrando o layout */
     .header-actions {
         gap: 6px;
         flex-wrap: wrap;
@@ -1244,7 +1276,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
-/* Correção Android — Fixar área do usuário no rodapé da sidebar */
+/* ===== Correção Android — Fixar área do usuário no rodapé da sidebar ===== */
 @media (max-width: 900px) {
     .sidebar {
         display: flex;
@@ -1261,7 +1293,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
-/* Correção Android — Alinhamento do cabeçalho financeiro */
+/* ===== Correção Android — Alinhamento do cabeçalho financeiro ===== */
 .header-financeiro {
     display: flex;
     flex-wrap: wrap;
@@ -1269,39 +1301,35 @@ body.dark-theme .tab-btn:hover:not(.active) {
     justify-content: space-between;
     gap: 10px;
 }
+
 .header-financeiro .saldo-global {
     flex: 1 1 auto;
     min-width: 180px;
 }
+
 .header-financeiro .acoes-financeiras {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
 }
+
 .header-financeiro .export-buttons {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 }
 
-/* Valor das despesas em vermelho (mantido) */
+/* Valor das despesas em vermelho */
 #kpi-total-despesas {
     color: #ff3b3b !important;
 }
 
-/* ========== LIMPEZAS E NOTAS ==========
-   - Duplas de variáveis em :root foram consolidadas (mantida versão mais recente).
-   - Duplicatas de .modal-overlay / .modal-content foram consolidadas.
-   - Comentários antigos repetidos removidos.
-   - Mantive regras que afetam visual (cores, fontes, tamanhos).
-   =====================================*/
-
 /* ==============================
    PATCH v8.0 - Correções gerais
    - Remove overflow horizontal
-   - Ajusta altura real em iOS/iOS (100dvh)
-   - Garante visibilidade do botão "Sair" (apenas ícone permanece)
+   - Ajusta altura real em iOS/Android (100dvh)
+   - Garante visibilidade do botão "Sair"
    - Remove uso problemático de position:absolute no footer
    - Ajusta tabelas em telas <480px
    - Pequenas melhorias iOS (scroll/keyboard)
@@ -1316,11 +1344,13 @@ html, body {
 
 /* Forçar limites de largura para elementos que por engano estouram */
 * {
+    /* Mantém box-sizing já definido, mas garante que nada exceda 100% */
     max-width: 100% !important;
     box-sizing: border-box !important;
 }
 
 /* --- Altura real para mobile (corrige 100vh issues) --- */
+/* Aplique nas classes de wrapper/containers usadas no projeto. Se suas classes forem diferentes, substitua. */
 .main-content,
 .container,
 .content-wrapper,
@@ -1334,17 +1364,19 @@ html, body {
     height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
+    /* previne deslocamentos inesperados */
     overflow-y: auto !important;
 }
 
-/* Forçar exibição do botão sair (apenas estilo de visibilidade; ícone mantido) */
+/* Caso seu botão "Sair" esteja com classe diferente, verifique e adapte.
+   Essa regra é segura: ela só força visibilidade e posicionamento dentro do menu. */
 .sidebar .logout-btn,
 .sidebar .btn-logout,
 .logout-btn {
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    margin-top: auto !important;
+    margin-top: auto !important; /* empurra para baixo do menu (sempre visível) */
     padding: 12px 16px !important;
     min-width: 0 !important;
 }
@@ -1397,7 +1429,7 @@ table {
     table td {
         padding: 6px !important; /* reduz o padding sem mudar aparência geral */
         font-size: 0.85rem !important;
-        white-space: nowrap;
+        white-space: nowrap; /* evita quebra estranha dentro de células curtas */
     }
 }
 
@@ -1424,6 +1456,13 @@ select {
     max-width: 100% !important;
 }
 
+/* --- Ajustes para evitar gaps laterais causados por scrollbars personalizados --- */
+@media (min-width: 1px) {
+    :root {
+        /* sem mudanças de aparência, apenas garante comportamento consistente */
+    }
+}
+
 /* --- Melhora comportamento do teclado em iOS (quando abrir teclado não corta campos) --- */
 input:focus,
 textarea:focus,
@@ -1431,10 +1470,10 @@ select:focus {
     scroll-margin-top: 20px;
 }
 
-/* --- Prevenir margens negativas extremas (podem causar overflow) --- */
+/* --- Pequena regra para prevenir margens negativas extremas (podem causar overflow) --- */
 [class*="m-"] {
     margin-left: 0 !important;
     margin-right: 0 !important;
 }
 
-/* FIM DO STYLE_V8_FINAL.CSS */
+/* FIM DO PATCH v8.0 */
