@@ -1287,56 +1287,64 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
-/* ===== Correção FINAL v2: Sem Borda e Sem Esticar ===== */
+/* ===== Correção FINAL v3: Anti-Pulo (100dvh) ===== */
 @media (max-width: 900px) {
     .sidebar {
-        /* 1. TRAVAMENTO NA TELA */
+        /* 1. TRAVAMENTO ABSOLUTO */
         position: fixed !important;
         top: 0 !important;
-        bottom: 0 !important;
         left: 0 !important;
         
-        /* 2. FLEXBOX (Para o rodapé ir pro fundo) */
+        /* O SEGREDO: 100dvh ignora a barra do navegador que sobe/desce */
+        height: 100vh !important; /* Fallback para celulares velhos */
+        height: 100dvh !important; /* Dynamic Viewport Height (A mágica) */
+        
+        width: 70%; /* Ou a largura que você preferir (ex: 250px) */
+        max-width: 300px; /* Limite para não ficar gigante em tablets */
+        
+        /* 2. ESTRUTURA FLEX */
         display: flex !important;
         flex-direction: column !important;
-        height: auto !important;
         
-        /* 3. BLOQUEIO DO ELÁSTICO (Overscroll) */
-        /* Isso impede que o menu "quique" ou puxe o fundo da página */
+        /* 3. ESTABILIDADE VISUAL (GPU) */
+        /* Isso impede o menu de "piscar" ou redesenhar ao rolar */
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        
+        /* 4. BLOQUEIO DE ELÁSTICO */
         overscroll-behavior: none;
         
-        /* 4. CONFIGURAÇÕES VISUAIS */
         z-index: 9999;
-        overflow: hidden; /* A caixa principal não rola, só o 'ul' dentro */
+        overflow: hidden;
+        background-color: var(--card-bg); /* Use a cor original aqui se preferir */
         
-        /* Nota: Sem 'background-color' aqui, ele usa a cor original do seu design */
+        /* Sombra opcional para destacar o menu do resto do site */
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     }
 
-    /* Área dos LINKS (Rola só aqui dentro) */
+    /* LISTA DE LINKS (Rola aqui dentro) */
     .sidebar ul {
         flex: 1;            
         overflow-y: auto;   
         
-        /* O segredo: o scroll morre aqui e não passa pro resto */
-        overscroll-behavior: contain; 
+        /* Scroll suave e contido */
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         
-        min-height: 0;
         margin-bottom: 0;
         padding-bottom: 10px;
     }
 
-    /* RODAPÉ (Fixo no fundo sem linha) */
+    /* RODAPÉ (Fixo, sem pular) */
     .sidebar-footer {
-        flex-shrink: 0;
+        flex-shrink: 0; /* Proibido encolher */
         width: 100%;
         margin-top: auto !important;
         
-        /* Ajuste para telas modernas (iPhone X, Androids novos) */
+        /* Proteção para iPhone X e Androids novos */
         padding-bottom: env(safe-area-inset-bottom, 20px);
         
-        /* REMOVIDO A BORDA QUE VOCÊ NÃO QUERIA */
-        border: none !important; 
-        border-top: none !important;
+        border: none !important;
     }
 }
 
