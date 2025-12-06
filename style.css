@@ -1287,61 +1287,49 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
-/* ===== Correção FINAL (Estável): Altura 100% e Cor Original ===== */
+/* ===== SOLUÇÃO FINAL: Rodapé TRAVADO e Scroll apenas nos Links ===== */
 @media (max-width: 900px) {
+    /* 1. O PAI (A Barra Lateral Inteira) */
     .sidebar {
-        /* 1. FIXAÇÃO ESTÁVEL */
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
-        
-        /* 2. O TRUQUE DO 100% */
-        /* '100%' em fixed é mais estável que 'vh' no Android, 
-           pois não muda quando a barra do navegador aparece/some */
-        height: 100% !important;
-        
-        width: 70%; /* Ajuste a largura se quiser (ex: 260px) */
+        bottom: 0 !important;
+        height: 100% !important; /* Ocupa a tela toda fixa */
         
         display: flex !important;
         flex-direction: column !important;
         
-        /* 3. COR (IMPORTANTE) */
-        /* Removi a cor forçada. Se ficar transparente, descomente abaixo: */
-        /* background-color: #fff; */  
-        /* background-color: var(--color-background); */ 
+        /* AQUI ESTÁ A CORREÇÃO: */
+        overflow: hidden !important; /* PROIBIDO ROLAR A BARRA INTEIRA */
         
-        /* 4. BLOQUEIO DE COMPORTAMENTOS ESTRANHOS */
-        overscroll-behavior: none; /* Evita o efeito elástico */
         z-index: 9999;
-        overflow: hidden; /* O scroll é interno, não na caixa */
+        width: 70%; /* Ajuste a largura se precisar */
         
-        /* Sombra para destacar o menu do fundo (opcional) */
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        /* Se ficar transparente, coloque a cor de fundo aqui: */
+        /* background-color: var(--card-bg); */
     }
 
-    /* ÁREA DE LINKS (Rola aqui) */
+    /* 2. O FILHO (A Lista de Links no meio) */
     .sidebar ul {
-        flex: 1;            
-        overflow-y: auto;   
+        flex: 1;          /* Ocupa todo o espaço sobrando entre o topo e o rodapé */
+        overflow-y: auto; /* <--- O SCROLL ACONTECE SÓ AQUI DENTRO */
         
-        /* Scroll suave */
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-        
+        min-height: 0;    /* Garante que o scroll funcione sem empurrar o pai */
         margin-bottom: 0;
-        padding-bottom: 20px; /* Espaço extra no fim da lista */
+        padding-bottom: 20px;
     }
 
-    /* RODAPÉ (Fixo) */
+    /* 3. O RODAPÉ (Usuário) */
     .sidebar-footer {
-        flex-shrink: 0;
+        flex-shrink: 0;   /* Garante que ele é sólido e fixo */
         width: 100%;
-        margin-top: auto !important;
+        margin-top: 0 !important; /* Remove empurrão desnecessário */
         
+        /* Proteção para iPhone X e Androids novos */
         padding-bottom: env(safe-area-inset-bottom, 20px);
         
-        /* Sem borda extra */
-        border: none !important; 
+        border: none !important;
     }
 }
 
