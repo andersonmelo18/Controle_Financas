@@ -1287,15 +1287,41 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
-/* ===== Correção Android — Fixar área do usuário no rodapé da sidebar ===== */
+/* ===== Correção Android — Sidebar Fixa com Scroll Interno ===== */
 @media (max-width: 900px) {
     .sidebar {
-        display: flex;
-        flex-direction: column;
+        display: flex !important;
+        flex-direction: column !important;
+        
+        /* 1. Trava a altura da barra no tamanho exato da tela */
+        height: 100vh;      
+        height: 100dvh;     /* Melhor para celular */
+        
+        /* 2. Mantém a barra fixa flutuando */
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 9999;
+        
+        /* 3. Remove a rolagem geral */
+        overflow: hidden; 
     }
 
+    /* 4. A mágica: A lista de links rola SOZINHA se precisar */
+    .sidebar ul {
+        flex-grow: 1;       /* Empurra o rodapé para baixo */
+        overflow-y: auto;   /* Cria rolagem interna nos links */
+        margin-bottom: 0;
+    }
+
+    /* 5. O Rodapé fica fixo lá embaixo */
     .sidebar-footer {
+        flex-shrink: 0;     /* Não deixa amassar o rodapé */
         margin-top: auto !important;
+        width: 100%;
+        background-color: var(--card-bg); 
+        padding-bottom: 1rem;
     }
 
     .user-area {
@@ -1312,7 +1338,7 @@ body.dark-theme .tab-btn:hover:not(.active) {
     justify-content: space-between;
     gap: 10px;
 }
-
+z
 .header-financeiro .saldo-global {
     flex: 1 1 auto;
     min-width: 180px;
