@@ -1335,3 +1335,34 @@ body.dark-theme .tab-btn:hover:not(.active) {
 #kpi-total-despesas {
     color: #ff3b3b !important;
 }
+
+/* No Desktop (telas grandes), mantém o espaçamento bonito */
+.area-principal {
+    margin: 2rem;
+}
+
+/* No Celular (telas pequenas), diminui para aproveitar espaço */
+@media (max-width: 600px) {
+    .area-principal {
+        margin: 1rem 0.5rem; /* Margem bem menor nas laterais */
+    }
+    
+    /* Dica extra: Oculta colunas menos importantes da tabela no celular 
+       se ainda estiver muito apertado */
+    /* .table-container td:nth-child(5), 
+       .table-container th:nth-child(5) {
+           display: none; 
+       } */
+}
+
+/* Cartões que ficam abaixo do principal (sem margem no topo) */
+.area-secundaria {
+    margin: 0 2rem 2rem 2rem; /* Desktop: Mantém o visual atual */
+}
+
+@media (max-width: 600px) {
+    .area-secundaria {
+        /* Mobile: Zero no topo, margens finas nas laterais (igual ao outro) */
+        margin: 0 0.5rem 1rem 0.5rem; 
+    }
+}
