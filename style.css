@@ -1287,51 +1287,48 @@ body.dark-theme .tab-btn:hover:not(.active) {
     }
 }
 
-/* ===== Correção FINAL: Menu Travado (Sem Esticar) e Fixo ===== */
+/* ===== Correção FINAL: Menu Travado e com Cor Original ===== */
 @media (max-width: 900px) {
     .sidebar {
-        /* 1. POSIÇÃO: Prende nas 4 pontas da tela */
+        /* 1. POSIÇÃO e ESTRUTURA */
         position: fixed !important;
         top: 0 !important;
         bottom: 0 !important;
         left: 0 !important;
-        
-        /* 2. ESTRUTURA: Flexbox para empurrar o rodapé */
         display: flex !important;
         flex-direction: column !important;
-        height: auto !important; /* O top/bottom já definem a altura */
+        height: auto !important;
         
-        /* 3. O SEGREDO ANTI-ELÁSTICO */
-        /* Isso impede que o menu "quique" ou estique ao rolar no Android/iOS */
+        /* 2. TRAVA O "QUICA/ESTICA" (Overscroll) */
         overscroll-behavior: none; 
         
-        /* 4. VISUAL */
-        /* Se você não quer branco, troque var(--card-bg) por uma cor ex: #333 */
-        background-color: var(--card-bg); 
+        /* 3. COR DE FUNDO */
+        /* Removi a linha que forçava branco. Agora ele usa a cor original do seu CSS. */
+        /* background-color: var(--card-bg); */ 
+        
         z-index: 9999;
-        overflow: hidden; /* Trava a rolagem da caixa principal */
+        overflow: hidden; 
     }
 
-    /* Área dos links (Rola apenas aqui dentro) */
+    /* Área dos links */
     .sidebar ul {
-        flex: 1;            /* Ocupa o meio da tela */
-        overflow-y: auto;   /* Scroll acontece aqui */
-        overscroll-behavior: contain; /* O scroll morre aqui, não passa pra página */
+        flex: 1;            
+        overflow-y: auto;   
+        overscroll-behavior: contain; /* O scroll morre aqui dentro */
         min-height: 0;
         margin-bottom: 0;
         padding-bottom: 10px;
     }
 
-    /* Rodapé (Fixo no chão) */
+    /* Rodapé (User + Sair) */
     .sidebar-footer {
-        flex-shrink: 0;     /* Não deixa amassar */
+        flex-shrink: 0;
         width: 100%;
         margin-top: auto !important;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
         
-        /* Proteção para iPhone X e Androids novos (barra de gesto) */
-        padding-bottom: env(safe-area-inset-bottom, 20px); 
-        
-        background-color: var(--card-bg); /* Mesma cor do menu */
+        /* IMPORTANTE: Aqui também removi a cor forçada. */
+        /* Ele vai ficar transparente ou pegar a cor da sidebar acima */
         border-top: 1px solid var(--border-color);
     }
 }
