@@ -21,7 +21,8 @@ import {
     getUserId, 
     formatCurrency, 
     parseCurrency, 
-    verificarSaldoSuficiente 
+    verificarSaldoSuficiente,
+    showToast
 } from './main.js';
 
 // ---- Variáveis Globais ----
