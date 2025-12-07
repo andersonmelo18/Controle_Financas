@@ -575,3 +575,46 @@ function listenToGlobalBalance(userId) {
         balanceContainer.style.display = 'flex';
     });
 }
+
+// ===============================================================
+// 9. SISTEMA DE NOTIFICAÇÕES (TOAST) - v6.0 (NOVO!)
+// ===============================================================
+export function showToast(message, type = 'success') {
+    // 1. Cria o container se não existir
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    // 2. Cria o elemento do Toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // Escolhe o ícone baseado no tipo
+    let iconName = 'check_circle'; // Padrão sucesso
+    if (type === 'error') iconName = 'error';
+    if (type === 'info') iconName = 'info';
+
+    toast.innerHTML = `
+        <span class="material-icons-sharp">${iconName}</span>
+        <p style="margin: 0; font-weight: 500;">${message}</p>
+    `;
+
+    // 3. Adiciona na tela
+    container.appendChild(toast);
+
+    // 4. Animação de Entrada
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    // 5. Remove automaticamente após 3 segundos
+    setTimeout(() => {
+        toast.classList.remove('show'); // Animação de saída
+        setTimeout(() => {
+            toast.remove();
+        }, 300); 
+    }, 3500);
+}

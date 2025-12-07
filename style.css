@@ -845,3 +845,57 @@ body.dark-theme .login-overlay {
     width: 100%;
 }
 .btn-google:hover { background-color: #357ae8; box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3); }
+
+/* ==========================================================================
+   9. TOAST NOTIFICATIONS (Alertas Flutuantes)
+   ========================================================================== */
+
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10001; /* Acima de tudo, inclusive modais */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: var(--card-bg);
+    color: var(--text-color);
+    padding: 1rem 1.5rem;
+    border-radius: var(--card-radius);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    min-width: 300px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    /* Animação */
+    transform: translateX(120%); /* Começa fora da tela */
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border-left: 5px solid var(--primary-color);
+}
+
+.toast.show {
+    transform: translateX(0); /* Entra na tela */
+}
+
+/* Tipos de Toast */
+.toast.success {
+    border-left-color: var(--success-color);
+}
+.toast.success span {
+    color: var(--success-color);
+}
+
+.toast.error {
+    border-left-color: var(--danger-color);
+}
+.toast.error span {
+    color: var(--danger-color);
+}
+
+.toast.info {
+    border-left-color: var(--info-color, #2d9cdb);
+}
