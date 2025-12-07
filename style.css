@@ -545,6 +545,15 @@ body.dark-theme .tab-btn:hover:not(.active) { background-color: #2c3036; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
 
+/* Garante que os botões ocupem a largura toda em formulários grid */
+.modal-buttons {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
 /* Notificações (Sino) */
 .notification-bell { position: relative; display: flex; align-items: center; }
 #notification-button.has-alerts { color: var(--primary-color); animation: bell-ring 1.5s ease-in-out infinite; }
