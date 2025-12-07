@@ -22,7 +22,8 @@ import {
     formatCurrency, 
     parseCurrency, 
     verificarSaldoSuficiente, 
-    getCartoesHtmlOptions 
+    getCartoesHtmlOptions,
+    showToast 
 } from './main.js';
 
 // ---- Variáveis Globais ----
@@ -292,9 +293,14 @@ async function handleFormSubmit(e) {
         updateDataInput();
         if (comprovanteInput) comprovanteInput.value = '';
 
+        // [MUDANÇA] Notificação de Sucesso adicionada aqui
+        showToast("Despesa salva com sucesso!", "success");
+
     } catch (error) {
         console.error("Erro ao salvar despesa:", error);
-        alert(`Não foi possível salvar a despesa. Erro: ${error.message}`);
+        
+        // [MUDANÇA] Alert substituído por Toast de Erro
+        showToast(`Erro ao salvar: ${error.message}`, "error");
         
         if (comprovanteData && comprovanteData.path) {
             console.warn("Revertendo upload do arquivo órfão...");
@@ -488,7 +494,7 @@ function handleDeleteClick(e) {
     const valor = parseFloat(tr.dataset.valor);
     const formaPagamento = tr.dataset.formaPagamento;
     const data = tr.dataset.data;
-    const comprovantePath = tr.dataset.comprovantePath; // Pega o path do arquivo
+    const comprovantePath = tr.dataset.comprovantePath; 
 
     if (!id || !data) {
         console.error("Erro: ID ou Data não encontrados na linha.");
@@ -512,9 +518,16 @@ function handleDeleteClick(e) {
             await remove(ref(db, itemPath));
             
             hideModal('modal-confirm');
+
+            // [MUDANÇA] Sucesso: Notificação verde
+            showToast("Despesa excluída com sucesso.", "success");
+
         } catch (error) {
             console.error("Erro ao excluir despesa:", error);
-            alert("Não foi possível excluir a despesa.");
+            
+            // [MUDANÇA] Erro: Notificação vermelha em vez de alert
+            showToast("Não foi possível excluir a despesa.", "error");
+            
             loadDespesas();
         }
     };
@@ -642,9 +655,14 @@ async function handleSaveEdit(e) {
 
         modalEdit.style.display = 'none';
 
+        // [MUDANÇA] Sucesso: Notificação verde
+        showToast("Alterações salvas com sucesso!", "success");
+
     } catch (error) {
         console.error("Erro ao salvar edição:", error);
-        alert(`Não foi possível salvar as alterações. Erro: ${error.message}`);
+        
+        // [MUDANÇA] Erro: Notificação vermelha em vez de alert
+        showToast(`Erro ao editar: ${error.message}`, "error");
         
         if (novoArquivoSelecionado && comprovanteData) {
             await deleteFile(comprovanteData.path);
