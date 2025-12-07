@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <link rel="icon" type="image/png" href="logo.png">
-    
-    <title>Entradas - Controle Financeiro</title> 
+
+    <title>Entradas - Controle Financeiro</title>
 
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
@@ -21,7 +21,8 @@
         </div>
         <ul>
             <li><a href="index.html"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
-            <li class="active"><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
+            <li class="active"><a href="entradas.html"><span class="material-icons-sharp">trending_up</span>Entradas</a>
+            </li>
             <li><a href="despesas.html"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
             <li><a href="fixos.html"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
             <li><a href="cartoes.html"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
@@ -54,7 +55,7 @@
             <button class="hamburger-menu">
                 <span class="material-icons-sharp">menu</span>
             </button>
-            
+
             <h2>Controle de Entradas</h2>
 
             <div class="month-selector">
@@ -64,7 +65,7 @@
             </div>
 
             <div class="header-actions">
-            
+
                 <div class="global-balance" id="global-balance-container" style="display: none;">
                     <small>Saldo em Caixa</small>
                     <h3 id="global-balance-display">R$ 0,00</h3>
@@ -77,13 +78,14 @@
                     </button>
                     <div id="notification-dropdown" class="dropdown-content">
                         <div id="notification-list">
-                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                            <p id="notification-placeholder"
+                                style="padding: 1rem; text-align: center; color: var(--text-light);">
                                 Nenhum alerta no momento.
                             </p>
                         </div>
                     </div>
                 </div>
-                
+
                 <button class="theme-toggler">
                     <span class="material-icons-sharp active">light_mode</span>
                     <span class="material-icons-sharp">dark_mode</span>
@@ -132,7 +134,7 @@
                     <label for="entrada-comprovante">Comprovante (Opcional)</label>
                     <input type="file" id="entrada-comprovante">
                 </div>
-                <div class="form-group" style="align-items: flex-end;">
+                <div class="form-group form-group-end">
                     <button type="submit" class="btn-primary">Adicionar Entrada</button>
                 </div>
             </form>
@@ -141,29 +143,28 @@
         <section class="card area-secundaria">
             <h3>Histórico de Entradas do Mês</h3>
 
-            <div id="filtro-bar" class="form-container"
-                style="padding-bottom: 1.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+            <div id="filtro-bar" class="form-container">
                 <div class="form-group">
                     <label for="filtro-origem">Filtrar por Origem</label>
                     <select id="filtro-origem">
                         <option value="todas">Todas as Origens</option>
-                        <!-- Preenchido por JS -->
                     </select>
                 </div>
-                <div class="form-group search-bar">
-                    <label for="filtro-busca">Buscar por Descrição</label>
-                    <span class="material-icons-sharp">search</span>
-                    <input type="text" id="filtro-busca" placeholder="Buscar...">
-                </div>
-                <div class="form-group" style="align-items: flex-end;">
-                    <button id="btn-limpar-filtros" class="btn-secondary">
-                        <span class="material-icons-sharp">close</span> Limpar
-                    </button>
-                </div>
+            </div>
+            <div class="form-group search-bar">
+                <label for="filtro-busca">Buscar por Descrição</label>
+                <span class="material-icons-sharp">search</span>
+                <input type="text" id="filtro-busca" placeholder="Buscar...">
+            </div>
+            <div class="form-group form-group-end">
+                <button id="btn-limpar-filtros" class="btn-secondary">
+                    <span class="material-icons-sharp">close</span> Limpar
+                </button>
+            </div>
             </div>
 
             <div class="table-container">
-                <table id="table-entradas"> 
+                <table id="table-entradas">
                     <thead>
                         <tr>
                             <th>Data</th>
@@ -172,7 +173,7 @@
                             <th style="text-align: center;">Comp.</th>
                             <th>KM</th>
                             <th>Horas</th>
-                            <th style="width: 140px;">Ações</th> 
+                            <th style="width: 140px;">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-entradas">
@@ -183,11 +184,11 @@
 
             <div class="table-footer">
                 <h3>Total Filtrado:
-                    <span id="total-filtrado" style="color: var(--text-color);">R$ 0,00</span>
+                    <span id="total-filtrado">R$ 0,00</span>
                 </h3>
                 <div style="text-align: right;">
-                    <h3 style="margin: 0;">Total (Mês): 
-                        <span id="total-mes-entradas" style="color: var(--success-color);">R$ 0,00</span>
+                    <h3 style="margin: 0;">Total (Mês):
+                        <span id="total-mes-entradas" class="text-success">R$ 0,00</span>
                     </h3>
                     <small style="color: var(--text-light); font-weight: 500;">
                         KM: <span id="total-mes-km">0.0 km</span> | Horas: <span id="total-mes-horas">0h 00m</span>
@@ -195,18 +196,21 @@
                 </div>
             </div>
         </section>
-        
+
         <section class="card area-secundaria">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
                 <h3>Ganhos Diários (Visão Semanal)</h3>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="filtro-semana" style="margin-bottom: 0; margin-right: 0.5rem;">Selecionar Semana:</label>
-                    <select id="filtro-semana" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius-1); background: var(--card-background); color: var(--text-color);">
+                    <label for="filtro-semana" style="margin-bottom: 0; margin-right: 0.5rem;">Selecionar
+                        Semana:</label>
+                    <select id="filtro-semana"
+                        style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius-1); background: var(--card-background); color: var(--text-color);">
                         <!-- JS Preenche aqui -->
                     </select>
                 </div>
             </div>
-            
+
             <div style="height: 250px; position: relative;">
                 <canvas id="grafico-semanal"></canvas>
             </div>
@@ -244,9 +248,9 @@
     <div class="modal-container" id="modal-edit-entrada" style="display: none;">
         <div class="modal-content">
             <h2>Editar Entrada</h2>
-            
+
             <form id="form-edit-entrada" class="form-container">
-                
+
                 <div class="form-group">
                     <label for="edit-entrada-data">Data</label>
                     <input type="date" id="edit-entrada-data" required>
@@ -281,40 +285,41 @@
                     <label for="edit-entrada-km">KM Rodados (Opcional)</label>
                     <input type="number" id="edit-entrada-km" step="0.1" placeholder="0.0">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit-entrada-horas">Horas Trab. (Opcional)</label>
                     <input type="text" id="edit-entrada-horas" placeholder="Ex: 8:30 ou 8.5">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit-entrada-comprovante">Substituir Comprovante (Opcional)</label>
                     <input type="file" id="edit-entrada-comprovante">
-                    <p id="edit-comprovante-display" style="font-size: 0.8rem; color: var(--text-light); margin-top: 5px; display: none;">
+                    <p id="edit-comprovante-display"
+                        style="font-size: 0.8rem; color: var(--text-light); margin-top: 5px; display: none;">
                         Arquivo atual: ...
                     </p>
                 </div>
 
                 <div class="modal-buttons">
-                    <button type="button" class="btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" id="modal-edit-btn-cancel"></button>Cancelar</button>
                     <button type="submit" class="btn btn-save">Salvar Alterações</button>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <!-- =============================================================== -->
     <!-- SCRIPTS ATUALIZADOS (v10.7.1 Modular) -->
     <!-- =============================================================== -->
-    
+
     <!-- Scripts 'compat' ANTIGOS REMOVIDOS -->
-    
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/entradas.js"></script>
-    
+
     <!-- Modal de Logout (Copiado) -->
     <div id="modal-logout-confirm" class="modal-overlay">
         <div class="modal-content">
@@ -331,4 +336,5 @@
         </div>
     </div>
 </body>
+
 </html>
