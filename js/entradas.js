@@ -1,9 +1,9 @@
 // js/entradas.js
-// VERSÃO 5.2 (Atualizado para Autenticação Google e caminho 'usuarios/')
+// VERSÃO 5.3 (Atualizado para Gráfico Azul Profissional e Total Semanal)
 
 import { 
     db, 
-    storage, // IMPORTA O STORAGE
+    storage, 
     ref, 
     set, 
     get, 
@@ -12,7 +12,7 @@ import {
     onValue, 
     off, 
     update,
-    storageRef,     // IMPORTA AS FUNÇÕES DO STORAGE
+    storageRef, 
     uploadBytes,
     getDownloadURL,
     deleteObject
@@ -53,7 +53,7 @@ const valorInput = document.getElementById('entrada-valor');
 const kmInput = document.getElementById('entrada-km');
 const horasInput = document.getElementById('entrada-horas');
 const comprovanteInput = document.getElementById('entrada-comprovante');
-const btnSubmitForm = form.querySelector('button[type="submit"]'); // Botão de submit
+const btnSubmitForm = form.querySelector('button[type="submit"]');
 
 // ---- Elementos DOM (Tabela e Totais) ----
 const tbody = document.getElementById('tbody-entradas');
@@ -68,6 +68,8 @@ const filtroBusca = document.getElementById('filtro-busca');
 const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
 const filtroSemana = document.getElementById('filtro-semana');
 const canvasGraficoSemanal = document.getElementById('grafico-semanal');
+// v5.3: Elemento para exibir o total da semana selecionada
+const displayTotalSemanal = document.getElementById('display-total-semanal');
 
 // ---- Modais ----
 const modalConfirm = document.getElementById('modal-confirm');
@@ -83,7 +85,6 @@ const editHorasInput = document.getElementById('edit-entrada-horas');
 const editComprovanteDisplay = document.getElementById('edit-comprovante-display');
 const btnCancelEdit = document.getElementById('modal-edit-btn-cancel');
 
-// (Funções de inicialização, helpers de data e filtros - Sem mudanças)
 // ===============================================================
 // HELPER DE DATA
 // ===============================================================
@@ -209,7 +210,7 @@ function updateDataInput() {
 }
 
 // ===============================================================
-// 2. NOVAS FUNÇÕES DE UPLOAD (v5.2 - Caminho atualizado)
+// 2. FUNÇÕES DE UPLOAD
 // ===============================================================
 
 async function uploadFile(file) {
@@ -217,7 +218,6 @@ async function uploadFile(file) {
     
     const timestamp = Date.now();
     const uniqueFileName = `${timestamp}-${file.name}`;
-    // v5.2: Caminho atualizado
     const storagePath = `usuarios/${userId}/comprovantes/${uniqueFileName}`;
     
     const fileRef = storageRef(storage, storagePath);
@@ -244,13 +244,12 @@ async function deleteFile(path) {
 }
 
 // ===============================================================
-// 3. LÓGICA DE DADOS (Load & Render) - (v5.2 - Caminho atualizado)
+// 3. LÓGICA DE DADOS (Load & Render)
 // ===============================================================
 function loadEntradas() {
     if (!userId) return;
     if (activeListener) off(activeListener.ref, 'value', activeListener.callback);
     
-    // v5.2: Caminho atualizado
     const path = `usuarios/${userId}/entradas/${currentYear}-${currentMonth}`;
     const dataRef = ref(db, path);
     
@@ -334,9 +333,6 @@ function renderTabela() {
     renderGraficoEntradas(entradasPorDia);
 }
 
-/**
- * Renderiza a linha (TR) (v5.1 - Lógica mantida)
- */
 function renderRow(entrada) {
     if (!entrada.data) return;
 
@@ -349,8 +345,7 @@ function renderRow(entrada) {
     tr.dataset.km = entrada.km || 0;
     tr.dataset.horas = entrada.horas || 0;
     
-    // v5.1: Salva o path e a URL
-    const comp = entrada.comprovante; // { url: "...", path: "..." }
+    const comp = entrada.comprovante; 
     tr.dataset.comprovanteUrl = comp ? comp.url : '';
     tr.dataset.comprovantePath = comp ? comp.path : ''; 
 
@@ -358,7 +353,6 @@ function renderRow(entrada) {
     const dataFormatada = `${d}/${m}/${y}`;
     const icone = origemIcones[entrada.origem] || "🧩"; 
     
-    // v5.1: Lógica do Comprovante (agora é um link <a>)
     let comprovanteHtml = '-';
     if (comp && comp.url) {
         comprovanteHtml = `
@@ -390,7 +384,7 @@ function renderRow(entrada) {
 }
 
 // ===============================================================
-// 4. GRÁFICOS (v5.0 - Lógica mantida)
+// 4. GRÁFICOS (ATUALIZADO v5.3 - Azul e Total Semanal)
 // ===============================================================
 function renderGraficoSemanal() {
     if (!filtroSemana || !canvasGraficoSemanal) return;
@@ -421,11 +415,21 @@ function renderGraficoSemanal() {
         dataValues.push(totalDia);
     }
 
+    // v5.3: Calcular e Exibir Total da Semana
+    const totalSemana = dataValues.reduce((acc, curr) => acc + curr, 0);
+    const displayTotal = document.getElementById('display-total-semanal');
+    if (displayTotal) {
+        displayTotal.textContent = formatCurrency(totalSemana);
+    }
+
     if (graficoSemanal) graficoSemanal.destroy();
 
     const estiloComputado = getComputedStyle(document.body);
     const corTexto = estiloComputado.getPropertyValue('--text-color') || '#000';
-    const corBarras = '#000000'; 
+    
+    // v5.3: Pegar a cor AZUL do tema
+    const rootStyles = getComputedStyle(document.documentElement);
+    const corAzulPrimary = rootStyles.getPropertyValue('--primary-color').trim() || '#4a90e2';
 
     graficoSemanal = new Chart(ctx, {
         type: 'bar',
@@ -434,9 +438,11 @@ function renderGraficoSemanal() {
             datasets: [{
                 label: 'Ganhos do Dia',
                 data: dataValues,
-                backgroundColor: corBarras,
-                borderRadius: 4, 
-                barThickness: 25, 
+                backgroundColor: corAzulPrimary, // v5.3: Cor Azul do Tema
+                borderRadius: 5,  // v5.3: Bordas arredondadas
+                borderSkipped: false,
+                barPercentage: 0.6, // v5.3: Barras mais finas/elegantes
+                categoryPercentage: 0.8
             }]
         },
         options: {
@@ -452,11 +458,11 @@ function renderGraficoSemanal() {
                 y: {
                     beginAtZero: true,
                     ticks: { color: corTexto, callback: (v) => formatCurrency(v) },
-                    grid: { display: true, borderDash: [5, 5] }
+                    grid: { display: true, borderDash: [5, 5], color: 'rgba(0,0,0,0.05)' }
                 },
                 x: {
                     ticks: { color: corTexto },
-                    grid: { display: false }
+                    grid: { display: false } // v5.3: Sem grade vertical (clean)
                 }
             }
         }
@@ -539,7 +545,7 @@ function renderGraficoEntradas(entradasPorDia) {
 }
 
 // ===============================================================
-// 5. FUNÇÕES DE AÇÃO (v5.2 - Caminhos atualizados)
+// 5. FUNÇÕES DE AÇÃO
 // ===============================================================
 
 async function handleFormSubmit(e) {
@@ -554,7 +560,7 @@ async function handleFormSubmit(e) {
     try {
         if (comprovanteInput.files.length > 0) {
             const file = comprovanteInput.files[0];
-            comprovanteData = await uploadFile(file); // uploadFile já usa 'usuarios/'
+            comprovanteData = await uploadFile(file); 
         }
 
         const data = {
@@ -570,7 +576,7 @@ async function handleFormSubmit(e) {
         if (data.valor <= 0) throw new Error("Valor deve ser maior que zero.");
         
         const [entryYear, entryMonth] = data.data.split('-');
-        // v5.2: Caminho atualizado
+        
         const newRef = push(ref(db, `usuarios/${userId}/entradas/${entryYear}-${entryMonth}`));
         await set(newRef, { ...data, id: newRef.key });
         
@@ -607,7 +613,6 @@ function handleDuplicateClick(e) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// v5.2: Caminho atualizado
 function handleDeleteClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -623,10 +628,9 @@ function handleDeleteClick(e) {
             await updateSaldoGlobal(-valor);
             
             if (comprovantePath) {
-                await deleteFile(comprovantePath); // deleteFile já usa 'usuarios/'
+                await deleteFile(comprovantePath); 
             }
             
-            // v5.2: Caminho atualizado
             await remove(ref(db, `usuarios/${userId}/entradas/${entryYear}-${entryMonth}/${id}`));
             
             hideModal('modal-confirm');
@@ -637,7 +641,6 @@ function handleDeleteClick(e) {
     });
 }
 
-// v5.2: Caminho atualizado
 function handleEditClick(e) {
     const tr = e.target.closest('tr');
     if (!tr) return;
@@ -649,7 +652,6 @@ function handleEditClick(e) {
     const comprovantePath = tr.dataset.comprovantePath;
     
     formEdit.dataset.id = id;
-    // v5.2: Caminho atualizado
     formEdit.dataset.entryPath = `usuarios/${userId}/entradas/${entryYear}-${entryMonth}/${id}`;
     formEdit.dataset.valorAntigo = tr.dataset.valor;
     formEdit.dataset.comprovanteAntigoUrl = comprovanteUrl;
@@ -672,13 +674,12 @@ function handleEditClick(e) {
     modalEdit.style.display = 'flex';
 }
 
-// v5.2: Caminho atualizado
 async function handleSaveEdit(e) {
     e.preventDefault();
     if (!userId) return;
     
     const id = formEdit.dataset.id;
-    const path = formEdit.dataset.entryPath; // Já contém 'usuarios/'
+    const path = formEdit.dataset.entryPath; 
     const valorAntigo = parseFloat(formEdit.dataset.valorAntigo);
     const comprovanteAntigoUrl = formEdit.dataset.comprovanteAntigoUrl;
     const comprovanteAntigoPath = formEdit.dataset.comprovanteAntigoPath;
@@ -694,7 +695,7 @@ async function handleSaveEdit(e) {
         if (editFile && editFile.files.length > 0) {
             novoArquivoSelecionado = true;
             const file = editFile.files[0];
-            comprovanteData = await uploadFile(file); // uploadFile já usa 'usuarios/'
+            comprovanteData = await uploadFile(file); 
         }
 
         const novosDados = {
@@ -710,7 +711,6 @@ async function handleSaveEdit(e) {
 
         const ajuste = novosDados.valor - valorAntigo;
         if (ajuste < 0) {
-             // verificarSaldoSuficiente() já usa 'usuarios/' (via main.js v4.1)
             if (!(await verificarSaldoSuficiente(Math.abs(ajuste)))) {
                 throw new Error("Saldo insuficiente para esta alteração!");
             }
@@ -718,13 +718,13 @@ async function handleSaveEdit(e) {
         
         await remove(ref(db, path));
         const [ny, nm] = novosDados.data.split('-');
-        // v5.2: Caminho atualizado
+        
         await set(ref(db, `usuarios/${userId}/entradas/${ny}-${nm}/${id}`), novosDados);
         
         if (ajuste !== 0) await updateSaldoGlobal(ajuste);
         
         if (novoArquivoSelecionado && comprovanteAntigoPath) {
-            await deleteFile(comprovanteAntigoPath); // deleteFile já usa 'usuarios/'
+            await deleteFile(comprovanteAntigoPath); 
         }
         
         modalEdit.style.display = 'none';
@@ -739,7 +739,6 @@ async function handleSaveEdit(e) {
     }
 }
 
-// (Funções de utilidade - Lógica mantida)
 function parseInputParaMinutos(str) {
     if (!str) return 0;
     if (str.includes(':')) {
@@ -755,10 +754,8 @@ function formatHoras(min) {
     return `${h}h ${m.toString().padStart(2,'0')}m`;
 }
 
-// v5.2: Caminho atualizado
 async function updateSaldoGlobal(valor) {
     if (valor === 0) return;
-    // v5.2: Caminho atualizado
     const sRef = ref(db, `usuarios/${userId}/saldo/global`);
     const snap = await get(sRef);
     let atual = snap.val()?.saldoAcumulado || 0;
