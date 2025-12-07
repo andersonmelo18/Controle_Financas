@@ -1,106 +1,99 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="logo.png">
     <title>Login - FinanControl</title>
+    <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
-    
-    <!-- Estilos específicos para a página de login -->
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: var(--bg-color);
-        }
-        .login-card {
-            background-color: var(--card-bg);
-            padding: 2.5rem 3rem;
-            border-radius: var(--card-radius);
-            box-shadow: var(--card-shadow);
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-            border-top: 4px solid var(--primary-color);
-        }
-        .login-header h2 {
-            font-size: 2rem;
-            color: var(--text-color);
-        }
-        .login-header h2 span {
-            color: var(--primary-color);
-        }
-        .login-header p {
-            font-size: 1rem;
-            color: var(--text-light);
-            margin-top: 0.5rem;
-            margin-bottom: 2rem;
-        }
-        .btn-google {
-            background-color: #4285F4;
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border: none;
-            border-radius: var(--card-radius);
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            width: 100%;
-        }
-        .btn-google:hover {
-            background-color: #357ae8;
-        }
-        .btn-google img {
-            width: 20px;
-            height: 20px;
-            background: #FFF;
-            border-radius: 50%;
-            padding: 2px;
-        }
-        #login-error {
-            color: var(--danger-color);
-            margin-top: 1.5rem;
-            font-weight: 500;
-            display: none; /* Começa escondido */
-        }
-    </style>
 </head>
-
 <body>
 
-    <div class="login-card">
-        <div class="login-header">
-            <h2>Finan<span>Control</span></h2>
-            <p>Seu controle financeiro pessoal.</p>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>Finan<span>Control</span></h3>
         </div>
+        <ul>
+            <li class="active"><a href="#"><span class="material-icons-sharp">dashboard</span>Painel Principal</a></li>
+            <li><a href="#"><span class="material-icons-sharp">trending_up</span>Entradas</a></li>
+            <li><a href="#"><span class="material-icons-sharp">trending_down</span>Desp. Variáveis</a></li>
+            <li><a href="#"><span class="material-icons-sharp">event_repeat</span>Desp. Fixas</a></li>
+            <li><a href="#"><span class="material-icons-sharp">credit_card</span>Cartões</a></li>
+            <li><a href="#"><span class="material-icons-sharp">savings</span>Investimentos</a></li>
+        </ul>
+    </nav>
 
-        <button id="btn-login-google" class="btn-google">
-            <!-- Ícone do Google (SVG inline para não depender de links externos) -->
-            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 48 48" style="background: #FFF; border-radius: 50%; padding: 2px;">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                <path fill="none" d="M0 0h48v48H0z"></path>
-            </svg>
-            Entrar com o Google
-        </button>
+    <main class="content">
+        <header class="main-header">
+            <button class="hamburger-menu"><span class="material-icons-sharp">menu</span></button>
+            <h2>Visão Geral</h2>
+            <div class="header-actions">
+                <div class="global-balance">
+                    <small>Saldo Oculto</small>
+                    <h3>R$ ****</h3>
+                </div>
+                <div class="notification-bell">
+                    <span class="material-icons-sharp">notifications</span>
+                </div>
+            </div>
+        </header>
 
-        <p id="login-error"></p>
+        <div class="kpi-grid">
+            <div class="card kpi-card">
+                <h4>Total Entradas</h4>
+                <h2 class="text-success">R$ ****</h2>
+            </div>
+            <div class="card kpi-card">
+                <h4>Total Despesas</h4>
+                <h2 class="text-danger">R$ ****</h2>
+            </div>
+            <div class="card kpi-card">
+                <h4>Saldo Atual</h4>
+                <h2 class="text-primary">R$ ****</h2>
+            </div>
+        </div>
+        
+        <div class="main-grid two-cols">
+            <div class="card" style="height: 300px; display: flex; align-items: center; justify-content: center; color: var(--text-light); flex-direction: column;">
+                <span class="material-icons-sharp" style="font-size: 4rem; opacity: 0.3;">bar_chart</span>
+                <p style="margin-top: 10px; opacity: 0.5;">Faça login para visualizar</p>
+            </div>
+            <div class="card" style="height: 300px; display: flex; align-items: center; justify-content: center; color: var(--text-light); flex-direction: column;">
+                <span class="material-icons-sharp" style="font-size: 4rem; opacity: 0.3;">pie_chart</span>
+                <p style="margin-top: 10px; opacity: 0.5;">Faça login para visualizar</p>
+            </div>
+        </div>
+    </main>
+
+    <div class="login-overlay">
+        <div class="login-card">
+            <div class="login-header">
+                <h2>Finan<span>Control</span></h2>
+                <p>Seu controle financeiro pessoal.</p>
+            </div>
+
+            <button id="btn-login-google" class="btn-google">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 48 48" style="background: #FFF; border-radius: 50%; padding: 2px;">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                    <path fill="none" d="M0 0h48v48H0z"></path>
+                </svg>
+                Entrar com Google
+            </button>
+
+            <p id="login-error" style="color: var(--danger-color); margin-top: 1rem; display: none;"></p>
+            
+            <p style="margin-top: 2rem; font-size: 0.8rem; color: var(--text-light);">
+                v10.7.1 - Acesso Seguro
+            </p>
+        </div>
     </div>
 
-    <!-- Firebase (SDK v10.7.1, como nos seus exemplos) -->
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/login.js"></script>
+
 </body>
 </html>
