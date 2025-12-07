@@ -586,9 +586,14 @@ async function handleFormSubmit(e) {
         form.reset();
         updateDataInput();
 
+        // [MUDANÇA AQUI] Mensagem de Sucesso (Verde)
+        showToast("Entrada registrada com sucesso!", "success");
+
     } catch (error) { 
         console.error(error); 
-        alert("Erro ao salvar: " + error.message);
+        
+        // [MUDANÇA AQUI] Mensagem de Erro (Vermelha) em vez de alert
+        showToast("Erro ao salvar: " + error.message, "error");
         
         if (comprovanteData && comprovanteData.path) {
             console.warn("Revertendo upload do arquivo órfão...");
@@ -624,6 +629,7 @@ function handleDeleteClick(e) {
     const [entryYear, entryMonth] = data.split('-');
     
     modalMessage.textContent = 'Excluir esta entrada?';
+    
     showModal('modal-confirm', async () => {
         try {
             await updateSaldoGlobal(-valor);
@@ -635,8 +641,16 @@ function handleDeleteClick(e) {
             await remove(ref(db, `usuarios/${userId}/entradas/${entryYear}-${entryMonth}/${id}`));
             
             hideModal('modal-confirm');
+
+            // [NOVO] Notificação de Sucesso
+            showToast("Entrada excluída com sucesso.", "success");
+
         } catch (error) { 
             console.error(error); 
+            
+            // [NOVO] Notificação de Erro
+            showToast("Erro ao excluir entrada.", "error");
+            
             loadEntradas(); 
         }
     });
@@ -730,9 +744,14 @@ async function handleSaveEdit(e) {
         
         modalEdit.style.display = 'none';
 
+        // [NOVO] Notificação de Sucesso
+        showToast("Alterações salvas com sucesso!", "success");
+
     } catch (error) { 
         console.error(error); 
-        alert("Erro ao editar: " + error.message);
+        
+        // [NOVO] Notificação de Erro em vez de Alert
+        showToast("Erro ao editar: " + error.message, "error");
         
         if (novoArquivoSelecionado && comprovanteData) {
             await deleteFile(comprovanteData.path);
