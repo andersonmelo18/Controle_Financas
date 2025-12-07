@@ -867,6 +867,7 @@ body.dark-theme .login-overlay {
     border-radius: var(--card-radius);
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     min-width: 300px;
+    max-width: 90vw;
     display: flex;
     align-items: center;
     gap: 12px;
