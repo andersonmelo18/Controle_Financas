@@ -21,8 +21,7 @@ import {
     getUserId, 
     formatCurrency, 
     parseCurrency, 
-    verificarSaldoSuficiente,
-    showToast 
+    verificarSaldoSuficiente 
 } from './main.js';
 
 // ---- Variáveis Globais ----
@@ -549,16 +548,7 @@ function renderGraficoEntradas(entradasPorDia) {
 // 5. FUNÇÕES DE AÇÃO
 // ===============================================================
 
-
-
-function handleEditClick(e) {
-    const tr = e.target.closest('tr');
-    if (!tr) return;
-    const id = tr.dataset.id;
-    const data = tr.dataset.data;
-    const [entryYear, entryMonth] = data.split('-');
-    
-    const comprovanteUrl = tr.dataset.comprovanteUrl;async function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
     e.preventDefault();
     if (!userId) return;
 
@@ -595,14 +585,9 @@ function handleEditClick(e) {
         form.reset();
         updateDataInput();
 
-        // [NOVO] Notificação de Sucesso
-        showToast("Entrada registrada com sucesso!", "success");
-
     } catch (error) { 
         console.error(error); 
-        
-        // [ALTERADO] Substitui o alert pelo Toast de Erro
-        showToast("Erro ao salvar: " + error.message, "error");
+        alert("Erro ao salvar: " + error.message);
         
         if (comprovanteData && comprovanteData.path) {
             console.warn("Revertendo upload do arquivo órfão...");
@@ -649,18 +634,21 @@ function handleDeleteClick(e) {
             await remove(ref(db, `usuarios/${userId}/entradas/${entryYear}-${entryMonth}/${id}`));
             
             hideModal('modal-confirm');
-
-            // [NOVO] Notificação de Sucesso na Exclusão
-            showToast("Entrada excluída com sucesso.", "success");
-
         } catch (error) { 
-            console.error(error);
-            // [NOVO] Notificação de Erro na Exclusão
-            showToast("Erro ao excluir entrada.", "error");
+            console.error(error); 
             loadEntradas(); 
         }
     });
 }
+
+function handleEditClick(e) {
+    const tr = e.target.closest('tr');
+    if (!tr) return;
+    const id = tr.dataset.id;
+    const data = tr.dataset.data;
+    const [entryYear, entryMonth] = data.split('-');
+    
+    const comprovanteUrl = tr.dataset.comprovanteUrl;
     const comprovantePath = tr.dataset.comprovantePath;
     
     formEdit.dataset.id = id;
@@ -741,14 +729,9 @@ async function handleSaveEdit(e) {
         
         modalEdit.style.display = 'none';
 
-        // [NOVO] Notificação de Sucesso na Edição
-        showToast("Alterações salvas com sucesso!", "success");
-
     } catch (error) { 
-        console.error(error);
-        
-        // [ALTERADO] Substitui o alert pelo Toast de Erro
-        showToast("Erro ao editar: " + error.message, "error");
+        console.error(error); 
+        alert("Erro ao editar: " + error.message);
         
         if (novoArquivoSelecionado && comprovanteData) {
             await deleteFile(comprovanteData.path);
