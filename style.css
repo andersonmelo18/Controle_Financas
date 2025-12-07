@@ -406,6 +406,25 @@ body.dark-theme .btn-secondary:disabled {
 }
 .search-bar input { padding-left: 2.5rem !important; }
 
+/* Agrupamento de inputs em linha (usado em Modais) */
+.form-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Divide em 2 colunas iguais */
+    gap: 1rem;
+}
+/* No celular, volta a ficar um embaixo do outro */
+@media (max-width: 600px) {
+    .form-group-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group-end {
+    display: flex;
+    justify-content: flex-end; /* Alinha à direita se for flex row */
+    align-items: flex-end;     /* Alinha ao fundo se for flex column */
+}
+
 /* --- Tabelas --- */
 .table-container {
     width: 100%;
