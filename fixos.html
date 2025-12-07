@@ -92,7 +92,7 @@
             </div>
         </header>
 
-        <section class="card" style="margin: 2rem;">
+        <section class="card area-principal">
             <h3>Registrar Despesa Fixa</h3>
             <p style="margin-bottom: 1rem; color: var(--text-light);">
                 O lançamento será feito no mês selecionado: <strong id="mes-aviso">...</strong>
@@ -144,13 +144,13 @@
                     <label for="fixo-num-parcelas">Nº de Parcelas</label>
                     <input type="number" id="fixo-num-parcelas" value="2" min="2" max="120">
                 </div>
-                <div class="form-group" style="align-items: flex-end;">
+                <div class="form-group form-group-end">
                     <button type="submit" class="btn-primary">Adicionar Despesa</button>
                 </div>
             </form>
         </section>
 
-        <section class="card" style="margin: 0 2rem 2rem 2rem;">
+        <section class="card area-secundaria">
             <h3>Resumo de Despesas Fixas do Mês</h3>
             <div class="table-container">
                 <table id="table-despesas-fixas">
@@ -172,10 +172,10 @@
                 </table>
             </div>
             <h3 style="margin-top: 1.5rem; text-align: right;">
-                Total Pago (Mês): <span id="total-fixo-pago" style="color: var(--danger-color);">R$ 0,00</span>
+                Total Pago (Mês): <span id="total-fixo-pago" class="text-danger">R$ 0,00</span>
             </h3>
             <h3 style="margin-top: 0.5rem; text-align: right;">
-                A Pagar (Mês): <span id="total-fixo-pendente" style="color: var(--warning-color);">R$ 0,00</span>
+                A Pagar (Mês): <span id="total-fixo-pendente" class="text-warning">R$ 0,00</span>
             </h3>
 
             <div class="content-section">
@@ -246,7 +246,7 @@
                     <input type="text" id="edit-fixo-valor" class="currency" placeholder="R$ 0,00" required>
                 </div>
                 <div class="modal-buttons">
-                    <button type="button" class="btn btn-cancel" id="modal-edit-btn-cancel">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" id="modal-edit-btn-cancel">Cancelar</button>
                     <button type="submit" class="btn btn-save">Salvar Alterações</button>
                 </div>
             </form>
