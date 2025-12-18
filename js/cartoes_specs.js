@@ -199,38 +199,38 @@ function renderParcelasDoMes() {
     const dataFaturaAtual = new Date(currentYear, currentMonth - 1, 1);
 
     // Usar apenas registros mestre
-const masterSpecs = flattenMasterSpecs(allSpecs);
+    const masterSpecs = flattenMasterSpecs(allSpecs);
 
-masterSpecs.forEach(compra => {
+    masterSpecs.forEach(compra => {
 
-    if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
-        console.warn("Compra ignorada (data início inválida): ", compra.descricao);
-        return;
-    }
+        if (!compra.dataInicio || compra.dataInicio.split('-').length < 2) {
+            console.warn("Compra ignorada (data início inválida): ", compra.descricao);
+            return;
+        }
 
-    // DATA INÍCIO VIRTUAL (considera fechamento + faturas pagas)
-    const dataInicioVirtual = calcularDataInicioVirtual(compra);
-    const [startYear, startMonth] = [
-        dataInicioVirtual.getFullYear(),
-        dataInicioVirtual.getMonth() + 1
-    ];
+        // DATA INÍCIO VIRTUAL (considera fechamento + faturas pagas)
+        const dataInicioVirtual = calcularDataInicioVirtual(compra);
+        const [startYear, startMonth] = [
+            dataInicioVirtual.getFullYear(),
+            dataInicioVirtual.getMonth() + 1
+        ];
 
-    // Cálculo correto da parcela deste mês
-    let mesesDiff = (dataFaturaAtual.getFullYear() - startYear) * 12 +
-                    ((dataFaturaAtual.getMonth() + 1) - startMonth);
+        // Cálculo correto da parcela deste mês
+        let mesesDiff = (dataFaturaAtual.getFullYear() - startYear) * 12 +
+            ((dataFaturaAtual.getMonth() + 1) - startMonth);
 
-    const parcelaAtual = mesesDiff + 1;
+        const parcelaAtual = mesesDiff + 1;
 
-    // Somente exibe se a parcela pertence ao mês selecionado!
-    if (parcelaAtual >= 1 && parcelaAtual <= compra.parcelas) {
+        // Somente exibe se a parcela pertence ao mês selecionado!
+        if (parcelaAtual >= 1 && parcelaAtual <= compra.parcelas) {
 
-        const valorParcela = compra.valorTotal / compra.parcelas;
+            const valorParcela = compra.valorTotal / compra.parcelas;
 
-        const tr = document.createElement('tr');
-        const icone = cartaoIcones[compra.cartao] || "💳";
-        const [y, m, d] = (compra.dataCompra || "---").split('-');
+            const tr = document.createElement('tr');
+            const icone = cartaoIcones[compra.cartao] || "💳";
+            const [y, m, d] = (compra.dataCompra || "---").split('-');
 
-        tr.innerHTML = `
+            tr.innerHTML = `
             <td>${icone} ${compra.cartao}</td>
             <td>${compra.descricao}</td>
             <td>${(compra.dataCompra) ? `${d}/${m}/${y}` : 'N/A'}</td>
@@ -238,13 +238,13 @@ masterSpecs.forEach(compra => {
             <td>${formatCurrency(valorParcela)}</td>
         `;
 
-        tbodyParcelasDoMes.appendChild(tr);
+            tbodyParcelasDoMes.appendChild(tr);
 
-        // Soma corretamente apenas a parcela deste mês
-        totalMes += valorParcela;
-    }
+            // Soma corretamente apenas a parcela deste mês
+            totalMes += valorParcela;
+        }
 
-});
+    });
 
 
     totalParcelasMesEl.textContent = formatCurrency(totalMes);
@@ -344,7 +344,7 @@ function renderMasterList() {
 }
 
 // ===============================================================
-// 4. LÓGICA DO FORMULÁRIO (CRIAR) (v4.2 - Caminho atualizado)
+// 4. LÓGICA DO FORMULÁRIO (CRIAR) (ATUALIZADO COM TOAST)
 // ===============================================================
 
 async function handleFormSubmit(e) {
@@ -357,78 +357,124 @@ async function handleFormSubmit(e) {
     const valorTotal = parseCurrency(valorTotalInput.value);
     const numParcelas = parseInt(numParcelasInput.value);
 
+    // Validações com Toast Vermelho
     if (valorTotal <= 0 || numParcelas <= 0) {
-        alert("Valor total e número de parcelas devem ser maiores que zero.");
+        Toastify({
+            text: "Valor e parcelas devem ser maiores que zero!",
+            duration: 3000,
+            gravity: "top",
+            position: "right",
+            style: { background: "#ff7782" } // Vermelho Suave
+        }).showToast();
         return;
     }
     if (!cartaoNome) {
-        alert("Por favor, selecione um cartão.");
+        Toastify({
+            text: "Por favor, selecione um cartão.",
+            duration: 3000,
+            gravity: "top",
+            position: "right",
+            style: { background: "#ff7782" }
+        }).showToast();
         return;
     }
     if (!dataCompra) {
-        alert("Por favor, selecione a data da compra.");
+        Toastify({
+            text: "Selecione a data da compra.",
+            duration: 3000,
+            gravity: "top",
+            position: "right",
+            style: { background: "#ff7782" }
+        }).showToast();
         return;
     }
 
     const cartaoConfig = cartaoConfigMap[cartaoNome];
     if (!cartaoConfig) {
-        alert("Erro: Configuração do cartão não encontrada. Tente recarregar a página.");
+        Toastify({
+            text: "Erro: Configuração do cartão não encontrada.",
+            duration: 3000,
+            style: { background: "#ff7782" }
+        }).showToast();
         return;
     }
 
-    const diaFechamento = cartaoConfig.diaFechamento;
-    const dataCompraObj = new Date(dataCompra + 'T12:00:00');
+    // Feedback visual de carregamento (Opcional, muda cursor)
+    document.body.style.cursor = 'wait';
 
-    const mesPrimeiraParcela = calcularMesFatura(dataCompraObj, diaFechamento);
-    const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
+    try {
+        const diaFechamento = cartaoConfig.diaFechamento;
+        const dataCompraObj = new Date(dataCompra + 'T12:00:00');
 
-    // ----- Registro principal -----
-    const path = `usuarios/${userId}/cartoes_specs`;
-    const newCompraRef = push(ref(db, path));
+        const mesPrimeiraParcela = calcularMesFatura(dataCompraObj, diaFechamento);
+        const dataInicioString = `${mesPrimeiraParcela.getFullYear()}-${(mesPrimeiraParcela.getMonth() + 1).toString().padStart(2, '0')}`;
 
-    await set(newCompraRef, {
-        id: newCompraRef.key,
-        cartao: cartaoNome,
-        descricao: descricao,
-        valorTotal: valorTotal,
-        parcelas: numParcelas,
-        dataCompra: dataCompra,
-        dataInicio: dataInicioString,
-        status: 'ativo'
-    });
+        // ----- Registro principal -----
+        const path = `usuarios/${userId}/cartoes_specs`;
+        const newCompraRef = push(ref(db, path));
 
-    // -----------------------------------------------------------
-    //  CRIA AS PARCELAS DE CADA MÊS
-    // -----------------------------------------------------------
-    let dataParcela = new Date(mesPrimeiraParcela);
-
-    for (let i = 1; i <= numParcelas; i++) {
-
-        const ano = dataParcela.getFullYear();
-        const mes = (dataParcela.getMonth() + 1).toString().padStart(2, "0");
-
-        const parcelaRef = ref(db,
-            `usuarios/${userId}/cartoes_specs/${ano}/${mes}/${newCompraRef.key}_${i}`
-        );
-
-        await set(parcelaRef, {
-            compraId: newCompraRef.key,
+        await set(newCompraRef, {
+            id: newCompraRef.key,
             cartao: cartaoNome,
-            descricao: `${descricao} (${i}/${numParcelas})`,
-            parcelaNumero: i,
-            parcelasTotal: numParcelas,
-            valor: valorTotal / numParcelas,
+            descricao: descricao,
+            valorTotal: valorTotal,
+            parcelas: numParcelas,
             dataCompra: dataCompra,
-            status: "pendente"
+            dataInicio: dataInicioString,
+            status: 'ativo'
         });
 
-        // Avançar para o próximo mês
-        dataParcela.setMonth(dataParcela.getMonth() + 1);
-    }
+        // -----------------------------------------------------------
+        //  CRIA AS PARCELAS DE CADA MÊS
+        // -----------------------------------------------------------
+        let dataParcela = new Date(mesPrimeiraParcela);
 
-    alert("Compra parcelada registrada com sucesso!");
-    form.reset();
-    updateDataInput();
+        for (let i = 1; i <= numParcelas; i++) {
+            const ano = dataParcela.getFullYear();
+            const mes = (dataParcela.getMonth() + 1).toString().padStart(2, "0");
+
+            const parcelaRef = ref(db,
+                `usuarios/${userId}/cartoes_specs/${ano}/${mes}/${newCompraRef.key}_${i}`
+            );
+
+            await set(parcelaRef, {
+                compraId: newCompraRef.key,
+                cartao: cartaoNome,
+                descricao: `${descricao} (${i}/${numParcelas})`,
+                parcelaNumero: i,
+                parcelasTotal: numParcelas,
+                valor: valorTotal / numParcelas,
+                dataCompra: dataCompra,
+                status: "pendente"
+            });
+
+            // Avançar para o próximo mês
+            dataParcela.setMonth(dataParcela.getMonth() + 1);
+        }
+
+        // Sucesso - Toast Verde
+        Toastify({
+            text: "Compra parcelada registrada com sucesso!",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: { background: "#41f1b6", color: "#000" } // Verde Suave
+        }).showToast();
+
+        form.reset();
+        updateDataInput();
+
+    } catch (error) {
+        console.error(error);
+        Toastify({
+            text: "Erro ao salvar compra. Tente novamente.",
+            duration: 3000,
+            style: { background: "#ff7782" }
+        }).showToast();
+    } finally {
+        document.body.style.cursor = 'default';
+    }
 }
 
 
@@ -479,7 +525,7 @@ function calcularDataInicioVirtual(compra) {
     if (compra.dataInicio && compra.dataInicio.split('-').length >= 2) {
         [anoCompra, mesCompra] = compra.dataInicio.split('-').map(Number);
     } else if (compra.dataCompra && compra.dataCompra.split('-').length === 3) {
-        const [a,m,d] = compra.dataCompra.split('-').map(Number);
+        const [a, m, d] = compra.dataCompra.split('-').map(Number);
         anoCompra = a; mesCompra = m;
     } else {
         return new Date();
@@ -598,16 +644,32 @@ async function handleSaveEdit(e) {
     };
 
     if (novosDados.valorTotal <= 0) {
-        alert("O valor deve ser maior que zero.");
+        Toastify({
+            text: "O valor deve ser maior que zero.",
+            duration: 3000,
+            style: { background: "#ff7782" }
+        }).showToast();
         return;
     }
 
     try {
         await update(ref(db, path), novosDados);
         modalEdit.style.display = 'none';
+
+        // Toast de Sucesso na Edição
+        Toastify({
+            text: "Alterações salvas com sucesso!",
+            duration: 3000,
+            style: { background: "#41f1b6", color: "#000" }
+        }).showToast();
+
     } catch (error) {
         console.error("Erro ao salvar edição:", error);
-        alert("Não foi possível salvar as alterações.");
+        Toastify({
+            text: "Não foi possível salvar as alterações.",
+            duration: 3000,
+            style: { background: "#ff7782" }
+        }).showToast();
     }
 }
 
@@ -637,7 +699,7 @@ async function executarQuitacao(compra, valorRestante) {
 
     const cartaoConfig = cartaoConfigMap[compra.cartao];
     if (!cartaoConfig) {
-        alert("Erro: Configuração do cartão não encontrada.");
+        Toastify({ text: "Erro: Configuração do cartão não encontrada.", style: { background: "#ff7782" } }).showToast();
         return;
     }
 
@@ -699,6 +761,13 @@ async function executarQuitacao(compra, valorRestante) {
         status: "pago",
         data: dataHoje
     });
+
+    Toastify({
+        text: "Compra quitada com sucesso!",
+        duration: 3000,
+        style: { background: "#41f1b6", color: "#000" }
+    }).showToast();
+    // 👆 FIM DO CÓDIGO NOVO 👆
 
     hideModal('modal-quitar-confirm');
 }
