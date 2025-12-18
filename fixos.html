@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <link rel="icon" type="image/png" href="logo.png">
-    
+
     <title>Despesas Fixas - Controle Financeiro</title>
 
     <link rel="stylesheet" href="style.css">
@@ -55,7 +55,7 @@
             <button class="hamburger-menu">
                 <span class="material-icons-sharp">menu</span>
             </button>
-            
+
             <h2>Despesas Fixas</h2>
 
             <div class="month-selector">
@@ -65,7 +65,7 @@
             </div>
 
             <div class="header-actions">
-            
+
                 <div class="global-balance" id="global-balance-container" style="display: none;">
                     <small>Saldo em Caixa</small>
                     <h3 id="global-balance-display">R$ 0,00</h3>
@@ -78,13 +78,14 @@
                     </button>
                     <div id="notification-dropdown" class="dropdown-content">
                         <div id="notification-list">
-                            <p id="notification-placeholder" style="padding: 1rem; text-align: center; color: var(--text-light);">
+                            <p id="notification-placeholder"
+                                style="padding: 1rem; text-align: center; color: var(--text-light);">
                                 Nenhum alerta no momento.
                             </p>
                         </div>
                     </div>
                 </div>
-                
+
                 <button class="theme-toggler">
                     <span class="material-icons-sharp active">light_mode</span>
                     <span class="material-icons-sharp">dark_mode</span>
@@ -184,7 +185,7 @@
                     <canvas id="grafico-anual-fixos"></canvas>
                 </div>
             </div>
-            
+
         </section>
 
     </main>
@@ -202,6 +203,21 @@
                 <button class="btn-secondary" id="modal-parcela-btn-cancel">Cancelar</button>
                 <button class="btn-primary" id="modal-parcela-btn-apenas-esta">Excluir Apenas Este Mês</button>
                 <button class="btn-danger" id="modal-parcela-btn-todas">Excluir Todas as Futuras</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirmar Exclusão</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Tem certeza que deseja excluir esta despesa?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-btn-cancel">Cancelar</button>
+                <button class="btn-danger" id="modal-btn-confirm">Excluir</button>
             </div>
         </div>
     </div>
@@ -264,7 +280,7 @@
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/fixos.js"></script>
-    
+
     <!-- Modal de Logout (Copiado) -->
     <div id="modal-logout-confirm" class="modal-overlay">
         <div class="modal-content">
@@ -281,4 +297,5 @@
         </div>
     </div>
 </body>
+
 </html>
